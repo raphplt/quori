@@ -11,12 +11,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, Github, LogOut, User, Settings, Sheet } from "lucide-react";
-import { SheetTrigger, SheetContent } from "../ui/sheet";
+import { Menu, Github, LogOut, User, Settings } from "lucide-react";
+import { Sheet, SheetTrigger, SheetContent } from "../ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import Image from "next/image";
 
 const Header = () => {
   const { user, isLoading, signIn, signOut } = useAuth();
+
+  console.log("Header user:", user);
 
   const NavLinks = () => (
     <>
@@ -61,9 +64,12 @@ const Header = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.avatarUrl} alt={user.name} />
+                <AvatarImage
+                  src={user.image || undefined}
+                  alt={user.name || "User"}
+                />
                 <AvatarFallback>
-                  {user.name.charAt(0).toUpperCase()}
+                  {user.name?.charAt(0)?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -71,7 +77,7 @@ const Header = () => {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <div className="flex items-center justify-start gap-2 p-2">
               <div className="flex flex-col space-y-1 leading-none">
-                <p className="font-medium">{user.name}</p>
+                <p className="font-medium">{user.name || "Utilisateur"}</p>
                 <p className="w-[200px] truncate text-sm text-muted-foreground">
                   {user.email}
                 </p>
@@ -113,26 +119,20 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
+      <div className="container mx-auto px-4 flex items-center justify-between h-14">
         <Link href="/" className="flex items-center space-x-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <span className="text-lg font-bold">Q</span>
-          </div>
+          <Image src="/Logo.png" alt="Quori Logo" width={40} height={40} />
           <span className="hidden font-bold sm:inline-block">Quori</span>
         </Link>
 
-        {/* Navigation Desktop */}
         <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
           <NavLinks />
         </nav>
 
-        {/* Actions Desktop */}
         <div className="hidden md:flex items-center space-x-4">
           <UserMenu />
         </div>
 
-        {/* Mobile Menu */}
         <div className="flex md:hidden">
           <Sheet>
             <SheetTrigger asChild>

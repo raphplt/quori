@@ -7,15 +7,7 @@ import React, {
   useState,
   ReactNode,
 } from "react";
-import { authClient } from "../lib/auth-client";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  githubUsername?: string;
-  avatarUrl?: string;
-}
+import { authClient, type User } from "../lib/auth-client";
 
 interface AuthContextType {
   user: User | null;
@@ -37,16 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkSession = async () => {
     try {
       const session = await authClient.getSession();
+      console.log("Session response:", session);
+
       if (session?.data?.user) {
-        setUser({
-          id: session.data.user.id,
-          name: session.data.user.name,
-          email: session.data.user.email,
-          avatarUrl: session.data.user.image || undefined,
-        });
+        setUser(session.data.user);
       }
     } catch (error) {
-      console.error("Erreur lors de la vérification de session:", error);
+      console.error("Session check error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -60,8 +49,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authClient.signOut();
       setUser(null);
+      window.location.href = "/";
     } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
+      console.error("Sign out error:", error);
     }
   };
 
