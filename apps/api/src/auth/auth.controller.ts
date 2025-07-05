@@ -6,7 +6,6 @@ import { auth } from './auth.config';
 export class AuthController {
   private getSessionToken(req: Request): string | undefined {
     const authHeader = req.headers.authorization;
-    // Utilisation d'une vérification de type plus sûre pour les cookies
     const cookies = req.cookies as Record<string, string> | undefined;
     const cookieToken = cookies?.['better-auth.session_token'];
     return authHeader?.replace('Bearer ', '') || cookieToken;
@@ -21,7 +20,6 @@ export class AuthController {
         return null;
       }
 
-      // Créer un objet Headers pour Better Auth
       const headers = new Headers();
       headers.set('authorization', `Bearer ${sessionToken}`);
 

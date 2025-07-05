@@ -31,7 +31,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Vérifier la session au chargement
     checkSession();
   }, []);
 
@@ -54,7 +53,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = () => {
-    // Rediriger vers GitHub via notre API
     window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/sign-in/github`;
   };
 
