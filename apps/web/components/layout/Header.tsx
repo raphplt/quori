@@ -19,8 +19,6 @@ import Image from "next/image";
 const Header = () => {
   const { user, isLoading, signIn, signOut } = useAuth();
 
-  console.log("Header user:", user);
-
   const NavLinks = () => (
     <>
       <Link
@@ -65,7 +63,7 @@ const Header = () => {
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarImage
-                  src={user.image || undefined}
+                  src={user.avatarUrl || undefined}
                   alt={user.name || "User"}
                 />
                 <AvatarFallback>

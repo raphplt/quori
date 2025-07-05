@@ -1,7 +1,13 @@
+"use client";
+
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import Link from "next/link";
 
-const page = () => {
+const HomePage = () => {
+  const { user, isAuthenticated, signIn } = useAuth();
+
   return (
     <div className="container mx-auto px-4 py-16">
       <div className="text-center max-w-4xl mx-auto">
@@ -15,13 +21,40 @@ const page = () => {
           professionnelles engageantes.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button size="lg" className="text-lg px-8 py-3">
-            Commencer gratuitement
-          </Button>
-          <Button variant="outline" size="lg" className="text-lg px-8 py-3">
-            Voir la démo
-          </Button>
+          {isAuthenticated ? (
+            <>
+              <Button size="lg" className="text-lg px-8 py-3" asChild>
+                <Link href="/dashboard">
+                  Accéder au Dashboard
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" className="text-lg px-8 py-3" asChild>
+                <Link href="/repositories">
+                  Mes Dépôts
+                </Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button 
+                size="lg" 
+                className="text-lg px-8 py-3"
+                onClick={signIn}
+              >
+                Commencer gratuitement
+              </Button>
+              <Button variant="outline" size="lg" className="text-lg px-8 py-3">
+                Voir la démo
+              </Button>
+            </>
+          )}
         </div>
+        
+        {user && (
+          <div className="mt-6 text-sm text-muted-foreground">
+            Connecté en tant que <span className="font-medium">{user.name}</span>
+          </div>
+        )}
       </div>
 
       {/* Section fonctionnalités */}
@@ -63,4 +96,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default HomePage;
