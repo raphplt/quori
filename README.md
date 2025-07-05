@@ -96,10 +96,6 @@ GITHUB_WEBHOOK_SECRET="your_webhook_secret"
 # OpenAI
 OPENAI_API_KEY="sk-..."
 
-# JWT
-JWT_SECRET="your_jwt_secret"
-```
-
 **apps/web/.env.local**
 ```bash
 NEXT_PUBLIC_API_URL="http://localhost:3001"

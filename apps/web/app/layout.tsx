@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "../contexts/auth-context";
 
 export const metadata: Metadata = {
   title: "Quori",
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={``}>{children}</body>
+      <body className={``}>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

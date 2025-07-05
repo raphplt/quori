@@ -6,6 +6,7 @@
     "private": true,
     "license": "UNLICENSED",
     "scripts": {
+        "dev": "nest start --watch",
         "build": "nest build",
         "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
         "start": "nest start",
@@ -32,6 +33,7 @@
         "@nestjs/terminus": "^11.0.0",
         "@nestjs/throttler": "^6.4.0",
         "@prisma/client": "^6.11.1",
+        "better-auth": "^1.2.12",
         "bullmq": "^5.56.1",
         "cache-manager": "^7.0.1",
         "class-transformer": "^0.5.1",
