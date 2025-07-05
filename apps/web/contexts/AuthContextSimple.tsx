@@ -1,12 +1,12 @@
 "use client";
 
 import { User } from "@/type/user";
-import React, { 
-  createContext, 
-  useContext, 
+import React, {
+  createContext,
+  useContext,
   useState,
   useEffect,
-  ReactNode
+  ReactNode,
 } from "react";
 
 interface AuthContextType {
@@ -19,7 +19,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -28,20 +28,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Vérifier l'auth au chargement et après callback
   useEffect(() => {
     checkAuth();
-    
+
     // Gérer le callback GitHub
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    
+    const token = urlParams.get("token");
+
     if (token) {
-      localStorage.setItem('token', token);
-      window.history.replaceState({}, '', window.location.pathname);
+      localStorage.setItem("token", token);
+      window.history.replaceState({}, "", window.location.pathname);
       checkAuth();
     }
   }, []);
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (!token) {
       setIsLoading(false);
       return;
@@ -49,20 +49,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await fetch(`${API_URL}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
       } else {
-        localStorage.removeItem('token');
+        localStorage.removeItem("token");
       }
     } catch (error) {
-      console.error('Erreur auth:', error);
-      localStorage.removeItem('token');
+      console.error("Erreur auth:", error);
+      localStorage.removeItem("token");
     }
-    
+
     setIsLoading(false);
   };
 
@@ -71,9 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setUser(null);
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   const value: AuthContextType = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useSession } from "next-auth/react";
 import { useRouter } from 'next/navigation';
 import { useEffect, ReactNode } from 'react';
 
@@ -13,36 +13,35 @@ export default function ProtectedRoute({
   children, 
   fallback 
 }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    // Si on n'est pas en train de charger et qu'il n'y a pas d'utilisateur
-    if (!isLoading && !user) {
-      router.push('/auth/login');
+    // Si on n'est pas en train de charger et qu'il n'y a pas de session
+    if (status !== "loading" && status === "unauthenticated") {
+      router.push("/auth/login");
     }
-  }, [isLoading, user, router]);
+  }, [status, router]);
 
   // Affichage du loading
-  if (isLoading) {
+  if (status === "loading") {
     return (
       fallback || (
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold">Vérification de l'authentification...</h2>
-            <p className="text-muted-foreground">Veuillez patienter.</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="mt-2">Chargement...</p>
           </div>
         </div>
       )
     );
   }
 
-  // Si pas d'utilisateur, ne rien afficher (redirection en cours)
-  if (!user) {
+  // Si pas authentifié, ne rien afficher (la redirection est en cours)
+  if (status === "unauthenticated") {
     return null;
   }
 
-  // Utilisateur connecté, afficher le contenu protégé
+  // Si authentifié, afficher le contenu
   return <>{children}</>;
 }
