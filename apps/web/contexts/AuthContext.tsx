@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (response.ok) {
         const userData = await response.json();
-        sethttps://chatgpt.com/User(userData);
+        setUser(userData);
       } else {
         // Token invalide, on le supprime
         localStorage.removeItem('authToken');

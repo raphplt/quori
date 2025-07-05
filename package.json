@@ -21,22 +21,24 @@
     "turbo": "^2.5.4",
     "typescript": "5.8.2"
   },
-"lint-staged": {
+  "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-        "eslint --fix",
-        "prettier --write"
+      "eslint --fix",
+      "prettier --write"
     ],
     "*.{json,md}": [
-        "prettier --write"
+      "prettier --write"
     ]
-},
+  },
   "engines": {
     "node": ">=18"
   },
   "packageManager": "npm@11.3.0",
   "workspaces": [
     "apps/*",
-  
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "next-auth": "^4.24.11"
+  }
 }
