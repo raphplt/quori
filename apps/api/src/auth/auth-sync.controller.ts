@@ -18,19 +18,21 @@ export class AuthSyncController {
 
   @Post('github/sync')
   @HttpCode(200)
-  async syncGitHubUser(@Body() body: GitHubSyncDto) {
+  syncGitHubUser(@Body() body: GitHubSyncDto) {
     // Convertir le profil GitHub au format attendu
     const profile = {
       id: body.githubProfile.id.toString(),
       username: body.githubProfile.login,
       displayName: body.githubProfile.name,
-      emails: body.githubProfile.email ? [{ value: body.githubProfile.email }] : [],
+      emails: body.githubProfile.email
+        ? [{ value: body.githubProfile.email }]
+        : [],
       photos: [{ value: body.githubProfile.avatar_url }],
     };
 
     // Créer ou mettre à jour l'utilisateur
     const user = this.authService.validateGithubUser(profile);
-    
+
     // Générer le token JWT
     const access_token = this.authService.generateJwtToken(user);
 

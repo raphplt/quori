@@ -34,7 +34,7 @@ export default function AuthErrorPage() {
         <div className="text-center">
           <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
           <h1 className="mt-4 text-3xl font-bold text-gray-900">
-            Erreur d'authentification
+            Erreur d&apos;authentification
           </h1>
           <p className="mt-2 text-gray-600">{errorMessage}</p>
         </div>
@@ -52,7 +52,7 @@ export default function AuthErrorPage() {
             variant="outline"
             className="w-full"
           >
-            Retour à l'accueil
+            Retour à l&apos;accueil
           </Button>
         </div>
       </div>
