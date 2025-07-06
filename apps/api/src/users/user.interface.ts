@@ -5,6 +5,7 @@ export interface User {
   email: string;
   avatarUrl: string;
   name: string;
+  githubAccessToken?: string; // Token pour accéder à l'API GitHub
   createdAt: Date;
   updatedAt: Date;
 }

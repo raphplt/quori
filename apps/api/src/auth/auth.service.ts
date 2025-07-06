@@ -26,17 +26,18 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  validateGithubUser(profile: GitHubProfile): User {
+  validateGithubUser(profile: GitHubProfile, githubAccessToken?: string): User {
     let user = this.usersService.findByGithubId(profile.id);
 
     if (!user) {
-      user = this.usersService.create(profile);
+      user = this.usersService.create(profile, githubAccessToken);
     } else {
       const updatedUser = this.usersService.update(user.id, {
         username: profile.username,
         email: profile.emails?.[0]?.value || user.email,
         avatarUrl: profile.photos?.[0]?.value || user.avatarUrl,
         name: profile.displayName || profile.username || user.name,
+        githubAccessToken,
       });
       if (!updatedUser) {
         throw new Error('Failed to update user');

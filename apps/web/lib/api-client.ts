@@ -11,7 +11,6 @@ export const authenticatedFetch = async (
   options: RequestInit = {}
 ) => {
   const session = await getSession();
-
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
@@ -22,7 +21,8 @@ export const authenticatedFetch = async (
     headers.Authorization = `Bearer ${apiToken}`;
   }
 
-  return fetch(`${API_BASE_URL}${url.startsWith("/") ? url : `/${url}`}`, {
+  const finalUrl = `${API_BASE_URL}${url.startsWith("/") ? url : `/${url}`}`;
+  return fetch(finalUrl, {
     ...options,
     headers,
   });

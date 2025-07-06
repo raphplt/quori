@@ -21,7 +21,7 @@ export class UsersService {
     return this.users.find((user) => user.id === id);
   }
 
-  create(githubProfile: GitHubProfile): User {
+  create(githubProfile: GitHubProfile, githubAccessToken?: string): User {
     const user: User = {
       id: this.generateId(),
       githubId: githubProfile.id,
@@ -29,6 +29,7 @@ export class UsersService {
       email: githubProfile.emails?.[0]?.value || '',
       avatarUrl: githubProfile.photos?.[0]?.value || '',
       name: githubProfile.displayName || githubProfile.username,
+      githubAccessToken,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

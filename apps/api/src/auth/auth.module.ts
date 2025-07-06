@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { GithubStrategy } from './strategies/github.strategy';
 import { AuthController } from './auth.controller';
+import { AuthSyncController } from './auth-sync.controller';
 import { UsersModule } from 'src/users/users.module';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -24,7 +25,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       inject: [ConfigService],
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, AuthSyncController],
   providers: [AuthService, GithubStrategy, JwtStrategy],
   exports: [AuthService, JwtModule],
 })

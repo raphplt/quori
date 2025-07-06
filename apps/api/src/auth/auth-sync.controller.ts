@@ -30,8 +30,7 @@ export class AuthSyncController {
       photos: [{ value: body.githubProfile.avatar_url }],
     };
 
-    // Créer ou mettre à jour l'utilisateur
-    const user = this.authService.validateGithubUser(profile);
+    const user = this.authService.validateGithubUser(profile, body.accessToken);
 
     // Générer le token JWT
     const access_token = this.authService.generateJwtToken(user);

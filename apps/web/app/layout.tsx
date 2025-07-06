@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 import { NextAuthProvider } from "@/contexts/NextAuthContext";
+import { ReactQueryProvider } from "@/contexts/QueryClientContext";
 
 export const metadata: Metadata = {
   title: "Quori",
@@ -17,11 +18,13 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="min-h-screen flex flex-col">
-        <NextAuthProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </NextAuthProvider>
+        <ReactQueryProvider>
+          <NextAuthProvider>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </NextAuthProvider>
+        </ReactQueryProvider>
       </body>
     </html>
   );

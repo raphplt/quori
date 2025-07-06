@@ -1,10 +1,72 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { CreateGithubDto } from './dto/create-github.dto';
 import { UpdateGithubDto } from './dto/update-github.dto';
+import { GitHubRepository } from './interfaces/github-repository.interface';
 
 @Injectable()
 export class GithubService {
-  create(createGithubDto: CreateGithubDto) {
+  private readonly GITHUB_API_BASE = 'https://api.github.com';
+
+  async getUserRepositories(accessToken: string): Promise<GitHubRepository[]> {
+    try {
+      const response = await fetch(`${this.GITHUB_API_BASE}/user/repos`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'Quori-App',
+        },
+      });
+
+      if (!response.ok) {
+        throw new HttpException(
+          `GitHub API error: ${response.status}`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      return (await response.json()) as GitHubRepository[];
+    } catch {
+      throw new HttpException(
+        'Failed to fetch repositories from GitHub',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async getRepository(
+    accessToken: string,
+    owner: string,
+    repo: string,
+  ): Promise<GitHubRepository> {
+    try {
+      const response = await fetch(
+        `${this.GITHUB_API_BASE}/repos/${owner}/${repo}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/vnd.github.v3+json',
+            'User-Agent': 'Quori-App',
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new HttpException(
+          `GitHub API error: ${response.status}`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      return (await response.json()) as GitHubRepository;
+    } catch {
+      throw new HttpException(
+        'Failed to fetch repository from GitHub',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  create(_createGithubDto: CreateGithubDto) {
     return 'This action adds a new github';
   }
 
@@ -16,7 +78,7 @@ export class GithubService {
     return `This action returns a #${id} github`;
   }
 
-  update(id: number, updateGithubDto: UpdateGithubDto) {
+  update(id: number, _updateGithubDto: UpdateGithubDto) {
     return `This action updates a #${id} github`;
   }
 
