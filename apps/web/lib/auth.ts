@@ -176,7 +176,7 @@ export const authOptions: NextAuthConfig = {
       } else if (
         token.refreshToken &&
         token.apiTokenExpires &&
-        Date.now() >= token.apiTokenExpires - 60000
+        Date.now() >= Number(token.apiTokenExpires) - 60000
       ) {
         const refreshed = await refreshApiToken(token.refreshToken as string);
         if (refreshed) {

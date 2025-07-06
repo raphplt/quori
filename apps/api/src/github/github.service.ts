@@ -7,7 +7,6 @@ export class GithubService {
 
   async getUserRepositories(accessToken: string): Promise<GitHubRepository[]> {
     try {
-      console.log('Fetching repositories from GitHub API...');
       const response = await fetch(`${this.GITHUB_API_BASE}/user/repos`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
