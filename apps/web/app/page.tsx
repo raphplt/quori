@@ -2,11 +2,13 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSession, signIn } from "next-auth/react";
 import Link from "next/link";
 
 const HomePage = () => {
-  const { user, isAuthenticated, signIn } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const isAuthenticated = status === "authenticated";
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -36,10 +38,10 @@ const HomePage = () => {
             </>
           ) : (
             <>
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="text-lg px-8 py-3"
-                onClick={signIn}
+                onClick={() => signIn("github")}
               >
                 Commencer gratuitement
               </Button>

@@ -1,12 +1,12 @@
 "use client";
 
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Github, User, Mail, Calendar, RefreshCw } from "lucide-react";
+import { Github, User, Mail, Calendar } from "lucide-react";
 
 export default function DashboardPage() {
   return (
@@ -17,7 +17,9 @@ export default function DashboardPage() {
 }
 
 function DashboardContent() {
-  const { user, signOut, refreshUser } = useAuth();
+  const { data: session } = useSession();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const user = session?.user as any;
 
   if (!user) {
     return null;
@@ -37,17 +39,7 @@ function DashboardContent() {
           
           <div className="flex items-center space-x-4">
             <Button
-              onClick={refreshUser}
-              variant="outline"
-              size="sm"
-              className="flex items-center space-x-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span>Actualiser</span>
-            </Button>
-            
-            <Button
-              onClick={signOut}
+              onClick={() => signOut()}
               variant="destructive"
               size="sm"
             >
@@ -71,7 +63,8 @@ function DashboardContent() {
             <div className="flex items-start space-x-6">
               <Avatar className="h-20 w-20">
                 <AvatarImage
-                  src={user.avatarUrl}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  src={(user as any).avatarUrl}
                   alt={user.name}
                 />
                 <AvatarFallback className="text-lg">
@@ -94,7 +87,8 @@ function DashboardContent() {
                       <Github className="h-4 w-4 text-gray-500" />
                       <span className="text-sm font-medium">Username GitHub</span>
                     </div>
-                    <p className="text-gray-900">@{user.username}</p>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    <p className="text-gray-900">@{(user as any).username}</p>
                   </div>
                   
                   <div className="space-y-2">
@@ -111,7 +105,8 @@ function DashboardContent() {
                       <span className="text-sm font-medium">Membre depuis</span>
                     </div>
                     <p className="text-gray-900">
-                      {new Date(user.createdAt).toLocaleDateString('fr-FR')}
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {new Date((user as any).createdAt).toLocaleDateString('fr-FR')}
                     </p>
                   </div>
                 </div>
@@ -125,7 +120,8 @@ function DashboardContent() {
                       ✓ Connecté
                     </Badge>
                     <Badge variant="outline">
-                      GitHub ID: {user.githubId}
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      GitHub ID: {(user as any).githubId}
                     </Badge>
                   </div>
                 </div>
@@ -154,7 +150,8 @@ function DashboardContent() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {new Date(user.updatedAt).toLocaleDateString('fr-FR')}
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {new Date((user as any).updatedAt).toLocaleDateString('fr-FR')}
               </div>
               <p className="text-xs text-muted-foreground">
                 Dernière synchronisation
@@ -187,11 +184,13 @@ function DashboardContent() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">ID utilisateur:</span>
-                <span className="font-mono">{user.id}</span>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <span className="font-mono">{(user as any).id}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">GitHub ID:</span>
-                <span className="font-mono">{user.githubId}</span>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <span className="font-mono">{(user as any).githubId}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Token stocké:</span>

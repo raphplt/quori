@@ -2,11 +2,12 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 const RegisterPage = () => {
-  const { user, signIn } = useAuth();
+  const { data: session } = useSession();
+  const user = session?.user;
   const router = useRouter();
 
   // Si l'utilisateur est déjà connecté, rediriger vers la page d'accueil
@@ -38,7 +39,7 @@ const RegisterPage = () => {
 
         <div className="mt-8">
           <Button
-            onClick={signIn}
+            onClick={() => signIn("github")}
             className="w-full flex items-center justify-center"
             size="lg"
           >
