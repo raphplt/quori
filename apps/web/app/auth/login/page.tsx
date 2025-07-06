@@ -2,20 +2,20 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 const LoginPage = () => {
-  const { user, signIn, isLoading } = useAuth();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   React.useEffect(() => {
-    if (user) {
+    if (session) {
       router.push("/dashboard");
     }
-  }, [user, router]);
+  }, [session, router]);
 
-  if (isLoading) {
+  if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -26,7 +26,7 @@ const LoginPage = () => {
     );
   }
 
-  if (user) {
+  if (session) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -48,7 +48,7 @@ const LoginPage = () => {
 
         <div className="mt-8">
           <Button
-            onClick={signIn}
+            onClick={() => signIn("github")}
             className="w-full flex items-center justify-center"
             size="lg"
           >

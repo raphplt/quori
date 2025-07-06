@@ -1,8 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import { AuthProvider } from "../contexts/AuthContext";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
+import { NextAuthProvider } from "@/contexts/NextAuthContext";
 
 export const metadata: Metadata = {
   title: "Quori",
@@ -17,11 +17,11 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="min-h-screen flex flex-col">
-        <AuthProvider>
+        <NextAuthProvider>
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />
-        </AuthProvider>
+        </NextAuthProvider>
       </body>
     </html>
   );

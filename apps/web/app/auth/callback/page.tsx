@@ -9,13 +9,11 @@ export default function AuthCallbackPage() {
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    if (status === "loading") return; // Encore en cours de chargement
+    if (status === "loading") return;
 
     if (status === "authenticated" && session) {
-      // Authentification réussie, rediriger vers le dashboard
       router.push("/dashboard");
     } else if (status === "unauthenticated") {
-      // Authentification échouée, rediriger vers la page de connexion
       router.push("/auth/login?error=auth_failed");
     }
   }, [status, session, router]);
