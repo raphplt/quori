@@ -8,6 +8,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Github, User, Mail, Calendar } from "lucide-react";
 
+type ExtendedUser = {
+  id: string;
+  githubId: string;
+  username: string;
+  email: string;
+  avatarUrl: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  image?: string;
+};
+
 export default function DashboardPage() {
   return (
     <ProtectedRoute>
@@ -18,12 +30,13 @@ export default function DashboardPage() {
 
 function DashboardContent() {
   const { data: session } = useSession();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const user = session?.user as any;
+  const user = session?.user as ExtendedUser;
 
   if (!user) {
     return null;
   }
+
+  console.log("User:", user);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -85,8 +98,7 @@ function DashboardContent() {
                         Username GitHub
                       </span>
                     </div>
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    <p className="text-gray-900">@{(user as any).username}</p>
+                    <p className="text-gray-900">@{user.username}</p>
                   </div>
 
                   <div className="space-y-2">
@@ -103,10 +115,7 @@ function DashboardContent() {
                       <span className="text-sm font-medium">Membre depuis</span>
                     </div>
                     <p className="text-gray-900">
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                      {new Date((user as any).createdAt).toLocaleDateString(
-                        "fr-FR"
-                      )}
+                      {new Date(user.createdAt).toLocaleDateString("fr-FR")}
                     </p>
                   </div>
                 </div>
@@ -122,10 +131,7 @@ function DashboardContent() {
                     >
                       ✓ Connecté
                     </Badge>
-                    <Badge variant="outline">
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                      GitHub ID: {(user as any).githubId}
-                    </Badge>
+                    <Badge variant="outline">GitHub ID: {user.githubId}</Badge>
                   </div>
                 </div>
               </div>
@@ -155,8 +161,7 @@ function DashboardContent() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {new Date((user as any).updatedAt).toLocaleDateString("fr-FR")}
+                {new Date(user.updatedAt).toLocaleDateString("fr-FR")}
               </div>
               <p className="text-xs text-muted-foreground">
                 Dernière synchronisation
@@ -189,13 +194,11 @@ function DashboardContent() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">ID utilisateur:</span>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <span className="font-mono">{(user as any).id}</span>
+                <span className="font-mono">{user.id}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">GitHub ID:</span>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <span className="font-mono">{(user as any).githubId}</span>
+                <span className="font-mono">{user.githubId}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Token stocké:</span>
