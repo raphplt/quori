@@ -1,6 +1,5 @@
 import NextAuth from "next-auth"
 import type { NextAuthOptions } from "next-auth"
-import { JWT } from "next-auth/jwt"
 
 declare module "next-auth" {
   interface Session {
@@ -54,9 +53,14 @@ export const authOptions: NextAuthOptions = {
       },
       token: "https://github.com/login/oauth/access_token",
       userinfo: "https://api.github.com/user",
+      // eslint-disable-next-line turbo/no-undeclared-env-vars
       clientId: process.env.AUTH_GITHUB_ID!,
+      // eslint-disable-next-line turbo/no-undeclared-env-vars
       clientSecret: process.env.AUTH_GITHUB_SECRET!,
-      profile: async (profile: any, tokens: any) => {
+      profile: async (
+        profile: Record<string, unknown>,
+        tokens: Record<string, unknown>,
+      ) => {
         // Après récupération du profil GitHub, on l'envoie à notre API
         try {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/github/sync`, {
@@ -102,14 +106,20 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, account, user }) {
       // Stocker le token de votre API
       if (account && user) {
-        token.apiToken = (user as any).apiToken
+        const extendedUser = user as {
+          apiToken?: string
+          username?: string
+          githubId?: string
+        } & typeof user
+
+        token.apiToken = extendedUser.apiToken
         token.user = {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          image: user.image,
-          username: (user as any).username,
-          githubId: (user as any).githubId,
+          id: extendedUser.id,
+          name: extendedUser.name,
+          email: extendedUser.email,
+          image: extendedUser.image,
+          username: extendedUser.username,
+          githubId: extendedUser.githubId,
         }
       }
       
@@ -136,6 +146,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 7 * 24 * 60 * 60, // 7 jours
   },
+  // eslint-disable-next-line turbo/no-undeclared-env-vars
   debug: process.env.NODE_ENV === "development",
 }
 

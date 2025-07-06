@@ -2,7 +2,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 // Types pour les réponses de l'API
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -29,7 +29,7 @@ export const authenticatedFetch = async (
 };
 
 // Fonction pour les requêtes GET authentifiées
-export const authenticatedGet = async <T = any>(endpoint: string): Promise<T> => {
+export const authenticatedGet = async <T = unknown>(endpoint: string): Promise<T> => {
   const response = await authenticatedFetch(endpoint);
   
   if (!response.ok) {
@@ -40,9 +40,9 @@ export const authenticatedGet = async <T = any>(endpoint: string): Promise<T> =>
 };
 
 // Fonction pour les requêtes POST authentifiées
-export const authenticatedPost = async <T = any>(
-  endpoint: string, 
-  data?: any
+export const authenticatedPost = async <T = unknown, D = unknown>(
+  endpoint: string,
+  data?: D
 ): Promise<T> => {
   const response = await authenticatedFetch(endpoint, {
     method: 'POST',
@@ -57,9 +57,9 @@ export const authenticatedPost = async <T = any>(
 };
 
 // Fonction pour les requêtes PUT authentifiées
-export const authenticatedPut = async <T = any>(
-  endpoint: string, 
-  data?: any
+export const authenticatedPut = async <T = unknown, D = unknown>(
+  endpoint: string,
+  data?: D
 ): Promise<T> => {
   const response = await authenticatedFetch(endpoint, {
     method: 'PUT',
@@ -74,7 +74,7 @@ export const authenticatedPut = async <T = any>(
 };
 
 // Fonction pour les requêtes DELETE authentifiées
-export const authenticatedDelete = async <T = any>(endpoint: string): Promise<T> => {
+export const authenticatedDelete = async <T = unknown>(endpoint: string): Promise<T> => {
   const response = await authenticatedFetch(endpoint, {
     method: 'DELETE',
   });
