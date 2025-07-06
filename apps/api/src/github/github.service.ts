@@ -7,6 +7,7 @@ export class GithubService {
 
   async getUserRepositories(accessToken: string): Promise<GitHubRepository[]> {
     try {
+      console.log('Fetching repositories from GitHub API...');
       const response = await fetch(`${this.GITHUB_API_BASE}/user/repos`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -62,25 +63,5 @@ export class GithubService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-  }
-
-  create() {
-    return 'This action adds a new github';
-  }
-
-  findAll() {
-    return `This action returns all github`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} github`;
-  }
-
-  update(id: number) {
-    return `This action updates a #${id} github`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} github`;
   }
 }

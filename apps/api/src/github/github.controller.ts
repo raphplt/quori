@@ -1,11 +1,7 @@
 import {
   Controller,
   Get,
-  Post,
-  Body,
-  Patch,
   Param,
-  Delete,
   UseGuards,
   Request,
   UnauthorizedException,
@@ -55,30 +51,5 @@ export class GithubController {
       owner,
       repo,
     );
-  }
-
-  @Post()
-  create() {
-    return this.githubService.create();
-  }
-
-  @Get()
-  findAll() {
-    return this.githubService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.githubService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string) {
-    return this.githubService.update(+id);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.githubService.remove(+id);
   }
 }
