@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Github, User, Mail, Calendar } from "lucide-react";
+import { Github, User, Mail, Calendar, GithubIcon } from "lucide-react";
 
 type ExtendedUser = {
   id: string;
@@ -135,6 +135,20 @@ function DashboardContent() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center space-x-2 mb-2">
+              Installer la GitHub App
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full">
+              Installer
+              <GithubIcon />
+            </Button>
           </CardContent>
         </Card>
 
