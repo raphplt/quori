@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Github, Twitter, Linkedin, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -12,12 +13,15 @@ const Footer = () => {
     <footer className="bg-background border-t">
       <div className="container mx-auto px-4 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Logo & Description */}
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center space-x-2 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <span className="text-lg font-bold">Q</span>
-              </div>
+              <Image
+                src="/Logo.png"
+                alt="Quori Logo"
+                width={40}
+                height={40}
+                className="h-10 w-10"
+              />
               <span className="font-bold text-xl">Quori</span>
             </Link>
             <p className="text-muted-foreground mb-4 max-w-md">
