@@ -32,11 +32,11 @@ export class AuthSyncController {
 
     const user = this.authService.validateGithubUser(profile, body.accessToken);
 
-    // Générer le token JWT
-    const access_token = this.authService.generateJwtToken(user);
+    const { access_token, refresh_token } = this.authService.login(user);
 
     return {
       access_token,
+      refresh_token,
       user,
     };
   }
