@@ -36,7 +36,7 @@ function DashboardContent() {
     return null;
   }
 
-  console.log("User:", user);
+  // console.log("User:", user);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -55,7 +55,6 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* Carte de profil */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -139,7 +138,6 @@ function DashboardContent() {
           </CardContent>
         </Card>
 
-        {/* Cartes d'information */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader className="pb-2">
@@ -182,7 +180,6 @@ function DashboardContent() {
           </Card>
         </div>
 
-        {/* Informations de session */}
         <Card>
           <CardHeader>
             <CardTitle>Informations de session</CardTitle>

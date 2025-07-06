@@ -1,20 +1,23 @@
+import type { DefaultSession, DefaultUser } from "next-auth";
+import type { JWT as DefaultJWT } from "next-auth/jwt";
+
 declare module "next-auth" {
-  interface Session {
+  interface Session extends DefaultSession {
     apiToken?: string;
     user: {
       id: string;
-      githubId: string;
-      username: string;
-      email: string;
-      avatarUrl: string;
-      name: string;
-      createdAt: string;
-      updatedAt: string;
-      image?: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      githubId?: string;
+      username?: string;
+      avatarUrl?: string;
+      createdAt?: string;
+      updatedAt?: string;
     };
   }
 
-  interface User {
+  interface User extends DefaultUser {
     id: string;
     githubId: string;
     username: string;
@@ -27,7 +30,7 @@ declare module "next-auth" {
 }
 
 declare module "next-auth/jwt" {
-  interface JWT {
+  interface JWT extends DefaultJWT {
     apiToken?: string;
     backendUser?: {
       id: string;
