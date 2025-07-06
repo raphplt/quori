@@ -65,8 +65,7 @@ const Header = () => {
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarImage
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  src={(user as any).avatarUrl || undefined}
+                  src={user.image || undefined}
                   alt={user.name || "User"}
                 />
                 <AvatarFallback>
@@ -78,7 +77,7 @@ const Header = () => {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <div className="flex items-center justify-start gap-2 p-2">
               <div className="flex flex-col space-y-1 leading-none">
-                <p className="font-medium">{user.name || "Utilisateur"}</p>
+                <p className="font-medium ">{user.name || "Utilisateur"}</p>
                 <p className="w-[200px] truncate text-sm text-muted-foreground">
                   {user.email}
                 </p>

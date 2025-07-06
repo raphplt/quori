@@ -22,7 +22,6 @@ export class AuthController {
     const user = req.user as User;
     const loginResult = this.authService.login(user);
 
-    // Redirect to frontend with token
     const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${loginResult.access_token}`;
     res.redirect(redirectUrl);
   }

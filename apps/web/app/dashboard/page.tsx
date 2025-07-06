@@ -32,17 +32,11 @@ function DashboardContent() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-1">
-              Bienvenue, {user.name} !
-            </p>
+            <p className="text-gray-600 mt-1">Bienvenue, {user.name} !</p>
           </div>
-          
+
           <div className="flex items-center space-x-4">
-            <Button
-              onClick={() => signOut()}
-              variant="destructive"
-              size="sm"
-            >
+            <Button onClick={() => signOut()} variant="destructive" size="sm">
               Se déconnecter
             </Button>
           </div>
@@ -61,17 +55,19 @@ function DashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="flex items-start space-x-6">
-              <Avatar className="h-20 w-20">
+              <Avatar className="h-14 w-14">
                 <AvatarImage
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  src={(user as any).avatarUrl}
-                  alt={user.name}
+                  src={user.image || undefined}
+                  alt={user.name || "User"}
+                  width={50}
+                  height={50}
                 />
-                <AvatarFallback className="text-lg">
+
+                <AvatarFallback>
                   {user.name?.charAt(0)?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
-              
+
               <div className="flex-1 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -81,16 +77,18 @@ function DashboardContent() {
                     </div>
                     <p className="text-gray-900">{user.name}</p>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <Github className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm font-medium">Username GitHub</span>
+                      <span className="text-sm font-medium">
+                        Username GitHub
+                      </span>
                     </div>
                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     <p className="text-gray-900">@{(user as any).username}</p>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <Mail className="h-4 w-4 text-gray-500" />
@@ -98,7 +96,7 @@ function DashboardContent() {
                     </div>
                     <p className="text-gray-900">{user.email}</p>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4 text-gray-500" />
@@ -106,17 +104,22 @@ function DashboardContent() {
                     </div>
                     <p className="text-gray-900">
                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                      {new Date((user as any).createdAt).toLocaleDateString('fr-FR')}
+                      {new Date((user as any).createdAt).toLocaleDateString(
+                        "fr-FR"
+                      )}
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="pt-4 border-t">
                   <div className="flex items-center space-x-2 mb-2">
                     <span className="text-sm font-medium">Statut</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Badge variant="default" className="bg-green-100 text-green-800">
+                    <Badge
+                      variant="default"
+                      className="bg-green-100 text-green-800"
+                    >
                       ✓ Connecté
                     </Badge>
                     <Badge variant="outline">
@@ -134,40 +137,42 @@ function DashboardContent() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Dernière connexion</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Dernière connexion
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">Maintenant</div>
-              <p className="text-xs text-muted-foreground">
-                Session active
-              </p>
+              <p className="text-xs text-muted-foreground">Session active</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Compte mis à jour</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Compte mis à jour
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                  {new Date((user as any).updatedAt).toLocaleDateString('fr-FR')}
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {new Date((user as any).updatedAt).toLocaleDateString("fr-FR")}
               </div>
               <p className="text-xs text-muted-foreground">
                 Dernière synchronisation
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Type de compte</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Type de compte
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">GitHub</div>
-              <p className="text-xs text-muted-foreground">
-                OAuth connecté
-              </p>
+              <p className="text-xs text-muted-foreground">OAuth connecté</p>
             </CardContent>
           </Card>
         </div>
