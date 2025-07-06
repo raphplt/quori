@@ -3,10 +3,9 @@ import Repositories from "./_components/Repositories";
 
 const Page = () => {
   return (
-    <div>
-      <h1>Mes repositories</h1>
+    <main>
       <Repositories />
-    </div>
+    </main>
   );
 };
 
