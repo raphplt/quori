@@ -15,6 +15,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   signIn: () => void;
   signOut: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,14 +35,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = urlParams.get('token');
     
     if (token) {
-      localStorage.setItem('token', token);
+      localStorage.setItem('authToken', token);
       window.history.replaceState({}, '', window.location.pathname);
       checkAuth();
     }
   }, []);
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('authToken');
     if (!token) {
       setIsLoading(false);
       return;
@@ -56,13 +57,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = await response.json();
         setUser(userData);
       } else {
-        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
       }
     } catch (error) {
       console.error('Erreur auth:', error);
-      localStorage.removeItem('token');
+      localStorage.removeItem('authToken');
     }
-    
+
     setIsLoading(false);
   };
 
@@ -71,9 +72,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('authToken');
     setUser(null);
     window.location.href = '/';
+  };
+
+  const refreshUser = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('Erreur refresh user:', error);
+    }
   };
 
   const value: AuthContextType = {
@@ -82,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user,
     signIn,
     signOut,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -15,7 +15,7 @@ export default function ProtectedRoute({
   fallback,
   redirectTo = "/auth/login",
 }: ProtectedRouteProps) {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
