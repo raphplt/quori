@@ -1,4 +1,12 @@
-import { Controller, Get, Post, UseGuards, Req, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  UseGuards,
+  Req,
+  Res,
+  Body,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
@@ -22,7 +30,9 @@ export class AuthController {
     const user = req.user as User;
     const loginResult = this.authService.login(user);
 
-    const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback?token=${loginResult.access_token}`;
+    const redirectUrl = `${
+      process.env.FRONTEND_URL || 'http://localhost:3000'
+    }/auth/callback?token=${loginResult.access_token}&refreshToken=${loginResult.refresh_token}`;
     res.redirect(redirectUrl);
   }
 
@@ -37,10 +47,18 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  logout() {
+  logout(@GetUser() user: User) {
+    this.authService.logout(user.id);
     return {
       message: 'Logged out successfully',
     };
+  }
+
+  @Post('refresh')
+  refresh(@Body('refreshToken') refreshToken: string) {
+    const { access_token, refresh_token, user } =
+      this.authService.refreshTokens(refreshToken);
+    return { access_token, refresh_token, user };
   }
 
   @Get('me')

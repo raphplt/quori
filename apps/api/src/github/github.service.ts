@@ -1,6 +1,4 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { CreateGithubDto } from './dto/create-github.dto';
-import { UpdateGithubDto } from './dto/update-github.dto';
 import { GitHubRepository } from './interfaces/github-repository.interface';
 
 @Injectable()
@@ -66,7 +64,7 @@ export class GithubService {
     }
   }
 
-  create(_createGithubDto: CreateGithubDto) {
+  create() {
     return 'This action adds a new github';
   }
 
@@ -78,7 +76,7 @@ export class GithubService {
     return `This action returns a #${id} github`;
   }
 
-  update(id: number, _updateGithubDto: UpdateGithubDto) {
+  update(id: number) {
     return `This action updates a #${id} github`;
   }
 

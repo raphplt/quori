@@ -11,6 +11,36 @@ import type { JWT } from "next-auth/jwt";
 import type { AdapterUser } from "next-auth/adapters";
 import GitHubProvider from "next-auth/providers/github";
 
+function decodeJwt(token: string): { exp?: number } {
+  try {
+    const payload = JSON.parse(
+      Buffer.from(token.split(".")[1], "base64url").toString()
+    );
+    return payload;
+  } catch {
+    return {};
+  }
+}
+
+async function refreshApiToken(
+  refreshToken: string
+): Promise<SyncResponse | null> {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!res.ok) {
+      return null;
+    }
+    return (await res.json()) as SyncResponse;
+  } catch (err) {
+    console.error("Failed to refresh API token", err);
+    return null;
+  }
+}
+
 interface GitHubProfileRaw {
   id: string;
   login: string;
@@ -21,6 +51,7 @@ interface GitHubProfileRaw {
 
 interface SyncResponse {
   access_token: string;
+  refresh_token: string;
   user: {
     id: string;
     githubId: string;
@@ -135,7 +166,27 @@ export const authOptions: NextAuthConfig = {
         if (data) {
           token.sub = data.user.id;
           token.apiToken = data.access_token;
+          token.refreshToken = data.refresh_token;
+          const decoded = decodeJwt(data.access_token);
+          if (decoded.exp) {
+            token.apiTokenExpires = decoded.exp * 1000;
+          }
           token.backendUser = data.user;
+        }
+      } else if (
+        token.refreshToken &&
+        token.apiTokenExpires &&
+        Date.now() >= token.apiTokenExpires - 60000
+      ) {
+        const refreshed = await refreshApiToken(token.refreshToken as string);
+        if (refreshed) {
+          token.apiToken = refreshed.access_token;
+          token.refreshToken = refreshed.refresh_token;
+          const decoded = decodeJwt(refreshed.access_token);
+          if (decoded.exp) {
+            token.apiTokenExpires = decoded.exp * 1000;
+          }
+          token.backendUser = refreshed.user;
         }
       }
       return token;

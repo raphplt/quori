@@ -13,12 +13,28 @@ export interface GitHubProfile {
 export class UsersService {
   private users: User[] = [];
 
+  findByRefreshToken(refreshToken: string): User | undefined {
+    return this.users.find((user) => user.refreshToken === refreshToken);
+  }
+
   findByGithubId(githubId: string): User | undefined {
     return this.users.find((user) => user.githubId === githubId);
   }
 
   findById(id: string): User | undefined {
     return this.users.find((user) => user.id === id);
+  }
+
+  updateRefreshToken(
+    id: string,
+    refreshToken: string | undefined,
+    refreshTokenExpires?: Date,
+  ): void {
+    const userIndex = this.users.findIndex((user) => user.id === id);
+    if (userIndex === -1) return;
+    this.users[userIndex].refreshToken = refreshToken;
+    this.users[userIndex].refreshTokenExpires = refreshTokenExpires;
+    this.users[userIndex].updatedAt = new Date();
   }
 
   create(githubProfile: GitHubProfile, githubAccessToken?: string): User {
@@ -30,6 +46,8 @@ export class UsersService {
       avatarUrl: githubProfile.photos?.[0]?.value || '',
       name: githubProfile.displayName || githubProfile.username,
       githubAccessToken,
+      refreshToken: undefined,
+      refreshTokenExpires: undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

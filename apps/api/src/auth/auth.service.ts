@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/user.interface';
+import { randomBytes } from 'crypto';
 
 export interface JwtPayload {
   sub: string;
@@ -63,12 +64,48 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
-  login(user: User): { access_token: string; user: User } {
+  private generateRefreshToken(): string {
+    return randomBytes(32).toString('hex');
+  }
+
+  login(user: User): {
+    access_token: string;
+    refresh_token: string;
+    user: User;
+  } {
     const access_token = this.generateJwtToken(user);
+    const refresh_token = this.generateRefreshToken();
+    this.usersService.updateRefreshToken(user.id, refresh_token);
 
     return {
       access_token,
+      refresh_token,
       user,
     };
+  }
+
+  refreshTokens(refreshToken: string): {
+    access_token: string;
+    refresh_token: string;
+    user: User;
+  } {
+    const user = this.usersService.findByRefreshToken(refreshToken);
+    if (!user) {
+      throw new Error('Invalid refresh token');
+    }
+
+    const newAccess = this.generateJwtToken(user);
+    const newRefresh = this.generateRefreshToken();
+    this.usersService.updateRefreshToken(user.id, newRefresh);
+
+    return {
+      access_token: newAccess,
+      refresh_token: newRefresh,
+      user,
+    };
+  }
+
+  logout(userId: string): void {
+    this.usersService.updateRefreshToken(userId, undefined);
   }
 }

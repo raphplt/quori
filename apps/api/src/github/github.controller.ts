@@ -11,8 +11,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { GithubService } from './github.service';
-import { CreateGithubDto } from './dto/create-github.dto';
-import { UpdateGithubDto } from './dto/update-github.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from '../users/users.service';
 import { GitHubRepository } from './interfaces/github-repository.interface';
@@ -60,8 +58,8 @@ export class GithubController {
   }
 
   @Post()
-  create(@Body() createGithubDto: CreateGithubDto) {
-    return this.githubService.create(createGithubDto);
+  create() {
+    return this.githubService.create();
   }
 
   @Get()
@@ -75,8 +73,8 @@ export class GithubController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateGithubDto: UpdateGithubDto) {
-    return this.githubService.update(+id, updateGithubDto);
+  update(@Param('id') id: string) {
+    return this.githubService.update(+id);
   }
 
   @Delete(':id')
