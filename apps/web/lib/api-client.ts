@@ -12,13 +12,19 @@ export const authenticatedFetch = async (
 ) => {
   const session = await getSession();
 
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const apiToken = (session as any)?.apiToken as string | undefined;
+  if (apiToken) {
+    headers.Authorization = `Bearer ${apiToken}`;
+  }
+
   return fetch(`${API_BASE_URL}${url.startsWith("/") ? url : `/${url}`}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(session?.apiToken && { Authorization: `Bearer ${session.apiToken}` }),
-      ...options.headers,
-    },
+    headers,
   });
 };
 

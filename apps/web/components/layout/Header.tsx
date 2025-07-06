@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSession, signIn, signOut } from "next-auth/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import Image from "next/image";
 
 const Header = () => {
-  const { user, isLoading, signIn, signOut } = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const isLoading = status === "loading";
 
   const NavLinks = () => (
     <>
@@ -63,7 +65,8 @@ const Header = () => {
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarImage
-                  src={user.avatarUrl || undefined}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  src={(user as any).avatarUrl || undefined}
                   alt={user.name || "User"}
                 />
                 <AvatarFallback>
@@ -97,7 +100,7 @@ const Header = () => {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-600 focus:text-red-600"
-              onClick={signOut}
+              onClick={() => signOut()}
             >
               <LogOut className="mr-2 h-4 w-4" />
               Se déconnecter
@@ -108,7 +111,7 @@ const Header = () => {
     }
 
     return (
-      <Button onClick={signIn} className="flex items-center gap-2">
+      <Button onClick={() => signIn("github") } className="flex items-center gap-2">
         <Github className="h-4 w-4" />
         Se connecter
       </Button>

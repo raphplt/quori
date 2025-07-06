@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSession } from "next-auth/react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,20 +15,20 @@ export default function ProtectedRoute({
   fallback,
   redirectTo = "/auth/login",
 }: ProtectedRouteProps) {
-  const { isLoading, isAuthenticated } = useAuth();
+  const { status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (status === "unauthenticated") {
       router.push(redirectTo);
     }
-  }, [isLoading, isAuthenticated, router, redirectTo]);
+  }, [status, router, redirectTo]);
 
   // Affichage du loader pendant le chargement
-  if (isLoading) {
-    return (
-      fallback || (
-        <div className="min-h-screen flex items-center justify-center">
+  if (status === "loading") {
+      return (
+        fallback || (
+          <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -42,7 +42,7 @@ export default function ProtectedRoute({
   }
 
   // Si pas authentifié, on ne rend rien (la redirection se fait via useEffect)
-  if (!isAuthenticated) {
+  if (status !== "authenticated") {
     return null;
   }
 
