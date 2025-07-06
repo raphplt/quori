@@ -33,13 +33,16 @@ export class AuthService {
     if (!user) {
       user = this.usersService.create(profile, githubAccessToken);
     } else {
-      const updatedUser = this.usersService.update(user.id, {
+      const updateData: Partial<User> = {
         username: profile.username,
         email: profile.emails?.[0]?.value || user.email,
         avatarUrl: profile.photos?.[0]?.value || user.avatarUrl,
         name: profile.displayName || profile.username || user.name,
-        githubAccessToken,
-      });
+      };
+      if (githubAccessToken) {
+        updateData.githubAccessToken = githubAccessToken;
+      }
+      const updatedUser = this.usersService.update(user.id, updateData);
       if (!updatedUser) {
         throw new Error('Failed to update user');
       }
