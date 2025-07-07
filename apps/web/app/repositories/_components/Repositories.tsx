@@ -18,8 +18,6 @@ const Repositories = () => {
   const { data: session, status } = useSession();
   const { data: repositories, isLoading, error } = useGitHubRepositories();
 
-  console.log("session:", session);
-
   const {
     searchTerm,
     setSearchTerm,

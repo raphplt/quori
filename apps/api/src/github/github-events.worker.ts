@@ -5,7 +5,28 @@ import { GithubAppService } from './github-app.service';
 import { Installation } from './entities/installation.entity';
 import { Event as GithubEvent } from './entities/event.entity';
 import { Post } from './entities/post.entity';
-import { Octokit } from '@octokit/rest';
+
+interface PushPayload {
+  repository: {
+    full_name: string;
+    name: string;
+    owner: {
+      login: string;
+    };
+  };
+  after: string;
+}
+
+interface PullRequestPayload {
+  repository: {
+    full_name: string;
+    name: string;
+    owner: {
+      login: string;
+    };
+  };
+  number: number;
+}
 
 const config = new ConfigService();
 const dataSource = new DataSource({
@@ -23,11 +44,13 @@ async function bootstrap() {
     dataSource.getRepository(Post),
   );
 
-  const worker = new Worker(
+  const eventsRepository = dataSource.getRepository(GithubEvent);
+
+  new Worker(
     'github-events',
     async (job: Job) => {
       const { delivery_id } = job.data as { delivery_id: string };
-      const event = await service['events'].findOne({
+      const event = await eventsRepository.findOne({
         where: { delivery_id },
         relations: ['installation'],
       });
@@ -36,7 +59,7 @@ async function bootstrap() {
       const octokit = await service.getInstallationOctokit(installationId);
       let repoFullName = '';
       if (event.event === 'push') {
-        const payload: any = event.payload;
+        const payload = event.payload as unknown as PushPayload;
         repoFullName = payload.repository.full_name;
         await octokit.rest.repos.getCommit({
           owner: payload.repository.owner.login,
@@ -44,7 +67,7 @@ async function bootstrap() {
           ref: payload.after,
         });
       } else if (event.event === 'pull_request') {
-        const payload: any = event.payload;
+        const payload = event.payload as unknown as PullRequestPayload;
         repoFullName = payload.repository.full_name;
         await octokit.rest.pulls.get({
           owner: payload.repository.owner.login,
@@ -59,7 +82,7 @@ async function bootstrap() {
         eventType: event.event,
         content,
       });
-      await service.events.update({ delivery_id }, { processed: true });
+      await eventsRepository.update({ delivery_id }, { processed: true });
     },
     {
       connection: { url: config.get<string>('REDIS_URL') },
