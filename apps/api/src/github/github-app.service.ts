@@ -5,13 +5,26 @@ import { Octokit } from '@octokit/rest';
 import { Queue } from 'bullmq';
 import crypto from 'crypto';
 import { Request } from 'express';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Installation } from './entities/installation.entity';
+import { Event as GithubEvent } from './entities/event.entity';
+import { Post } from './entities/post.entity';
 
 @Injectable()
 export class GithubAppService {
   private cache = new Map<number, { token: string; expires: number }>();
   private queue: Queue<Record<string, unknown>>;
 
-  constructor(private config: ConfigService) {
+  constructor(
+    private config: ConfigService,
+    @InjectRepository(Installation)
+    private installations: Repository<Installation>,
+    @InjectRepository(GithubEvent)
+    private events: Repository<GithubEvent>,
+    @InjectRepository(Post)
+    private posts: Repository<Post>,
+  ) {
     this.queue = new Queue<Record<string, unknown>>('github-events', {
       connection: {
         url: this.config.get<string>('REDIS_URL'),
@@ -63,5 +76,80 @@ export class GithubAppService {
       expires: new Date(data.expires_at).getTime() - 60 * 1000,
     });
     return data.token;
+  }
+
+  async getInstallationOctokit(installationId: number): Promise<Octokit> {
+    const token = await this.getInstallationToken(installationId);
+    return new Octokit({ auth: token });
+  }
+
+  async upsertInstallation(data: {
+    installation_id: number;
+    account_login: string;
+    account_id: number;
+    repositories: string[];
+  }): Promise<void> {
+    await this.installations.save({
+      installation_id: data.installation_id,
+      account_login: data.account_login,
+      account_id: data.account_id,
+      repos: data.repositories,
+    });
+  }
+
+  async removeInstallation(id: number): Promise<void> {
+    await this.installations.delete({ installation_id: id });
+  }
+
+  async updateRepos(id: number, repos: string[]): Promise<void> {
+    await this.installations.update({ installation_id: id }, { repos });
+  }
+
+  async getInstallationRepos(id: number): Promise<string[]> {
+    const inst = await this.installations.findOne({
+      where: { installation_id: id },
+    });
+    return inst?.repos || [];
+  }
+
+  async recordEvent(
+    delivery: string,
+    installationId: number,
+    event: string,
+    payload: Record<string, unknown>,
+  ): Promise<void> {
+    const exists = await this.events.findOne({
+      where: { delivery_id: delivery },
+    });
+    if (exists) return;
+    const installation = await this.installations.findOne({
+      where: { installation_id: installationId },
+    });
+    if (!installation) return;
+    await this.events.save({
+      delivery_id: delivery,
+      installation,
+      event,
+      payload,
+    });
+    await this.queue.add(event, { delivery_id: delivery });
+  }
+
+  async savePost(data: {
+    installationId: number;
+    repo: string;
+    eventType: string;
+    content: string;
+  }): Promise<void> {
+    const installation = await this.installations.findOne({
+      where: { installation_id: data.installationId },
+    });
+    if (!installation) return;
+    await this.posts.save({
+      installation,
+      repo_full_name: data.repo,
+      event_type: data.eventType,
+      content_draft: data.content,
+    });
   }
 }
