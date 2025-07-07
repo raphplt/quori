@@ -19,7 +19,8 @@
         "test:watch": "jest --watch",
         "test:cov": "jest --coverage",
         "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-        "test:e2e": "jest --config ./test/jest-e2e.json"
+        "test:e2e": "jest --config ./test/jest-e2e.json",
+        "worker:events": "ts-node src/github/github-events.worker.ts"
     },
     "dependencies": {
         "@nestjs/common": "^11.0.1",
@@ -37,6 +38,8 @@
         "bullmq": "^5.56.1",
         "@octokit/rest": "^20.0.0",
         "jsonwebtoken": "^9.0.2",
+        "@nestjs/typeorm": "^11.0.0",
+        "pg": "^8.11.3",
         "rxjs": "^7.8.1",
         "typeorm": "^0.3.25"
     },

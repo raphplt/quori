@@ -5,12 +5,12 @@ en posts LinkedIn prêts à publier.
 
 ## Monorepo
 
-| Path        | Stack                          | Rôle                                 |
-|-------------|--------------------------------|--------------------------------------|
-| apps/web    | Next 15, Tailwind, shadcn/ui   | Interface utilisateur                |
-| apps/api    | NestJS 10, Prisma, Redis       | API REST + Webhooks GitHub           |
-| apps/docs   | Next static export             | Documentation publique               |
-| packages/\* | Core logic, UI, configs        | Code partagé                        |
+| Path        | Stack                        | Rôle                       |
+| ----------- | ---------------------------- | -------------------------- |
+| apps/web    | Next 15, Tailwind, shadcn/ui | Interface utilisateur      |
+| apps/api    | NestJS 10, Prisma, Redis     | API REST + Webhooks GitHub |
+| apps/docs   | Next static export           | Documentation publique     |
+| packages/\* | Core logic, UI, configs      | Code partagé               |
 
 ## Démarrage rapide
 
@@ -18,11 +18,18 @@ en posts LinkedIn prêts à publier.
 npm install        # à la racine
 npm run dev:web    # lance le front
 npm run dev:api    # lance l'API NestJS
+npm --workspace=api run tunnel # expose l'API via localtunnel
 ```
+
+### Tester les webhooks GitHub
+
+Configurez l'URL `https://<sous-domaine>.loca.lt/webhooks/github` dans les
+paramètres de votre GitHub App puis installez l'app depuis le dashboard.
 
 ## Architecture
 
 ### Frontend (apps/web)
+
 - **Next.js 15** avec App Router et React Server Components
 - **Tailwind CSS v4** pour le styling
 - **shadcn/ui** pour les composants
@@ -32,6 +39,7 @@ npm run dev:api    # lance l'API NestJS
 - **Framer Motion** pour les animations
 
 ### Backend (apps/api)
+
 - **NestJS 10** avec TypeScript strict
 - **Prisma** avec PostgreSQL
 - **Redis** pour le cache et les queues
@@ -40,6 +48,7 @@ npm run dev:api    # lance l'API NestJS
 - **BullMQ** pour les tâches asynchrones
 
 ### Base de données
+
 ```sql
 -- Schéma Prisma (à développer)
 model User {
@@ -81,7 +90,8 @@ npm run format      # Format avec Prettier
 ### Variables d'environnement
 
 **apps/api/.env**
-```bash
+
+````bash
 # Database
 DATABASE_URL="postgresql://user:password@localhost:5432/quori"
 
@@ -101,12 +111,12 @@ OPENAI_API_KEY="sk-..."
 NEXT_PUBLIC_API_URL="http://localhost:3001"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your_nextauth_secret"
-```
+````
 
 ## Workflow de développement
 
 1. **Webhook GitHub** reçoit push/PR → parse les changements
-2. **Queue BullMQ** traite les événements de manière asynchrone  
+2. **Queue BullMQ** traite les événements de manière asynchrone
 3. **OpenAI GPT-4** génère le post LinkedIn en français
 4. **Frontend** affiche les posts avec options d'édition
 5. **Utilisateur** copie/colle ou publie directement
@@ -114,25 +124,29 @@ NEXTAUTH_SECRET="your_nextauth_secret"
 ## Roadmap (30 jours)
 
 ### Week 1: Foundation
+
 - [x] Setup monorepo with Turbo
 - [x] NestJS API with Prisma
 - [x] Next.js frontend with Tailwind
 - [ ] GitHub webhook endpoint
 - [ ] Basic authentication
 
-### Week 2: Core Features  
+### Week 2: Core Features
+
 - [ ] Git event parsing logic
 - [ ] OpenAI integration for post generation
 - [ ] Basic UI for post management
 - [ ] Redis queues for async processing
 
 ### Week 3: Polish
+
 - [ ] Post editing interface
 - [ ] LinkedIn formatting preview
 - [ ] Error handling & monitoring
 - [ ] Basic analytics
 
 ### Week 4: Launch
+
 - [ ] Stripe integration (freemium model)
 - [ ] Production deployment
 - [ ] Documentation complète
@@ -163,6 +177,7 @@ npm run dev:web    # Terminal 2
 ## Tech Stack
 
 ### Frontend
+
 - **Framework**: Next.js 15 (App Router)
 - **Styling**: Tailwind CSS v4
 - **Components**: shadcn/ui, Radix UI
@@ -171,7 +186,8 @@ npm run dev:web    # Terminal 2
 - **Animation**: Framer Motion
 - **Auth**: NextAuth.js (future)
 
-### Backend  
+### Backend
+
 - **Framework**: NestJS 10
 - **Database**: PostgreSQL + Prisma
 - **Cache**: Redis + BullMQ
@@ -180,9 +196,10 @@ npm run dev:web    # Terminal 2
 - **Validation**: class-validator
 
 ### DevOps
+
 - **Monorepo**: Turborepo
 - **Package Manager**: npm workspaces
-- **Linting**: ESLint + Prettier  
+- **Linting**: ESLint + Prettier
 - **Git Hooks**: Husky + lint-staged
 - **CI/CD**: GitHub Actions
 - **Deployment**: Vercel (frontend) + Railway (backend)

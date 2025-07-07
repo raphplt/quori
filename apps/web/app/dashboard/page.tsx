@@ -4,9 +4,16 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Github, User, Mail, Calendar, GithubIcon } from "lucide-react";
+import Link from "next/link";
 
 type ExtendedUser = {
   id: string;
@@ -145,9 +152,15 @@ function DashboardContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Button className="w-full">
-              Installer
-              <GithubIcon />
+            <Button asChild className="w-full">
+              <Link
+                href={`https://github.com/apps/${process.env.NEXT_PUBLIC_GITHUB_APP_SLUG}/installations/new`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Installer
+                <GithubIcon />
+              </Link>
             </Button>
           </CardContent>
         </Card>
