@@ -18,7 +18,7 @@ export class AuthSyncController {
 
   @Post('github/sync')
   @HttpCode(200)
-  syncGitHubUser(@Body() body: GitHubSyncDto) {
+  async syncGitHubUser(@Body() body: GitHubSyncDto) {
     // Convertir le profil GitHub au format attendu
     const profile = {
       id: body.githubProfile.id.toString(),
@@ -30,9 +30,12 @@ export class AuthSyncController {
       photos: [{ value: body.githubProfile.avatar_url }],
     };
 
-    const user = this.authService.validateGithubUser(profile, body.accessToken);
+    const user = await this.authService.validateGithubUser(
+      profile,
+      body.accessToken,
+    );
 
-    const { access_token, refresh_token } = this.authService.login(user);
+    const { access_token, refresh_token } = await this.authService.login(user);
 
     return {
       access_token,

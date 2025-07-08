@@ -26,9 +26,9 @@ export class AuthController {
 
   @Get('github/callback')
   @UseGuards(AuthGuard('github'))
-  githubCallback(@Req() req: Request, @Res() res: Response) {
+  async githubCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
-    const loginResult = this.authService.login(user);
+    const loginResult = await this.authService.login(user);
 
     const redirectUrl = `${
       process.env.FRONTEND_URL || 'http://localhost:3000'
@@ -47,17 +47,17 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  logout(@GetUser() user: User) {
-    this.authService.logout(user.id);
+  async logout(@GetUser() user: User) {
+    await this.authService.logout(user.id);
     return {
       message: 'Logged out successfully',
     };
   }
 
   @Post('refresh')
-  refresh(@Body('refreshToken') refreshToken: string) {
+  async refresh(@Body('refreshToken') refreshToken: string) {
     const { access_token, refresh_token, user } =
-      this.authService.refreshTokens(refreshToken);
+      await this.authService.refreshTokens(refreshToken);
     return { access_token, refresh_token, user };
   }
 

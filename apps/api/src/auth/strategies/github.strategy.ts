@@ -24,11 +24,11 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     });
   }
 
-  validate(
+  async validate(
     accessToken: string,
     refreshToken: string,
     profile: GitHubProfile,
-  ): User {
-    return this.authService.validateGithubUser(profile);
+  ): Promise<User> {
+    return this.authService.validateGithubUser(profile, accessToken);
   }
 }

@@ -106,6 +106,10 @@ GITHUB_WEBHOOK_SECRET="your_webhook_secret"
 # OpenAI
 OPENAI_API_KEY="sk-..."
 
+# Sessions & Encryption
+SESSION_SECRET="your-session-secret-key"
+ENCRYPTION_KEY="change-me"
+
 **apps/web/.env.local**
 ```bash
 NEXT_PUBLIC_API_URL="http://localhost:3001"

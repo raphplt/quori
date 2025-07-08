@@ -26,3 +26,18 @@ CREATE TABLE IF NOT EXISTS posts (
   content_draft text,
   created_at timestamptz DEFAULT now()
 );
+
+-- users
+CREATE TABLE IF NOT EXISTS users (
+  user_id text PRIMARY KEY,
+  github_id text,
+  username text,
+  email text,
+  avatar_url text,
+  name text,
+  github_access_token text,
+  refresh_token text,
+  refresh_token_expires timestamptz,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
