@@ -16,13 +16,22 @@ interface GitHubRepository {
   created_at: string;
 }
 
+interface GitHubRepositoriesPage {
+  repositories: GitHubRepository[];
+  totalCount: number;
+}
+
 /**
  * Hook pour récupérer les repositories GitHub de l'utilisateur connecté
  */
-export function useGitHubRepositories() {
-  return useAuthenticatedQuery<GitHubRepository[]>(
-    ["github", "repositories"],
-    "/github/repositories",
+export function useGitHubRepositories(page = 1, perPage = 30) {
+  const params = new URLSearchParams({
+    page: String(page),
+    perPage: String(perPage),
+  });
+  return useAuthenticatedQuery<GitHubRepositoriesPage>(
+    ["github", "repositories", page, perPage],
+    `/github/repositories?${params.toString()}`,
     { method: "GET" }
   );
 }
@@ -41,4 +50,4 @@ export function useGitHubRepository(owner: string, repo: string) {
   );
 }
 
-export type { GitHubRepository };
+export type { GitHubRepository, GitHubRepositoriesPage };
