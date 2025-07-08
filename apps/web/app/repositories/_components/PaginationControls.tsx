@@ -96,7 +96,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
                 <PaginationLink
                   onClick={() => onPageChange(page)}
                   isActive={currentPage === page}
-                  className="cursor-pointer"
+                  className="cursor-pointer w-8"
                 >
                   {page}
                 </PaginationLink>

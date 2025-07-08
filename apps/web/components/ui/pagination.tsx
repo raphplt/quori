@@ -49,7 +49,7 @@ const PaginationLink = ({
     aria-current={isActive ? "page" : undefined}
     variant={isActive ? "default" : "ghost"}
     size={size}
-    className={cn("h-8 w-8 p-0", className)}
+    className={cn("h-8 inline-flex items-center justify-center p-0", className)}
     {...props}
   />
 );
