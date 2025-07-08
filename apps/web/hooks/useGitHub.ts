@@ -24,7 +24,7 @@ interface GitHubRepositoriesPage {
 /**
  * Hook pour récupérer les repositories GitHub de l'utilisateur connecté
  */
-export function useGitHubRepositories(page = 1, perPage = 30) {
+export function useGitHubRepositories(page = 1, perPage = 100) {
   const params = new URLSearchParams({
     page: String(page),
     perPage: String(perPage),
@@ -32,6 +32,17 @@ export function useGitHubRepositories(page = 1, perPage = 30) {
   return useAuthenticatedQuery<GitHubRepositoriesPage>(
     ["github", "repositories", page, perPage],
     `/github/repositories?${params.toString()}`,
+    { method: "GET" }
+  );
+}
+
+/**
+ * Hook pour récupérer TOUS les repositories GitHub de l'utilisateur connecté
+ */
+export function useAllGitHubRepositories() {
+  return useAuthenticatedQuery<GitHubRepositoriesPage>(
+    ["github", "repositories", "all"],
+    `/github/repositories?page=1&perPage=1000`,
     { method: "GET" }
   );
 }
