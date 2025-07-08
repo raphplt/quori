@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as session from 'express-session';
 import { json } from 'body-parser';
@@ -48,9 +49,24 @@ async function bootstrap() {
   // Global prefix for API routes
   app.setGlobalPrefix('api');
 
+  // Configure Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Quori API')
+    .setDescription('The Quori API documentation')
+    .setVersion('1.0')
+    .addTag('auth', 'Authentication endpoints')
+    .addTag('users', 'User management endpoints')
+    .addTag('github', 'GitHub integration endpoints')
+    .build();
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, documentFactory);
+
   await app.listen(process.env.PORT ?? 3001).then(() => {
     console.log(
-      `Application is running on: http://localhost:${process.env.PORT ?? 3001}`,
+      `🚀 API is running on: http://localhost:${process.env.PORT ?? 3001}`,
+    );
+    console.log(
+      `📚 Swagger docs available at: http://localhost:${process.env.PORT ?? 3001}/api/docs`,
     );
   });
 }
