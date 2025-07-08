@@ -2,6 +2,8 @@ import { Body, Controller, Headers, Post, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { GithubAppService } from './github-app.service';
 
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
+
 @Controller('webhooks/github')
 export class WebhooksController {
   constructor(private readonly appService: GithubAppService) {}

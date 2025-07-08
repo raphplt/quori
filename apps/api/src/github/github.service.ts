@@ -1,13 +1,21 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { GitHubRepository } from './interfaces/github-repository.interface';
+import { GitHubRepositoriesPage } from './interfaces/github-repositories-page.interface';
 
 @Injectable()
 export class GithubService {
   private readonly GITHUB_API_BASE = 'https://api.github.com';
 
-  async getUserRepositories(accessToken: string): Promise<GitHubRepository[]> {
+  async getUserRepositories(
+    accessToken: string,
+    page = 1,
+    perPage = 30,
+  ): Promise<GitHubRepositoriesPage> {
     try {
-      const response = await fetch(`${this.GITHUB_API_BASE}/user/repos`, {
+      const url = new URL(`${this.GITHUB_API_BASE}/user/repos`);
+      url.searchParams.set('page', String(page));
+      url.searchParams.set('per_page', String(perPage));
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           Accept: 'application/vnd.github.v3+json',
@@ -22,7 +30,17 @@ export class GithubService {
         );
       }
 
-      return (await response.json()) as GitHubRepository[];
+      const repositories = (await response.json()) as GitHubRepository[];
+      const link = response.headers.get('link');
+      let totalCount = (page - 1) * perPage + repositories.length;
+      if (link && /rel="last"/.test(link)) {
+        const match = link.match(/page=(\d+)>; rel="last"/);
+        if (match) {
+          const lastPage = parseInt(match[1], 10);
+          totalCount = lastPage * perPage;
+        }
+      }
+      return { repositories, totalCount };
     } catch {
       throw new HttpException(
         'Failed to fetch repositories from GitHub',

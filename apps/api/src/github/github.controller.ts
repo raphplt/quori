@@ -5,11 +5,13 @@ import {
   UseGuards,
   Request,
   UnauthorizedException,
+  Query,
 } from '@nestjs/common';
 import { GithubService } from './github.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UsersService } from '../users/users.service';
 import { GitHubRepository } from './interfaces/github-repository.interface';
+import { GitHubRepositoriesPage } from './interfaces/github-repositories-page.interface';
 import { User } from '../users/user.interface';
 
 interface AuthenticatedRequest {
@@ -27,12 +29,20 @@ export class GithubController {
   @Get('repositories')
   async getMyRepositories(
     @Request() req: AuthenticatedRequest,
-  ): Promise<GitHubRepository[]> {
+    @Query('page') page = '1',
+    @Query('perPage') perPage = '30',
+  ): Promise<GitHubRepositoriesPage> {
     const user = req.user;
     if (!user?.githubAccessToken) {
       throw new UnauthorizedException('No GitHub access token found for user');
     }
-    return this.githubService.getUserRepositories(user.githubAccessToken);
+    const pageNum = parseInt(page, 10) || 1;
+    const perPageNum = parseInt(perPage, 10) || 30;
+    return this.githubService.getUserRepositories(
+      user.githubAccessToken,
+      pageNum,
+      perPageNum,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

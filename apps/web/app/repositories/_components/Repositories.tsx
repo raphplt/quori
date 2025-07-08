@@ -9,14 +9,18 @@ import {
 import { useGitHubRepositories } from "@/hooks/useGitHub";
 import { useSession } from "next-auth/react";
 import { useRepositoryFilters } from "@/hooks/useRepositoryFilters";
-import { usePagination } from "@/hooks/usePagination";
+import { useState, useEffect } from "react";
 import { RepositoryFilters } from "./RepositoryFilters";
 import { RepositoryList } from "./RepositoryList";
 import { PaginationControls } from "./PaginationControls";
 
 const Repositories = () => {
   const { data: session, status } = useSession();
-  const { data: repositories, isLoading, error } = useGitHubRepositories();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+  const { data, isLoading, error } = useGitHubRepositories(currentPage, itemsPerPage);
+  const repositories = data?.repositories;
+  const totalCount = data?.totalCount || 0;
 
   const {
     searchTerm,
@@ -33,30 +37,21 @@ const Repositories = () => {
     filteredAndSortedRepos,
   } = useRepositoryFilters({ repositories });
 
-  const itemsPerPage = 6;
-  const {
-    currentPage,
-    totalPages,
-    startIndex,
-    endIndex,
-    goToPage,
-    goToPrevious,
-    goToNext,
-    canGoPrevious,
-    canGoNext,
-  } = usePagination({
-    totalItems: filteredAndSortedRepos.length,
-    itemsPerPage,
-    dependencies: [
-      searchTerm,
-      languageFilter,
-      visibilityFilter,
-      sortBy,
-      sortDirection,
-    ],
-  });
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  const paginatedRepos = filteredAndSortedRepos.slice(startIndex, endIndex);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, languageFilter, visibilityFilter, sortBy, sortDirection]);
+
+  const goToPage = (p: number) => {
+    setCurrentPage(Math.max(1, Math.min(totalPages, p)));
+  };
+  const goToPrevious = () => goToPage(currentPage - 1);
+  const goToNext = () => goToPage(currentPage + 1);
+  const canGoPrevious = currentPage > 1;
+  const canGoNext = currentPage < totalPages;
+
+  const paginatedRepos = filteredAndSortedRepos;
 
   if (status === "loading" || isLoading) {
     return (
@@ -105,9 +100,9 @@ const Repositories = () => {
           Mes Repositories GitHub
         </h1>
         <p className="text-muted-foreground">
-          {filteredAndSortedRepos.length} repository
-          {filteredAndSortedRepos.length > 1 ? "s" : ""} trouvé
-          {filteredAndSortedRepos.length > 1 ? "s" : ""}
+          {totalCount} repository
+          {totalCount > 1 ? "s" : ""} trouvé
+          {totalCount > 1 ? "s" : ""}
         </p>
       </div>
 
