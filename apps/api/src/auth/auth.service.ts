@@ -27,11 +27,14 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  validateGithubUser(profile: GitHubProfile, githubAccessToken?: string): User {
-    let user = this.usersService.findByGithubId(profile.id);
+  async validateGithubUser(
+    profile: GitHubProfile,
+    githubAccessToken?: string,
+  ): Promise<User> {
+    let user = await this.usersService.findByGithubId(profile.id);
 
     if (!user) {
-      user = this.usersService.create(profile, githubAccessToken);
+      user = await this.usersService.create(profile, githubAccessToken);
     } else {
       const updateData: Partial<User> = {
         username: profile.username,
@@ -42,7 +45,7 @@ export class AuthService {
       if (githubAccessToken) {
         updateData.githubAccessToken = githubAccessToken;
       }
-      const updatedUser = this.usersService.update(user.id, updateData);
+      const updatedUser = await this.usersService.update(user.id, updateData);
       if (!updatedUser) {
         throw new Error('Failed to update user');
       }
@@ -52,8 +55,8 @@ export class AuthService {
     return user;
   }
 
-  validateJwtPayload(payload: JwtPayload): User | null {
-    const user = this.usersService.findById(payload.sub);
+  async validateJwtPayload(payload: JwtPayload): Promise<User | null> {
+    const user = await this.usersService.findById(payload.sub);
     return user || null;
   }
 
@@ -71,14 +74,14 @@ export class AuthService {
     return randomBytes(32).toString('hex');
   }
 
-  login(user: User): {
+  async login(user: User): Promise<{
     access_token: string;
     refresh_token: string;
     user: User;
-  } {
+  }> {
     const access_token = this.generateJwtToken(user);
     const refresh_token = this.generateRefreshToken();
-    this.usersService.updateRefreshToken(user.id, refresh_token);
+    await this.usersService.updateRefreshToken(user.id, refresh_token);
 
     return {
       access_token,
@@ -87,19 +90,19 @@ export class AuthService {
     };
   }
 
-  refreshTokens(refreshToken: string): {
+  async refreshTokens(refreshToken: string): Promise<{
     access_token: string;
     refresh_token: string;
     user: User;
-  } {
-    const user = this.usersService.findByRefreshToken(refreshToken);
+  }> {
+    const user = await this.usersService.findByRefreshToken(refreshToken);
     if (!user) {
       throw new Error('Invalid refresh token');
     }
 
     const newAccess = this.generateJwtToken(user);
     const newRefresh = this.generateRefreshToken();
-    this.usersService.updateRefreshToken(user.id, newRefresh);
+    await this.usersService.updateRefreshToken(user.id, newRefresh);
 
     return {
       access_token: newAccess,
@@ -108,7 +111,7 @@ export class AuthService {
     };
   }
 
-  logout(userId: string): void {
-    this.usersService.updateRefreshToken(userId, undefined);
+  async logout(userId: string): Promise<void> {
+    await this.usersService.updateRefreshToken(userId, undefined);
   }
 }
