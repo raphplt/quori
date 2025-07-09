@@ -11,7 +11,7 @@ import { Repository } from 'typeorm';
 import { Installation } from './entities/installation.entity';
 import { Event as GithubEvent } from './entities/event.entity';
 import { Post } from './entities/post.entity';
-import { parseGitEvent, ParsedGitEvent } from './parse-git-event';
+import { parseGitEvent } from './parse-git-event';
 
 @Injectable()
 export class GithubAppService {
@@ -140,16 +140,33 @@ export class GithubAppService {
       where: { installation_id: installationId },
     });
     if (!installation) return;
+    // Type-safe extraction of repository full name
     const repoFullName =
-      (payload as any).repository?.full_name ?? '';
-    let metadata: ParsedGitEvent | undefined;
+      (payload as { repository?: { full_name?: string } }).repository
+        ?.full_name ?? '';
+
+    let metadata: Record<string, unknown> | undefined;
     try {
       const octokit = await this.getInstallationOctokit(installationId);
-      metadata = await parseGitEvent(payload, event, octokit);
+      const parsedEvent = await parseGitEvent(payload, event, octokit);
+      // Convert ParsedGitEvent to Record<string, unknown> for database storage
+      metadata = {
+        title: parsedEvent.title,
+        desc: parsedEvent.desc,
+        filesChanged: parsedEvent.filesChanged,
+        diffStats: parsedEvent.diffStats,
+      };
     } catch {
-      metadata = await parseGitEvent(payload, event);
+      const parsedEvent = await parseGitEvent(payload, event);
+      metadata = {
+        title: parsedEvent.title,
+        desc: parsedEvent.desc,
+        filesChanged: parsedEvent.filesChanged,
+        diffStats: parsedEvent.diffStats,
+      };
     }
-    const saved = await this.events.save({
+
+    const savedEvent = await this.events.save({
       delivery_id: delivery,
       installation,
       event,
@@ -157,7 +174,7 @@ export class GithubAppService {
       repo_full_name: repoFullName,
       metadata,
     });
-    this.eventSubject.next(saved);
+    this.eventSubject.next(savedEvent);
     await this.queue.add(event, { delivery_id: delivery });
   }
 
@@ -177,5 +194,40 @@ export class GithubAppService {
       event_type: data.eventType,
       content_draft: data.content,
     });
+  }
+
+  async createTestEvent(): Promise<GithubEvent> {
+    const testEvent = {
+      delivery_id: `test-${Date.now()}`,
+      event: 'push',
+      payload: {
+        repository: {
+          full_name: 'test/repo',
+          name: 'repo',
+          owner: { login: 'test' },
+        },
+        head_commit: {
+          message: 'Test commit for activity feed',
+          added: ['test.txt'],
+          modified: [],
+          removed: [],
+        },
+      },
+      repo_full_name: 'test/repo',
+      metadata: {
+        title: 'Test commit for activity feed',
+        desc: 'This is a test commit to verify the activity feed is working',
+        filesChanged: ['test.txt'],
+        diffStats: {
+          additions: 5,
+          deletions: 0,
+          total: 5,
+        },
+      },
+    };
+
+    const saved = await this.events.save(testEvent);
+    this.eventSubject.next(saved);
+    return saved;
   }
 }

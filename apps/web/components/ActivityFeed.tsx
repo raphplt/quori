@@ -1,6 +1,7 @@
 "use client";
 import { useEffect } from "react";
-import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
 import { GitHubEvent } from "@/types/githubEvent";
 import {
@@ -14,34 +15,26 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Activity, GitCommit, GitPullRequest } from "lucide-react";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
-
 export default function ActivityFeed() {
-  const queryClient = useQueryClient();
+  const { data: session } = useSession();
 
-  const { data } = useQuery<GitHubEvent[]>({
+  const { data, isLoading, error } = useQuery<GitHubEvent[]>({
     queryKey: ["events"],
     queryFn: () => authenticatedFetcher<GitHubEvent[]>("/github/events"),
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
+    enabled: !!session,
   });
 
+  // Log des données pour debug
   useEffect(() => {
-    const es = new EventSource(`${API_BASE_URL}/github/events/stream`);
-    es.onmessage = (e) => {
-      try {
-        const event: GitHubEvent = JSON.parse(e.data);
-        queryClient.setQueryData<GitHubEvent[]>(["events"], (old) => {
-          const arr = old ? [event, ...old] : [event];
-          return arr.slice(0, 20);
-        });
-      } catch {
-        // ignore
-      }
-    };
-    es.onerror = () => {
-      es.close();
-    };
-    return () => es.close();
-  }, [queryClient]);
+    if (data) {
+      console.log("Events loaded:", data.length);
+    }
+    if (error) {
+      console.error("Error loading events:", error);
+    }
+  }, [data, error]);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -67,7 +60,38 @@ export default function ActivityFeed() {
 
   return (
     <div className="grid gap-4">
-      {data?.map((activity) => (
+      {isLoading && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center text-muted-foreground">
+              Chargement des événements...
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {error && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center text-red-500">
+              Erreur lors du chargement des événements
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {data && data.length === 0 && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center text-muted-foreground">
+              Aucun événement Git trouvé. Connectez votre dépôt GitHub pour voir
+              les événements.
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {data?.map(activity => (
         <Card key={activity.delivery_id}>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -82,7 +106,8 @@ export default function ActivityFeed() {
               </div>
             </div>
             <CardDescription>
-              {activity.repo_full_name} • {new Date(activity.received_at).toLocaleString()}
+              {activity.repo_full_name} •{" "}
+              {new Date(activity.received_at).toLocaleString()}
             </CardDescription>
           </CardHeader>
           <CardContent>

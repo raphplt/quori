@@ -29,7 +29,16 @@ async function bootstrap() {
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Cache-Control',
+      'Accept',
+      'Accept-Language',
+      'Last-Event-ID',
+      'Connection',
+    ],
+    exposedHeaders: ['Content-Type', 'Cache-Control', 'Connection'],
   });
 
   // Configure session middleware
