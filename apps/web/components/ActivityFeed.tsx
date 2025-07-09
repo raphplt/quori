@@ -26,6 +26,7 @@ export default function ActivityFeed() {
     enabled: !!session,
   });
 
+  // Log des données pour debug
   useEffect(() => {
     if (data) {
       console.log("Events loaded:", data.length);
