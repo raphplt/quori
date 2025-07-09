@@ -16,6 +16,12 @@ export class Event {
   @Column('jsonb')
   payload!: Record<string, unknown>;
 
+  @Column('text')
+  repo_full_name!: string;
+
+  @Column('jsonb', { nullable: true })
+  metadata?: Record<string, unknown>;
+
   @Column('timestamptz', { default: () => 'now()' })
   received_at!: Date;
 

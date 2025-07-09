@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { sign } from 'jsonwebtoken';
 import { Octokit } from '@octokit/rest';
 import { Queue } from 'bullmq';
+import { Observable, Subject } from 'rxjs';
 import crypto from 'crypto';
 import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,11 +11,13 @@ import { Repository } from 'typeorm';
 import { Installation } from './entities/installation.entity';
 import { Event as GithubEvent } from './entities/event.entity';
 import { Post } from './entities/post.entity';
+import { parseGitEvent, ParsedGitEvent } from './parse-git-event';
 
 @Injectable()
 export class GithubAppService {
   private cache = new Map<number, { token: string; expires: number }>();
   private queue: Queue<Record<string, unknown>>;
+  private eventSubject = new Subject<GithubEvent>();
 
   constructor(
     private config: ConfigService,
@@ -112,6 +115,17 @@ export class GithubAppService {
     return inst?.repos || [];
   }
 
+  getEventStream(): Observable<GithubEvent> {
+    return this.eventSubject.asObservable();
+  }
+
+  async getRecentEvents(limit = 20): Promise<GithubEvent[]> {
+    return this.events.find({
+      order: { received_at: 'DESC' },
+      take: limit,
+    });
+  }
+
   async recordEvent(
     delivery: string,
     installationId: number,
@@ -126,12 +140,24 @@ export class GithubAppService {
       where: { installation_id: installationId },
     });
     if (!installation) return;
-    await this.events.save({
+    const repoFullName =
+      (payload as any).repository?.full_name ?? '';
+    let metadata: ParsedGitEvent | undefined;
+    try {
+      const octokit = await this.getInstallationOctokit(installationId);
+      metadata = await parseGitEvent(payload, event, octokit);
+    } catch {
+      metadata = await parseGitEvent(payload, event);
+    }
+    const saved = await this.events.save({
       delivery_id: delivery,
       installation,
       event,
       payload,
+      repo_full_name: repoFullName,
+      metadata,
     });
+    this.eventSubject.next(saved);
     await this.queue.add(event, { delivery_id: delivery });
   }
 

@@ -6,6 +6,7 @@ import {
   Request,
   UnauthorizedException,
   Query,
+  Sse,
 } from '@nestjs/common';
 import { GithubService } from './github.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -13,6 +14,7 @@ import { UsersService } from '../users/users.service';
 import { GitHubRepository } from './interfaces/github-repository.interface';
 import { GitHubRepositoriesPage } from './interfaces/github-repositories-page.interface';
 import { User } from '../users/user.interface';
+import { GithubAppService } from './github-app.service';
 
 interface AuthenticatedRequest {
   user: User;
@@ -23,6 +25,7 @@ export class GithubController {
   constructor(
     private readonly githubService: GithubService,
     private readonly usersService: UsersService,
+    private readonly appService: GithubAppService,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -61,5 +64,18 @@ export class GithubController {
       owner,
       repo,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('events')
+  async getEvents(@Query('limit') limit = '20') {
+    const num = parseInt(limit, 10) || 20;
+    return this.appService.getRecentEvents(num);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Sse('events/stream')
+  streamEvents() {
+    return this.appService.getEventStream();
   }
 }
