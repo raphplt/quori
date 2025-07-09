@@ -2,58 +2,56 @@
 
 import React from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { useSession, signIn, signOut } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
+  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, Github, LogOut, User, Settings } from "lucide-react";
-import { Sheet, SheetTrigger, SheetContent } from "../ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import Image from "next/image";
+import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import Sidebar from "./Sidebar";
 
-const Header = () => {
+import {
+  Search,
+  Users,
+  Plus,
+  Circle,
+  GitBranch,
+  Inbox,
+  ChevronDown,
+  User,
+  Settings,
+  LogOut,
+  Github,
+  PanelLeft,
+} from "lucide-react";
+
+const Header: React.FC = () => {
   const { data: session, status } = useSession();
   const user = session?.user;
   const isLoading = status === "loading";
 
-  const NavLinks = () => (
-    <>
-      <Link
-        href="/"
-        className="text-sm font-medium hover:text-primary transition-colors"
-      >
-        Accueil
-      </Link>
-      {user && (
-        <>
-          <Link
-            href="/dashboard"
-            className="text-sm font-medium hover:text-primary transition-colors"
-          >
-            Dashboard
-          </Link>
-          <Link
-            href="/repositories"
-            className="text-sm font-medium hover:text-primary transition-colors"
-          >
-            Dépôts
-          </Link>
-        </>
-      )}
-    </>
+  const PublicNavLinks = () => (
+    <Link
+      href="/"
+      className="text-sm font-medium hover:text-primary transition-colors"
+    >
+      Accueil
+    </Link>
   );
 
   const UserMenu = () => {
     if (isLoading) {
       return (
         <div className="flex items-center space-x-2">
-          <div className="animate-pulse bg-muted h-8 w-8 rounded-full"></div>
-          <div className="animate-pulse bg-muted h-4 w-20 rounded"></div>
+          <div className="animate-pulse bg-muted h-8 w-8 rounded-full" />
+          <div className="animate-pulse bg-muted h-4 w-20 rounded" />
         </div>
       );
     }
@@ -64,20 +62,17 @@ const Header = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage
-                  src={user.image || undefined}
-                  alt={user.name || "User"}
-                />
+                <AvatarImage src={user.image || ""} alt={user.name || "User"} />
                 <AvatarFallback>
-                  {user.name?.charAt(0)?.toUpperCase() || "U"}
+                  {user.name?.charAt(0).toUpperCase() ?? "U"}
                 </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
-            <div className="flex items-center justify-start gap-2 p-2">
+            <div className="flex items-center gap-2 p-2">
               <div className="flex flex-col space-y-1 leading-none">
-                <p className="font-medium ">{user.name || "Utilisateur"}</p>
+                <p className="font-medium">{user.name}</p>
                 <p className="w-[200px] truncate text-sm text-muted-foreground">
                   {user.email}
                 </p>
@@ -110,7 +105,11 @@ const Header = () => {
     }
 
     return (
-      <Button onClick={() => signIn("github") } className="flex items-center gap-2">
+      <Button
+        variant="ghost"
+        onClick={() => signIn("github")}
+        className="flex items-center gap-2"
+      >
         <Github className="h-4 w-4" />
         Se connecter
       </Button>
@@ -119,47 +118,95 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 flex items-center justify-between h-14">
-        <Link href="/" className="flex items-center space-x-2">
-          <Image src="/Logo.png" alt="Quori Logo" width={40} height={40} />
-          <span className="hidden font-bold sm:inline-block">Quori</span>
-        </Link>
+      <div className=" mx-auto px-6 flex items-center justify-between h-14">
+        {/* Logo & mobile menu */}
+        <div className="flex items-center space-x-3">
+          {user && (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <PanelLeft className="h-5 w-5" />
+                  <span className="sr-only">Menu de navigation</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-0">
+                <Sidebar />
+              </SheetContent>
+            </Sheet>
+          )}
 
-        <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-          <NavLinks />
-        </nav>
-
-        <div className="hidden md:flex items-center space-x-4">
-          <UserMenu />
+          <Link
+            href={user ? "/dashboard" : "/"}
+            className="flex items-center space-x-2"
+          >
+            <Image src="/Logo.png" alt="Quori Logo" width={40} height={40} />
+            <span className="hidden font-bold sm:inline-block">Quori</span>
+          </Link>
         </div>
 
-        <div className="flex md:hidden">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-              <div className="flex flex-col space-y-4">
-                <div className="flex items-center space-x-2 border-b pb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                    <span className="text-lg font-bold">Q</span>
-                  </div>
-                  <span className="font-bold">Quori</span>
-                </div>
+        {user && (
+          <nav className="hidden md:flex items-center space-x-2">
+            <div className="relative">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                width={16}
+              />
+              <Input
+                placeholder="Type / to search"
+                className="pl-10 pr-4 w-64"
+              />
+            </div>
 
-                <nav className="flex flex-col space-y-3">
-                  <NavLinks />
-                </nav>
+            <span className="h-6 w-px bg-border mx-2" />
 
-                <div className="border-t pt-4">
-                  <UserMenu />
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Users className="h-5 w-5" />
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>Workspace A</DropdownMenuItem>
+                <DropdownMenuItem>Workspace B</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Plus className="h-5 w-5" />
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>New Project</DropdownMenuItem>
+                <DropdownMenuItem>New Document</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <span className="h-6 w-px bg-border mx-2" />
+
+            <Button variant="ghost" size="icon">
+              <Circle className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon">
+              <GitBranch className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="relative">
+              <Inbox className="h-5 w-5" />
+              <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background" />
+            </Button>
+          </nav>
+        )}
+
+        <div className="flex items-center space-x-4">
+          {!user && (
+            <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
+              <PublicNavLinks />
+            </nav>
+          )}
+          <UserMenu />
         </div>
       </div>
     </header>

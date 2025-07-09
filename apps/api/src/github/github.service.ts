@@ -9,7 +9,7 @@ export class GithubService {
   async getUserRepositories(
     accessToken: string,
     page = 1,
-    perPage = 30,
+    perPage = 50,
   ): Promise<GitHubRepositoriesPage> {
     try {
       const url = new URL(`${this.GITHUB_API_BASE}/user/repos`);

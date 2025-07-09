@@ -7,3 +7,5 @@ export const protectedRoutes = [
   "/repositories",
   "/api/protected",
 ];
+
+export const baseRoute = "/";

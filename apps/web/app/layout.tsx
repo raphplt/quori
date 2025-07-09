@@ -2,8 +2,10 @@ import "./globals.css";
 import type { Metadata } from "next";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
+import MainLayout from "../components/layout/MainLayout";
 import { NextAuthProvider } from "@/contexts/NextAuthContext";
 import { ReactQueryProvider } from "@/contexts/QueryClientContext";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 
 export const metadata: Metadata = {
   title: "Quori",
@@ -20,9 +22,11 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col">
         <ReactQueryProvider>
           <NextAuthProvider>
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
+            <SidebarProvider>
+              <Header />
+              <MainLayout>{children}</MainLayout>
+              <Footer />
+            </SidebarProvider>
           </NextAuthProvider>
         </ReactQueryProvider>
       </body>
