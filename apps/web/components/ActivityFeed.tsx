@@ -35,6 +35,8 @@ export default function ActivityFeed() {
     }
   }, [data, error]);
 
+  //test
+
   const getIcon = (type: string) => {
     switch (type) {
       case "push":
