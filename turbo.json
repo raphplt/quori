@@ -37,6 +37,10 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "dev:tunnel": {
+      "cache": false,
+      "persistent": true
     }
   }
 }

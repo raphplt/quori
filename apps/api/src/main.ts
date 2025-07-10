@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-import { RequestMethod } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import * as session from 'express-session';
@@ -56,10 +55,7 @@ async function bootstrap() {
     }),
   );
 
-  // Global prefix for API routes (except webhooks)
-  app.setGlobalPrefix('api', {
-    exclude: [{ path: 'webhooks/github', method: RequestMethod.POST }],
-  });
+  app.setGlobalPrefix('api');
 
   // Configure Swagger
   const config = new DocumentBuilder()

@@ -7,7 +7,8 @@
     "license": "UNLICENSED",
     "scripts": {
         "dev": "nest start --watch",
-        "tunnel": "lt --port 3000 --subdomain quori-dev",
+        "dev:tunnel": "concurrently \"npm run dev\" \"lt --port 3001 --subdomain quori-dev\"",
+        "tunnel": "lt --port 3001 --subdomain quori-dev",
         "build": "nest build",
         "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
         "start": "nest start",
@@ -60,6 +61,7 @@
         "@types/passport-github2": "^1.2.9",
         "@types/passport-jwt": "^4.0.1",
         "@types/supertest": "^6.0.2",
+        "concurrently": "^9.2.0",
         "eslint": "^9.18.0",
         "eslint-config-prettier": "^10.0.1",
         "eslint-plugin-prettier": "^5.2.2",
