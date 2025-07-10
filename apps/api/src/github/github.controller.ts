@@ -76,7 +76,8 @@ export class GithubController {
   @Get('events')
   async getEvents(@Query('limit') limit = '20') {
     const num = parseInt(limit, 10) || 20;
-    return this.appService.getRecentEvents(num);
+    const events = await this.appService.getRecentEvents(num);
+    return events;
   }
 
   @Sse('events/stream')
@@ -98,32 +99,21 @@ export class GithubController {
 
     // Validate JWT token manually
     if (!token) {
-      console.error('SSE: No token provided');
       throw new UnauthorizedException('Token required');
     }
 
     try {
       this.jwtService.verify(token);
-      console.log('SSE: Token verified successfully');
-    } catch (error) {
-      console.error(
-        'SSE: Token verification failed:',
-        error instanceof Error ? error.message : 'Unknown error',
-      );
+    } catch {
       throw new UnauthorizedException('Invalid token');
     }
 
-    console.log('SSE: Starting event stream');
-
     return this.appService.getEventStream().pipe(
-      map((event) => {
-        console.log('SSE: Sending event:', event.delivery_id);
-        return {
-          data: JSON.stringify(event),
-          id: event.delivery_id,
-          type: 'event',
-        };
-      }),
+      map((event) => ({
+        data: JSON.stringify(event),
+        id: event.delivery_id,
+        type: 'event',
+      })),
     );
   }
 
@@ -143,5 +133,24 @@ export class GithubController {
   async createTestEvent() {
     const saved = await this.appService.createTestEvent();
     return { message: 'Test event created', event: saved };
+  }
+
+  @Get('installations')
+  async getInstallations() {
+    // This is a debug endpoint - in production you'd want auth and proper filtering
+    const installations = await this.appService.getAllInstallations();
+    return installations;
+  }
+
+  @Get('create-installation/:id')
+  async createInstallation(@Param('id') installationId: string) {
+    const id = parseInt(installationId, 10);
+    await this.appService.upsertInstallation({
+      installation_id: id,
+      account_login: 'raphplt', // Your GitHub username
+      account_id: 110672162, // Your GitHub user ID (from the webhook)
+      repositories: ['raphplt/melodix'], // Your repo
+    });
+    return { message: 'Installation created', installationId: id };
   }
 }

@@ -115,6 +115,10 @@ export class GithubAppService {
     return inst?.repos || [];
   }
 
+  async getAllInstallations(): Promise<Installation[]> {
+    return this.installations.find();
+  }
+
   getEventStream(): Observable<GithubEvent> {
     return this.eventSubject.asObservable();
   }
@@ -136,10 +140,38 @@ export class GithubAppService {
       where: { delivery_id: delivery },
     });
     if (exists) return;
-    const installation = await this.installations.findOne({
+    
+    let installation = await this.installations.findOne({
       where: { installation_id: installationId },
     });
-    if (!installation) return;
+    
+    if (!installation) {
+      // Auto-create installation from webhook payload
+      const webhookPayload = payload as {
+        sender?: { login?: string; id?: number };
+        repository?: { full_name?: string };
+      };
+      
+      if (
+        webhookPayload.sender?.login &&
+        webhookPayload.repository?.full_name
+      ) {
+        await this.upsertInstallation({
+          installation_id: installationId,
+          account_login: webhookPayload.sender.login,
+          account_id: webhookPayload.sender.id || 0,
+          repositories: [webhookPayload.repository.full_name],
+        });
+        
+        installation = await this.installations.findOne({
+          where: { installation_id: installationId },
+        });
+        if (!installation) return;
+      } else {
+        return;
+      }
+    }
+    
     // Type-safe extraction of repository full name
     const repoFullName =
       (payload as { repository?: { full_name?: string } }).repository
@@ -149,7 +181,6 @@ export class GithubAppService {
     try {
       const octokit = await this.getInstallationOctokit(installationId);
       const parsedEvent = await parseGitEvent(payload, event, octokit);
-      // Convert ParsedGitEvent to Record<string, unknown> for database storage
       metadata = {
         title: parsedEvent.title,
         desc: parsedEvent.desc,
@@ -174,6 +205,7 @@ export class GithubAppService {
       repo_full_name: repoFullName,
       metadata,
     });
+    
     this.eventSubject.next(savedEvent);
     await this.queue.add(event, { delivery_id: delivery });
   }

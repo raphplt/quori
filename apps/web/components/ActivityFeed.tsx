@@ -13,29 +13,38 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, GitCommit, GitPullRequest } from "lucide-react";
+import { Activity, GitCommit, GitPullRequest, RefreshCw } from "lucide-react";
 
 export default function ActivityFeed() {
   const { data: session } = useSession();
 
-  const { data, isLoading, error } = useQuery<GitHubEvent[]>({
+  const { data, isLoading, error, refetch } = useQuery<GitHubEvent[]>({
     queryKey: ["events"],
-    queryFn: () => authenticatedFetcher<GitHubEvent[]>("/github/events"),
-    refetchInterval: 5000,
+    queryFn: () => {
+      console.log("Fetching events from API...");
+      return authenticatedFetcher<GitHubEvent[]>("/github/events");
+    },
+    refetchInterval: 10000, // Increased to 10 seconds
     refetchOnWindowFocus: true,
     enabled: !!session,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   useEffect(() => {
+    console.log("ActivityFeed - Query state:", { 
+      isLoading, 
+      error: error?.message, 
+      dataLength: data?.length,
+      session: !!session 
+    });
     if (data) {
-      console.log("Events loaded:", data.length);
+      console.log("Events loaded:", data.length, data);
     }
     if (error) {
       console.error("Error loading events:", error);
     }
-  }, [data, error]);
-
-  //test
+  }, [data, error, isLoading, session]);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -61,6 +70,32 @@ export default function ActivityFeed() {
 
   return (
     <div className="grid gap-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Activité Git</h2>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => refetch()}
+          disabled={isLoading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          Actualiser
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={async () => {
+            try {
+              await authenticatedFetcher('/github/test-event');
+              setTimeout(() => refetch(), 1000);
+            } catch (error) {
+              console.error('Error creating test event:', error);
+            }
+          }}
+        >
+          Créer événement test
+        </Button>
+      </div>
       {isLoading && (
         <Card>
           <CardContent className="p-6">
