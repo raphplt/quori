@@ -20,11 +20,8 @@ export default function ActivityFeed() {
 
   const { data, isLoading, error, refetch } = useQuery<GitHubEvent[]>({
     queryKey: ["events"],
-    queryFn: () => {
-      console.log("Fetching events from API...");
-      return authenticatedFetcher<GitHubEvent[]>("/github/events");
-    },
-    refetchInterval: 10000, // Increased to 10 seconds
+    queryFn: () => authenticatedFetcher<GitHubEvent[]>("/github/events"),
+    refetchInterval: 10000,
     refetchOnWindowFocus: true,
     enabled: !!session,
     retry: 3,
@@ -32,18 +29,7 @@ export default function ActivityFeed() {
   });
 
   useEffect(() => {
-    console.log("ActivityFeed - Query state:", { 
-      isLoading, 
-      error: error?.message, 
-      dataLength: data?.length,
-      session: !!session 
-    });
-    if (data) {
-      console.log("Events loaded:", data.length, data);
-    }
-    if (error) {
-      console.error("Error loading events:", error);
-    }
+    // Optional: Add any side effects when data changes
   }, [data, error, isLoading, session]);
 
   const getIcon = (type: string) => {
