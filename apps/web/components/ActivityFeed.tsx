@@ -58,24 +58,26 @@ export default function ActivityFeed() {
     <div className="grid gap-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Activité Git</h2>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => refetch()}
           disabled={isLoading}
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+          />
           Actualiser
         </Button>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           onClick={async () => {
             try {
-              await authenticatedFetcher('/github/test-event');
+              await authenticatedFetcher("/github/test-event");
               setTimeout(() => refetch(), 1000);
             } catch (error) {
-              console.error('Error creating test event:', error);
+              console.error("Error creating test event:", error);
             }
           }}
         >

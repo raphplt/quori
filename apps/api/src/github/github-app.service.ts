@@ -140,18 +140,18 @@ export class GithubAppService {
       where: { delivery_id: delivery },
     });
     if (exists) return;
-    
+
     let installation = await this.installations.findOne({
       where: { installation_id: installationId },
     });
-    
+
     if (!installation) {
       // Auto-create installation from webhook payload
       const webhookPayload = payload as {
         sender?: { login?: string; id?: number };
         repository?: { full_name?: string };
       };
-      
+
       if (
         webhookPayload.sender?.login &&
         webhookPayload.repository?.full_name
@@ -162,7 +162,7 @@ export class GithubAppService {
           account_id: webhookPayload.sender.id || 0,
           repositories: [webhookPayload.repository.full_name],
         });
-        
+
         installation = await this.installations.findOne({
           where: { installation_id: installationId },
         });
@@ -171,7 +171,7 @@ export class GithubAppService {
         return;
       }
     }
-    
+
     // Type-safe extraction of repository full name
     const repoFullName =
       (payload as { repository?: { full_name?: string } }).repository
@@ -205,7 +205,7 @@ export class GithubAppService {
       repo_full_name: repoFullName,
       metadata,
     });
-    
+
     this.eventSubject.next(savedEvent);
     await this.queue.add(event, { delivery_id: delivery });
   }
