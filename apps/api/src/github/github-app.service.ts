@@ -4,7 +4,7 @@ import { sign } from 'jsonwebtoken';
 import { Octokit } from '@octokit/rest';
 import { Queue } from 'bullmq';
 import { Observable, Subject } from 'rxjs';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
