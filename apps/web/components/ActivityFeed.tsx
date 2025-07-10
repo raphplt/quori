@@ -26,7 +26,6 @@ export default function ActivityFeed() {
     enabled: !!session,
   });
 
-  //test
 
   useEffect(() => {
     if (data) {
