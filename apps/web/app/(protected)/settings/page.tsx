@@ -1,0 +1,767 @@
+"use client";
+
+import React, { useState } from "react";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { useSession } from "next-auth/react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  User,
+  Bell,
+  Shield,
+  Palette,
+  Globe,
+  Database,
+  Download,
+  Trash2,
+  Save,
+  Eye,
+  EyeOff,
+  Key,
+  Smartphone,
+} from "lucide-react";
+
+type ExtendedUser = {
+  id: string;
+  githubId: string;
+  username: string;
+  email: string;
+  avatarUrl: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  image?: string;
+};
+
+const Settings = () => {
+  return (
+    <ProtectedRoute>
+      <SettingsContent />
+    </ProtectedRoute>
+  );
+};
+
+function SettingsContent() {
+  const { data: session } = useSession();
+  const user = session?.user as ExtendedUser;
+
+  // State pour les paramètres
+  const [notifications, setNotifications] = useState({
+    emailOnNewPost: true,
+    emailOnCommit: false,
+    emailWeeklyReport: true,
+    pushNotifications: true,
+    slackIntegration: false,
+  });
+
+  const [preferences, setPreferences] = useState({
+    theme: "system",
+    language: "fr",
+    timezone: "Europe/Paris",
+    postsPerPage: "20",
+    autoGenerate: true,
+    publicProfile: false,
+  });
+
+  const [showApiKey, setShowApiKey] = useState(false);
+
+  if (!user) {
+    return null;
+  }
+
+  const connectedAccounts = [
+    {
+      id: "github",
+      name: "GitHub",
+      connected: true,
+      email: user.email,
+      avatar: user.avatarUrl,
+    },
+    {
+      id: "twitter",
+      name: "Twitter",
+      connected: false,
+      email: null,
+      avatar: null,
+    },
+    {
+      id: "linkedin",
+      name: "LinkedIn",
+      connected: false,
+      email: null,
+      avatar: null,
+    },
+  ];
+
+  const sessions = [
+    {
+      id: "1",
+      device: "MacBook Pro",
+      location: "Paris, France",
+      lastActive: "Maintenant",
+      current: true,
+    },
+    {
+      id: "2",
+      device: "iPhone 15",
+      location: "Paris, France",
+      lastActive: "Il y a 2h",
+      current: false,
+    },
+    {
+      id: "3",
+      device: "Chrome sur Windows",
+      location: "Lyon, France",
+      lastActive: "Il y a 3j",
+      current: false,
+    },
+  ];
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Paramètres</h1>
+          <p className="text-gray-600 mt-1">
+            Gérez vos préférences et paramètres de compte.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Navigation */}
+          <div className="lg:col-span-1">
+            <Card>
+              <CardContent className="p-4">
+                <nav className="space-y-1">
+                  <a
+                    href="#profile"
+                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground"
+                  >
+                    <User className="mr-3 h-4 w-4" />
+                    Profil
+                  </a>
+                  <a
+                    href="#notifications"
+                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50"
+                  >
+                    <Bell className="mr-3 h-4 w-4" />
+                    Notifications
+                  </a>
+                  <a
+                    href="#security"
+                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50"
+                  >
+                    <Shield className="mr-3 h-4 w-4" />
+                    Sécurité
+                  </a>
+                  <a
+                    href="#preferences"
+                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50"
+                  >
+                    <Palette className="mr-3 h-4 w-4" />
+                    Préférences
+                  </a>
+                  <a
+                    href="#integrations"
+                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50"
+                  >
+                    <Globe className="mr-3 h-4 w-4" />
+                    Intégrations
+                  </a>
+                  <a
+                    href="#data"
+                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50"
+                  >
+                    <Database className="mr-3 h-4 w-4" />
+                    Données
+                  </a>
+                </nav>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Content */}
+          <div className="lg:col-span-3 space-y-8">
+            {/* Profile Settings */}
+            <Card id="profile">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <User className="mr-2 h-5 w-5" />
+                  Informations du profil
+                </CardTitle>
+                <CardDescription>
+                  Mettez à jour vos informations personnelles.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200">
+                    {user.avatarUrl && (
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.name}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium">{user.name}</h3>
+                    <p className="text-sm text-gray-500">{user.email}</p>
+                    <div className="mt-2">
+                      <Button variant="outline" size="sm">
+                        Changer la photo
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nom complet</Label>
+                    <Input
+                      id="name"
+                      defaultValue={user.name}
+                      placeholder="Votre nom complet"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Nom d&apos;utilisateur</Label>
+                    <Input
+                      id="username"
+                      defaultValue={user.username}
+                      placeholder="@username"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    defaultValue={user.email}
+                    placeholder="votre@email.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    placeholder="Parlez-nous de vous..."
+                    rows={3}
+                  />
+                </div>
+
+                <Button>
+                  <Save className="mr-2 h-4 w-4" />
+                  Sauvegarder les modifications
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Notifications */}
+            <Card id="notifications">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Bell className="mr-2 h-5 w-5" />
+                  Notifications
+                </CardTitle>
+                <CardDescription>
+                  Configurez vos préférences de notification.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Email pour nouveaux posts</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Recevoir un email quand un nouveau post est généré
+                      </p>
+                    </div>
+                    <Switch
+                      checked={notifications.emailOnNewPost}
+                      onCheckedChange={value =>
+                        setNotifications(prev => ({
+                          ...prev,
+                          emailOnNewPost: value,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Email pour commits</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Recevoir un email pour chaque commit traité
+                      </p>
+                    </div>
+                    <Switch
+                      checked={notifications.emailOnCommit}
+                      onCheckedChange={value =>
+                        setNotifications(prev => ({
+                          ...prev,
+                          emailOnCommit: value,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Rapport hebdomadaire</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Recevoir un résumé de votre activité chaque semaine
+                      </p>
+                    </div>
+                    <Switch
+                      checked={notifications.emailWeeklyReport}
+                      onCheckedChange={value =>
+                        setNotifications(prev => ({
+                          ...prev,
+                          emailWeeklyReport: value,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Notifications push</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Recevoir des notifications push sur vos appareils
+                      </p>
+                    </div>
+                    <Switch
+                      checked={notifications.pushNotifications}
+                      onCheckedChange={value =>
+                        setNotifications(prev => ({
+                          ...prev,
+                          pushNotifications: value,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Security */}
+            <Card id="security">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Shield className="mr-2 h-5 w-5" />
+                  Sécurité
+                </CardTitle>
+                <CardDescription>
+                  Gérez la sécurité de votre compte.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Password */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium">Mot de passe</h4>
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium">Mot de passe</p>
+                      <p className="text-sm text-muted-foreground">
+                        Dernière modification il y a 3 mois
+                      </p>
+                    </div>
+                    <Button variant="outline">Modifier</Button>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* 2FA */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium">
+                    Authentification à deux facteurs
+                  </h4>
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Smartphone className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">
+                          Application d&apos;authentification
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Non configurée
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="outline">Configurer</Button>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* API Key */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium">Clé API</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        value={
+                          showApiKey
+                            ? "qr_sk_1234567890abcdef"
+                            : "qr_sk_••••••••••••••••"
+                        }
+                        readOnly
+                        className="font-mono"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                      >
+                        {showApiKey ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm">
+                        <Key className="mr-2 h-4 w-4" />
+                        Régénérer
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Copier
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Active Sessions */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium">Sessions actives</h4>
+                  <div className="space-y-3">
+                    {sessions.map(session => (
+                      <div
+                        key={session.id}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Smartphone className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <p className="text-sm font-medium">
+                                {session.device}
+                              </p>
+                              {session.current && (
+                                <Badge variant="default" className="text-xs">
+                                  Actuelle
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {session.location} • {session.lastActive}
+                            </p>
+                          </div>
+                        </div>
+                        {!session.current && (
+                          <Button variant="outline" size="sm">
+                            Révoquer
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Preferences */}
+            <Card id="preferences">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Palette className="mr-2 h-5 w-5" />
+                  Préférences
+                </CardTitle>
+                <CardDescription>
+                  Personnalisez votre expérience d&apos;utilisation.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="theme">Thème</Label>
+                    <Select
+                      value={preferences.theme}
+                      onValueChange={value =>
+                        setPreferences(prev => ({ ...prev, theme: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="light">Clair</SelectItem>
+                        <SelectItem value="dark">Sombre</SelectItem>
+                        <SelectItem value="system">Système</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="language">Langue</Label>
+                    <Select
+                      value={preferences.language}
+                      onValueChange={value =>
+                        setPreferences(prev => ({ ...prev, language: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fr">Français</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="es">Español</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="timezone">Fuseau horaire</Label>
+                    <Select
+                      value={preferences.timezone}
+                      onValueChange={value =>
+                        setPreferences(prev => ({ ...prev, timezone: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Europe/Paris">
+                          Europe/Paris
+                        </SelectItem>
+                        <SelectItem value="America/New_York">
+                          America/New_York
+                        </SelectItem>
+                        <SelectItem value="Asia/Tokyo">Asia/Tokyo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="postsPerPage">Posts par page</Label>
+                    <Select
+                      value={preferences.postsPerPage}
+                      onValueChange={value =>
+                        setPreferences(prev => ({
+                          ...prev,
+                          postsPerPage: value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Génération automatique</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Générer automatiquement des posts pour les nouveaux
+                        commits
+                      </p>
+                    </div>
+                    <Switch
+                      checked={preferences.autoGenerate}
+                      onCheckedChange={value =>
+                        setPreferences(prev => ({
+                          ...prev,
+                          autoGenerate: value,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Profil public</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Permettre aux autres de voir votre profil public
+                      </p>
+                    </div>
+                    <Switch
+                      checked={preferences.publicProfile}
+                      onCheckedChange={value =>
+                        setPreferences(prev => ({
+                          ...prev,
+                          publicProfile: value,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <Button>
+                  <Save className="mr-2 h-4 w-4" />
+                  Sauvegarder les préférences
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Integrations */}
+            <Card id="integrations">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Globe className="mr-2 h-5 w-5" />
+                  Comptes connectés
+                </CardTitle>
+                <CardDescription>
+                  Gérez vos intégrations avec d&apos;autres services.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {connectedAccounts.map(account => (
+                    <div
+                      key={account.id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                          {account.avatar ? (
+                            <img
+                              src={account.avatar}
+                              alt={account.name}
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-sm font-medium">
+                              {account.name.slice(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <p className="text-sm font-medium">
+                              {account.name}
+                            </p>
+                            {account.connected && (
+                              <Badge variant="default" className="text-xs">
+                                Connecté
+                              </Badge>
+                            )}
+                          </div>
+                          {account.email && (
+                            <p className="text-sm text-muted-foreground">
+                              {account.email}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant={account.connected ? "destructive" : "default"}
+                        size="sm"
+                      >
+                        {account.connected ? "Déconnecter" : "Connecter"}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Data & Privacy */}
+            <Card id="data">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Database className="mr-2 h-5 w-5" />
+                  Données et confidentialité
+                </CardTitle>
+                <CardDescription>
+                  Gérez vos données et paramètres de confidentialité.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium">
+                        Exporter vos données
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Télécharger une copie de toutes vos données
+                      </p>
+                    </div>
+                    <Button variant="outline">
+                      <Download className="mr-2 h-4 w-4" />
+                      Exporter
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 border rounded-lg border-red-200">
+                    <div>
+                      <p className="text-sm font-medium text-red-600">
+                        Supprimer le compte
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Supprimer définitivement votre compte et toutes vos
+                        données
+                      </p>
+                    </div>
+                    <Button variant="destructive">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Supprimer
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Settings;
