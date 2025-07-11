@@ -4,6 +4,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ActivityFeed from "@/components/ActivityFeed";
 
 export default function ActivityPage() {
+  //test
   return (
     <ProtectedRoute>
       <div className="space-y-6">
