@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 import {
   Card,
   CardContent,
@@ -45,8 +46,12 @@ export function GitHubAppSettings() {
         await revokeApp.mutateAsync(installationToRevoke);
         setShowRevokeDialog(false);
         setInstallationToRevoke(null);
+        toast.success("Installation révoquée avec succès");
       } catch (error) {
         console.error("Erreur lors de la révocation:", error);
+        toast.error(
+          "Erreur lors de la révocation de l'installation. Veuillez réessayer."
+        );
       }
     }
   };
@@ -133,7 +138,6 @@ export function GitHubAppSettings() {
               </Badge>
             )}
           </div>
-
           {!data?.installed && (
             <Button asChild>
               <a

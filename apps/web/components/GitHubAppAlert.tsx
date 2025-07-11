@@ -9,7 +9,6 @@ import Link from "next/link";
 export function GitHubAppAlert() {
   const { data, isLoading } = useGitHubAppStatus();
 
-  // Ne pas afficher l'alerte si en cours de chargement ou si l'app est installée
   if (isLoading || data?.installed) {
     return null;
   }

@@ -106,7 +106,25 @@ export class GithubAppService {
   }
 
   async removeInstallation(id: number): Promise<void> {
-    await this.installations.delete({ id: id });
+    // Utiliser une transaction pour s'assurer que toutes les suppressions sont atomiques
+    await this.installations.manager.transaction(
+      async (transactionalEntityManager) => {
+        // D'abord, supprimer tous les posts liés à cette installation
+        await transactionalEntityManager
+          .getRepository(Post)
+          .delete({ installation: { id } });
+
+        // Ensuite, supprimer tous les événements liés à cette installation
+        await transactionalEntityManager
+          .getRepository(GithubEvent)
+          .delete({ installation: { id } });
+
+        // Enfin, supprimer l'installation elle-même
+        await transactionalEntityManager
+          .getRepository(Installation)
+          .delete({ id });
+      },
+    );
   }
 
   async updateRepos(id: number, repos: string[]): Promise<void> {
@@ -142,7 +160,7 @@ export class GithubAppService {
     if (!appId) {
       throw new Error('GITHUB_APP_ID not configured');
     }
-    return `https://github.com/apps/${this.config.get<string>('GITHUB_APP_SLUG', 'quori-app')}/installations/new`;
+    return `https://github.com/apps/${this.config.get<string>('GITHUB_APP_SLUG', 'quori-dev')}/installations/new`;
   }
 
   getEventStream(): Observable<GithubEvent> {

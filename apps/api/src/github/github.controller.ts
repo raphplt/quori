@@ -184,14 +184,33 @@ export class GithubController {
     const user = req.user;
     const id = parseInt(installationId, 10);
 
-    // Vérifier que l'installation appartient bien à l'utilisateur
-    const installation = await this.appService.getInstallationById(id);
-    if (!installation || installation.account_id.toString() !== user.githubId) {
-      throw new UnauthorizedException('Installation not found or unauthorized');
-    }
+    try {
+      // Vérifier que l'installation appartient bien à l'utilisateur
+      const installation = await this.appService.getInstallationById(id);
+      if (
+        !installation ||
+        installation.account_id.toString() !== user.githubId
+      ) {
+        throw new UnauthorizedException(
+          'Installation not found or unauthorized',
+        );
+      }
 
-    await this.appService.removeInstallation(id);
-    return { message: 'Installation revoked successfully' };
+      await this.appService.removeInstallation(id);
+      return {
+        message: 'Installation revoked successfully',
+        installationId: id,
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      throw new UnauthorizedException(
+        `Failed to revoke installation: ${errorMessage}`,
+      );
+    }
   }
 
   @Get('debug/installation-url')
