@@ -9,15 +9,18 @@ export class GithubService {
   async getUserRepositories(
     accessToken: string,
     page = 1,
-    perPage = 50,
+    perPage = 100,
+    sort = 'updated',
+    direction = 'desc',
+    type = 'all',
   ): Promise<GitHubRepositoriesPage> {
     try {
       const url = new URL(`${this.GITHUB_API_BASE}/user/repos`);
       url.searchParams.set('page', String(page));
       url.searchParams.set('per_page', String(perPage));
-      // url.searchParams.set('sort', 'updated');
-      // url.searchParams.set('direction', 'desc');
-      // url.searchParams.set('type', 'all');
+      url.searchParams.set('sort', sort);
+      url.searchParams.set('direction', direction);
+      url.searchParams.set('type', type);
 
       const response = await fetch(url, {
         headers: {

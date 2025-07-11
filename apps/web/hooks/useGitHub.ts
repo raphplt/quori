@@ -24,13 +24,22 @@ interface GitHubRepositoriesPage {
 /**
  * Hook pour récupérer les repositories GitHub de l'utilisateur connecté
  */
-export function useGitHubRepositories(page = 1, perPage = 100) {
+export function useGitHubRepositories(
+  page = 1,
+  perPage = 100,
+  sort = "updated",
+  direction = "desc",
+  type = "all"
+) {
   const params = new URLSearchParams({
     page: String(page),
     perPage: String(perPage),
+    sort,
+    direction,
+    type,
   });
   return useAuthenticatedQuery<GitHubRepositoriesPage>(
-    ["github", "repositories", page, perPage],
+    ["github", "repositories", page, perPage, sort, direction, type],
     `/github/repositories?${params.toString()}`,
     { method: "GET" }
   );

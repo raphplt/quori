@@ -18,9 +18,10 @@ const Repositories = () => {
   const { data: session, status } = useSession();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-  const { data, isLoading, error } = useGitHubRepositories(currentPage, itemsPerPage);
+
+  // Récupérer tous les repositories d'un coup avec une limite élevée
+  const { data, isLoading, error } = useGitHubRepositories(1, 1000);
   const repositories = data?.repositories;
-  const totalCount = data?.totalCount || 0;
 
   const {
     searchTerm,
@@ -37,7 +38,13 @@ const Repositories = () => {
     filteredAndSortedRepos,
   } = useRepositoryFilters({ repositories });
 
-  const totalPages = Math.ceil(totalCount / itemsPerPage);
+  // Pagination côté client sur les repositories filtrés
+  const totalFilteredCount = filteredAndSortedRepos.length;
+  const totalPages = Math.ceil(totalFilteredCount / itemsPerPage);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedRepos = filteredAndSortedRepos.slice(startIndex, endIndex);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -50,8 +57,6 @@ const Repositories = () => {
   const goToNext = () => goToPage(currentPage + 1);
   const canGoPrevious = currentPage > 1;
   const canGoNext = currentPage < totalPages;
-
-  const paginatedRepos = filteredAndSortedRepos;
 
   if (status === "loading" || isLoading) {
     return (
@@ -100,9 +105,15 @@ const Repositories = () => {
           Mes Repositories GitHub
         </h1>
         <p className="text-muted-foreground">
-          {totalCount} repository
-          {totalCount > 1 ? "s" : ""} trouvé
-          {totalCount > 1 ? "s" : ""}
+          {totalFilteredCount} repository
+          {totalFilteredCount > 1 ? "s" : ""} trouvé
+          {totalFilteredCount > 1 ? "s" : ""}
+          {repositories && repositories.length !== totalFilteredCount && (
+            <span className="text-sm text-muted-foreground/70">
+              {" "}
+              (sur {repositories.length} au total)
+            </span>
+          )}
         </p>
       </div>
 

@@ -40,18 +40,24 @@ export class GithubController {
   async getMyRepositories(
     @Request() req: AuthenticatedRequest,
     @Query('page') page = '1',
-    @Query('perPage') perPage = '30',
+    @Query('perPage') perPage = '100',
+    @Query('sort') sort = 'updated',
+    @Query('direction') direction = 'desc',
+    @Query('type') type = 'all',
   ): Promise<GitHubRepositoriesPage> {
     const user = req.user;
     if (!user?.githubAccessToken) {
       throw new UnauthorizedException('No GitHub access token found for user');
     }
     const pageNum = parseInt(page, 10) || 1;
-    const perPageNum = parseInt(perPage, 10) || 30;
+    const perPageNum = parseInt(perPage, 10) || 100;
     return this.githubService.getUserRepositories(
       user.githubAccessToken,
       pageNum,
       perPageNum,
+      sort,
+      direction,
+      type,
     );
   }
 
