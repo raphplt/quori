@@ -36,7 +36,12 @@ export class GithubAppService {
   }
 
   verifySignature(req: Request): void {
-    const secret = this.config.get<string>('GITHUB_WEBHOOK_SECRET')!;
+    const secret = this.config.get<string>('GITHUB_WEBHOOK_SECRET');
+    if (!secret) {
+      throw new UnauthorizedException(
+        'GITHUB_WEBHOOK_SECRET not configured in environment variables',
+      );
+    }
     const sig = req.headers['x-hub-signature-256'] as string | undefined;
     if (!sig) throw new UnauthorizedException('Missing signature');
     const payload = (req as unknown as { rawBody?: string }).rawBody ?? '';
