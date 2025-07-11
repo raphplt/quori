@@ -5,9 +5,13 @@ import Link from "next/link";
 import { Github, Twitter, Linkedin, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const { data: session } = useSession();
+
+  if (session) return;
 
   return (
     <footer className="bg-background border-t">

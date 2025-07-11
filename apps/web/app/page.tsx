@@ -1,14 +1,39 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useSession, signIn } from "next-auth/react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const HomePage = () => {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const user = session?.user;
   const isAuthenticated = status === "authenticated";
+  const isLoading = status === "loading";
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, user, router]);
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center max-w-4xl mx-auto">
+          <div className="flex justify-center items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-2 text-muted-foreground">Chargement...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated && user) {
+    return null;
+  }
 
   return (
     <div className="container mx-auto px-4 py-16">
@@ -23,40 +48,19 @@ const HomePage = () => {
           professionnelles engageantes.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          {isAuthenticated ? (
-            <>
-              <Button size="lg" className="text-lg px-8 py-3" asChild>
-                <Link href="/dashboard">
-                  Accéder au Dashboard
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-3" asChild>
-                <Link href="/repositories">
-                  Mes Dépôts
-                </Link>
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                size="lg"
-                className="text-lg px-8 py-3"
-                onClick={() => signIn("github")}
-              >
-                Commencer gratuitement
-              </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-3">
-                Voir la démo
-              </Button>
-            </>
-          )}
+          <>
+            <Button
+              size="lg"
+              className="text-lg px-8 py-3"
+              onClick={() => signIn("github")}
+            >
+              Commencer gratuitement
+            </Button>
+            <Button variant="outline" size="lg" className="text-lg px-8 py-3">
+              Voir la démo
+            </Button>
+          </>
         </div>
-        
-        {user && (
-          <div className="mt-6 text-sm text-muted-foreground">
-            Connecté en tant que <span className="font-medium">{user.name}</span>
-          </div>
-        )}
       </div>
 
       {/* Section fonctionnalités */}
