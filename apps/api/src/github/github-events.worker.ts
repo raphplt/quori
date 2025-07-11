@@ -55,7 +55,7 @@ async function bootstrap() {
         relations: ['installation'],
       });
       if (!event || event.processed) return;
-      const installationId = event.installation.installation_id;
+      const installationId = event.installation.id;
       const octokit = await service.getInstallationOctokit(installationId);
       let repoFullName = '';
       if (event.event === 'push') {

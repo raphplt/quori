@@ -3,7 +3,7 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 @Entity({ name: 'installations' })
 export class Installation {
   @PrimaryColumn({ type: 'bigint' })
-  installation_id!: number;
+  id!: number;
 
   @Column('text')
   account_login!: string;

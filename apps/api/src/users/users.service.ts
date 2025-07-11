@@ -55,7 +55,7 @@ export class UsersService {
   }
 
   async findById(id: string): Promise<User | undefined> {
-    const entity = await this.repo.findOne({ where: { user_id: id } });
+    const entity = await this.repo.findOne({ where: { id: id } });
     return entity ? this.toUser(entity) : undefined;
   }
 
@@ -65,7 +65,7 @@ export class UsersService {
     refreshTokenExpires?: Date,
   ): Promise<void> {
     await this.repo.update(
-      { user_id: id },
+      { id: id },
       {
         refresh_token: refreshToken,
         refresh_token_expires: refreshTokenExpires,
@@ -76,7 +76,7 @@ export class UsersService {
 
   async create(githubProfile: GitHubProfile, githubAccessToken?: string): Promise<User> {
     const entity: UserEntity = {
-      user_id: crypto.randomUUID(),
+      id: crypto.randomUUID(),
       github_id: githubProfile.id,
       username: githubProfile.username,
       email: githubProfile.emails?.[0]?.value || '',
@@ -96,7 +96,7 @@ export class UsersService {
   }
 
   async update(id: string, updateData: Partial<User>): Promise<User | undefined> {
-    const entity = await this.repo.findOne({ where: { user_id: id } });
+    const entity = await this.repo.findOne({ where: { id: id } });
     if (!entity) {
       return undefined;
     }
@@ -116,7 +116,7 @@ export class UsersService {
 
   private toUser(entity: UserEntity): User {
     return {
-      id: entity.user_id,
+      id: entity.id,
       githubId: entity.github_id,
       username: entity.username,
       email: entity.email,

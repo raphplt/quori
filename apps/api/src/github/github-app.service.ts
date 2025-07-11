@@ -98,7 +98,7 @@ export class GithubAppService {
     repositories: string[];
   }): Promise<void> {
     await this.installations.save({
-      installation_id: data.installation_id,
+      id: data.installation_id,
       account_login: data.account_login,
       account_id: data.account_id,
       repos: data.repositories,
@@ -106,16 +106,16 @@ export class GithubAppService {
   }
 
   async removeInstallation(id: number): Promise<void> {
-    await this.installations.delete({ installation_id: id });
+    await this.installations.delete({ id: id });
   }
 
   async updateRepos(id: number, repos: string[]): Promise<void> {
-    await this.installations.update({ installation_id: id }, { repos });
+    await this.installations.update({ id: id }, { repos });
   }
 
   async getInstallationRepos(id: number): Promise<string[]> {
     const inst = await this.installations.findOne({
-      where: { installation_id: id },
+      where: { id: id },
     });
     return inst?.repos || [];
   }
@@ -147,7 +147,7 @@ export class GithubAppService {
     if (exists) return;
 
     let installation = await this.installations.findOne({
-      where: { installation_id: installationId },
+      where: { id: installationId },
     });
 
     if (!installation) {
@@ -169,7 +169,7 @@ export class GithubAppService {
         });
 
         installation = await this.installations.findOne({
-          where: { installation_id: installationId },
+          where: { id: installationId },
         });
         if (!installation) return;
       } else {
@@ -222,7 +222,7 @@ export class GithubAppService {
     content: string;
   }): Promise<void> {
     const installation = await this.installations.findOne({
-      where: { installation_id: data.installationId },
+      where: { id: data.installationId },
     });
     if (!installation) return;
     await this.posts.save({

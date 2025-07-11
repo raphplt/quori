@@ -10,7 +10,7 @@ import { Installation } from './installation.entity';
 @Entity({ name: 'posts' })
 export class Post {
   @PrimaryGeneratedColumn({ type: 'bigint' })
-  post_id!: number;
+  id!: number;
 
   @ManyToOne(() => Installation)
   @JoinColumn({ name: 'installation_id' })
