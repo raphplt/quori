@@ -27,6 +27,7 @@ import {
   Plus,
 } from "lucide-react";
 import Link from "next/link";
+import { GitHubAppAlert } from "@/components/GitHubAppAlert";
 
 type ExtendedUser = {
   id: string;
@@ -155,6 +156,9 @@ function DashboardContent() {
             </Button>
           </div>
         </div>
+
+        {/* GitHub App Alert */}
+        <GitHubAppAlert />
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

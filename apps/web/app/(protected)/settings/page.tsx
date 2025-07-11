@@ -40,6 +40,7 @@ import {
   User,
 } from "lucide-react";
 import Link from "next/link";
+import { GitHubAppSettings } from "@/components/GitHubAppSettings";
 
 type ExtendedUser = {
   id: string;
@@ -576,12 +577,17 @@ function SettingsContent() {
               </CardContent>
             </Card>
 
-            {/* Integrations */}
-            <Card id="integrations">
+            {/* GitHub App Integration */}
+            <div id="integrations">
+              <GitHubAppSettings />
+            </div>
+
+            {/* Other Integrations */}
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Globe className="mr-2 h-5 w-5" />
-                  Comptes connectés
+                  Autres intégrations
                 </CardTitle>
                 <CardDescription>
                   Gérez vos intégrations avec d&apos;autres services.

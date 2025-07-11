@@ -124,6 +124,27 @@ export class GithubAppService {
     return this.installations.find();
   }
 
+  async getUserInstallations(githubId: string): Promise<Installation[]> {
+    const githubIdNum = parseInt(githubId, 10);
+    return this.installations.find({
+      where: { account_id: githubIdNum },
+    });
+  }
+
+  async getInstallationById(id: number): Promise<Installation | null> {
+    return this.installations.findOne({
+      where: { id },
+    });
+  }
+
+  getInstallationUrl(): string {
+    const appId = this.config.get<string>('GITHUB_APP_ID');
+    if (!appId) {
+      throw new Error('GITHUB_APP_ID not configured');
+    }
+    return `https://github.com/apps/${this.config.get<string>('GITHUB_APP_SLUG', 'quori-app')}/installations/new`;
+  }
+
   getEventStream(): Observable<GithubEvent> {
     return this.eventSubject.asObservable();
   }

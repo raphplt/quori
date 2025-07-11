@@ -9,6 +9,7 @@ import {
   Sse,
   Res,
   Options,
+  Delete,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { map } from 'rxjs/operators';
@@ -152,5 +153,52 @@ export class GithubController {
       repositories: ['raphplt/melodix'], // Your repo
     });
     return { message: 'Installation created', installationId: id };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('app/status')
+  async getAppInstallationStatus(@Request() req: AuthenticatedRequest) {
+    const user = req.user;
+    // Rechercher les installations liées au compte GitHub de l'utilisateur
+    const installations = await this.appService.getUserInstallations(
+      user.githubId,
+    );
+    return {
+      installed: installations.length > 0,
+      installations: installations.map((install) => ({
+        id: install.id,
+        account_login: install.account_login,
+        repos: install.repos || [],
+        created_at: install.created_at,
+      })),
+      installUrl: this.appService.getInstallationUrl(),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('app/installation/:id')
+  async revokeInstallation(
+    @Request() req: AuthenticatedRequest,
+    @Param('id') installationId: string,
+  ) {
+    const user = req.user;
+    const id = parseInt(installationId, 10);
+
+    // Vérifier que l'installation appartient bien à l'utilisateur
+    const installation = await this.appService.getInstallationById(id);
+    if (!installation || installation.account_id.toString() !== user.githubId) {
+      throw new UnauthorizedException('Installation not found or unauthorized');
+    }
+
+    await this.appService.removeInstallation(id);
+    return { message: 'Installation revoked successfully' };
+  }
+
+  @Get('debug/installation-url')
+  getInstallationUrl() {
+    return {
+      installUrl: this.appService.getInstallationUrl(),
+      message: "URL d'installation de la GitHub App",
+    };
   }
 }
