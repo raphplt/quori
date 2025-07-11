@@ -1,7 +1,7 @@
 "use client";
 
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -14,28 +14,26 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import {
   User,
-  Bell,
-  Globe,
   Github,
   Mail,
   Calendar,
   Save,
+  GitCommit,
   FileText,
-  Shield,
+  TrendingUp,
+  MapPin,
+  Link as LinkIcon,
+  Edit,
+  Settings,
+  BarChart3,
+  Activity,
 } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 
 type ExtendedUser = {
   id: string;
@@ -61,63 +59,109 @@ function Profile() {
   const { data: session } = useSession();
   const user = session?.user as ExtendedUser;
 
-  // États pour les préférences
-  const [preferences, setPreferences] = useState({
-    notifications: {
-      email: true,
-      push: false,
-      postGenerated: true,
-      postScheduled: true,
-      weeklyReport: false,
-      errorAlerts: true,
-    },
-    language: "fr",
-    timezone: "Europe/Paris",
-    posting: {
-      autoGenerate: true,
-      requireApproval: true,
-      preferredStyle: "professionnel",
-      maxPostsPerDay: 3,
-    },
-    privacy: {
-      showProfile: true,
-      showActivity: false,
-    },
-  });
-
   const [bio, setBio] = useState(
-    "Développeur passionné qui transforme du code en contenu LinkedIn engageant."
+    "Développeur passionné qui transforme du code en contenu LinkedIn engageant. Spécialisé en React, TypeScript et Node.js."
   );
+  const [location, setLocation] = useState("Paris, France");
+  const [website, setWebsite] = useState("https://github.com/johndoe");
   const [isEditing, setIsEditing] = useState(false);
 
   if (!user) {
     return null;
   }
 
+  // Mock data pour les statistiques du profil
+  const profileStats = {
+    totalPosts: 89,
+    totalCommits: 245,
+    followersGrowth: 12.5,
+    engagementRate: 4.2,
+    joinedDate: user.createdAt,
+    lastActiveDate: "2025-07-11T14:30:00Z",
+  };
+
+  const recentActivity = [
+    {
+      id: 1,
+      type: "post",
+      title: "Nouvelle fonctionnalité de notifications",
+      engagement: 45,
+      date: "2025-07-10",
+      platform: "LinkedIn",
+    },
+    {
+      id: 2,
+      type: "commit",
+      title: "feat: add user preferences for notifications",
+      repo: "quori",
+      date: "2025-07-10",
+      platform: "GitHub",
+    },
+    {
+      id: 3,
+      type: "post",
+      title: "Optimisation des performances API",
+      engagement: 32,
+      date: "2025-07-09",
+      platform: "LinkedIn",
+    },
+  ];
+
+  const topRepositories = [
+    {
+      name: "quori",
+      description:
+        "Générateur automatique de posts LinkedIn à partir de commits Git",
+      language: "TypeScript",
+      stars: 127,
+      posts: 23,
+    },
+    {
+      name: "api-service",
+      description:
+        "API REST pour la gestion des utilisateurs et authentification",
+      language: "Node.js",
+      stars: 45,
+      posts: 12,
+    },
+    {
+      name: "web-app",
+      description: "Interface utilisateur moderne avec React et Next.js",
+      language: "React",
+      stars: 89,
+      posts: 18,
+    },
+  ];
+
   const handleSave = () => {
-    // Ici vous sauvegarderiez les préférences via votre API
-    console.log("Sauvegarde des préférences:", preferences);
+    // Ici vous sauvegarderiez les informations de profil via votre API
+    console.log("Sauvegarde du profil:", { bio, location, website });
     setIsEditing(false);
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Profil personnel
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900">Mon profil</h1>
             <p className="text-gray-600 mt-1">
-              Gérez vos informations et préférences
+              Votre profil public et vos statistiques
             </p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
+            <Button variant="outline" asChild>
+              <Link href="/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                Paramètres
+              </Link>
+            </Button>
             <Button
               onClick={() => setIsEditing(!isEditing)}
               variant={isEditing ? "outline" : "default"}
             >
+              <Edit className="mr-2 h-4 w-4" />
               {isEditing ? "Annuler" : "Modifier"}
             </Button>
             {isEditing && (
@@ -126,470 +170,358 @@ function Profile() {
                 Sauvegarder
               </Button>
             )}
-            <Button onClick={() => signOut()} variant="destructive" size="sm">
-              Se déconnecter
-            </Button>
           </div>
         </div>
 
-        {/* Informations personnelles */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <User className="h-5 w-5" />
-              <span>Informations personnelles</span>
-            </CardTitle>
-            <CardDescription>
-              Informations de base de votre profil
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-start space-x-6">
-              <Avatar className="h-20 w-20">
-                <AvatarImage
-                  src={user.image || undefined}
-                  alt={user.name || "User"}
-                />
-                <AvatarFallback className="text-lg">
-                  {user.name?.charAt(0)?.toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-
-              <div className="flex-1 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nom complet</Label>
-                    <Input
-                      id="name"
-                      value={user.name}
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-gray-50" : ""}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Profil principal */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Informations personnelles */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <User className="mr-2 h-5 w-5" />
+                  Informations personnelles
+                </CardTitle>
+                <CardDescription>
+                  Vos informations de profil public
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-start space-x-6">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage
+                      src={user.image || user.avatarUrl || undefined}
+                      alt={user.name || "User"}
                     />
-                  </div>
+                    <AvatarFallback className="text-xl">
+                      {user.name?.charAt(0)?.toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username GitHub</Label>
-                    <div className="flex items-center space-x-2">
-                      <Github className="h-4 w-4 text-gray-500" />
-                      <Input
-                        id="username"
-                        value={`@${user.username}`}
-                        disabled
-                        className="bg-gray-50"
-                      />
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <h2 className="text-2xl font-bold">{user.name}</h2>
+                      <p className="text-gray-600">@{user.username}</p>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <div className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4 text-gray-500" />
-                      <Input
-                        id="email"
-                        value={user.email}
-                        disabled={!isEditing}
-                        className={!isEditing ? "bg-gray-50" : ""}
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <div className="flex items-center space-x-2">
+                          <Mail className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">{user.email}</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="location">Localisation</Label>
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="h-4 w-4 text-gray-500" />
+                          {isEditing ? (
+                            <Input
+                              value={location}
+                              onChange={e => setLocation(e.target.value)}
+                              placeholder="Votre localisation"
+                              className="text-sm"
+                            />
+                          ) : (
+                            <span className="text-sm">{location}</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="github">GitHub</Label>
+                        <div className="flex items-center space-x-2">
+                          <Github className="h-4 w-4 text-gray-500" />
+                          <span className="text-sm">
+                            github.com/{user.username}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="website">Site web</Label>
+                        <div className="flex items-center space-x-2">
+                          <LinkIcon className="h-4 w-4 text-gray-500" />
+                          {isEditing ? (
+                            <Input
+                              value={website}
+                              onChange={e => setWebsite(e.target.value)}
+                              placeholder="https://yourwebsite.com"
+                              className="text-sm"
+                            />
+                          ) : (
+                            <a
+                              href={website}
+                              className="text-sm text-blue-600 hover:underline"
+                            >
+                              {website}
+                            </a>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="member-since">Membre depuis</Label>
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="h-4 w-4 text-gray-500" />
-                      <Input
-                        id="member-since"
-                        value={new Date(user.createdAt).toLocaleDateString(
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Bio</Label>
+                      {isEditing ? (
+                        <Textarea
+                          value={bio}
+                          onChange={e => setBio(e.target.value)}
+                          rows={3}
+                          placeholder="Parlez-nous de vous..."
+                        />
+                      ) : (
+                        <p className="text-gray-700">{bio}</p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                      <Badge
+                        variant="default"
+                        className="bg-green-100 text-green-800"
+                      >
+                        <Activity className="mr-1 h-3 w-3" />
+                        Actif
+                      </Badge>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Calendar className="mr-1 h-4 w-4" />
+                        Membre depuis{" "}
+                        {new Date(profileStats.joinedDate).toLocaleDateString(
                           "fr-FR"
                         )}
-                        disabled
-                        className="bg-gray-50"
-                      />
+                      </div>
                     </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={bio}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                      setBio(e.target.value)
-                    }
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                    rows={3}
-                    placeholder="Parlez-nous de vous..."
-                  />
+            {/* Activité récente */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Activity className="mr-2 h-5 w-5" />
+                  Activité récente
+                </CardTitle>
+                <CardDescription>
+                  Vos dernières publications et commits
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {recentActivity.map(activity => (
+                    <div
+                      key={activity.id}
+                      className="flex items-center space-x-4 p-3 border rounded-lg"
+                    >
+                      <div className="flex-shrink-0">
+                        {activity.type === "post" ? (
+                          <FileText className="h-5 w-5 text-blue-500" />
+                        ) : (
+                          <GitCommit className="h-5 w-5 text-green-500" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{activity.title}</p>
+                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                          <span>{activity.platform}</span>
+                          <span>•</span>
+                          <span>
+                            {new Date(activity.date).toLocaleDateString(
+                              "fr-FR"
+                            )}
+                          </span>
+                          {activity.engagement && (
+                            <>
+                              <span>•</span>
+                              <span>{activity.engagement} interactions</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Dépôts principaux */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Github className="mr-2 h-5 w-5" />
+                  Dépôts principaux
+                </CardTitle>
+                <CardDescription>Vos projets les plus actifs</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {topRepositories.map(repo => (
+                    <div
+                      key={repo.name}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-medium">{repo.name}</h3>
+                          <Badge variant="outline" className="text-xs">
+                            {repo.language}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {repo.description}
+                        </p>
+                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                          <span>⭐ {repo.stars}</span>
+                          <span>📝 {repo.posts} posts générés</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar - Statistiques */}
+          <div className="space-y-6">
+            {/* Statistiques */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <BarChart3 className="mr-2 h-5 w-5" />
+                  Statistiques
+                </CardTitle>
+                <CardDescription>Aperçu de votre activité</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Posts publiés</span>
+                    <span className="text-lg font-bold">
+                      {profileStats.totalPosts}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Commits traités</span>
+                    <span className="text-lg font-bold">
+                      {profileStats.totalCommits}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      Taux d&apos;engagement
+                    </span>
+                    <span className="text-lg font-bold">
+                      {profileStats.engagementRate}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Croissance</span>
+                    <span className="text-lg font-bold text-green-600">
+                      +{profileStats.followersGrowth}%
+                    </span>
+                  </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <Badge
-                    variant="default"
-                    className="bg-green-100 text-green-800"
-                  >
-                    ✓ Connecté
-                  </Badge>
-                  <Badge variant="outline">GitHub ID: {user.githubId}</Badge>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                <Separator />
 
-        {/* Préférences de notification */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Bell className="h-5 w-5" />
-              <span>Préférences de notification</span>
-            </CardTitle>
-            <CardDescription>
-              Gérez les notifications que vous souhaitez recevoir
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Notifications par email</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Recevez des notifications importantes par email
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">
+                    Dernière activité :{" "}
+                    {new Date(profileStats.lastActiveDate).toLocaleDateString(
+                      "fr-FR"
+                    )}
                   </p>
                 </div>
-                <Switch
-                  checked={preferences.notifications.email}
-                  onCheckedChange={(checked: boolean) =>
-                    setPreferences(prev => ({
-                      ...prev,
-                      notifications: { ...prev.notifications, email: checked },
-                    }))
-                  }
-                  disabled={!isEditing}
-                />
-              </div>
+              </CardContent>
+            </Card>
 
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Post généré</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Notification quand un nouveau post est généré
-                  </p>
-                </div>
-                <Switch
-                  checked={preferences.notifications.postGenerated}
-                  onCheckedChange={(checked: boolean) =>
-                    setPreferences(prev => ({
-                      ...prev,
-                      notifications: {
-                        ...prev.notifications,
-                        postGenerated: checked,
-                      },
-                    }))
-                  }
-                  disabled={!isEditing}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Post planifié</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Notification avant la publication d&apos;un post
-                  </p>
-                </div>
-                <Switch
-                  checked={preferences.notifications.postScheduled}
-                  onCheckedChange={(checked: boolean) =>
-                    setPreferences(prev => ({
-                      ...prev,
-                      notifications: {
-                        ...prev.notifications,
-                        postScheduled: checked,
-                      },
-                    }))
-                  }
-                  disabled={!isEditing}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Rapport hebdomadaire</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Résumé de votre activité chaque semaine
-                  </p>
-                </div>
-                <Switch
-                  checked={preferences.notifications.weeklyReport}
-                  onCheckedChange={(checked: boolean) =>
-                    setPreferences(prev => ({
-                      ...prev,
-                      notifications: {
-                        ...prev.notifications,
-                        weeklyReport: checked,
-                      },
-                    }))
-                  }
-                  disabled={!isEditing}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Alertes d&apos;erreur</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Notifications en cas de problème technique
-                  </p>
-                </div>
-                <Switch
-                  checked={preferences.notifications.errorAlerts}
-                  onCheckedChange={(checked: boolean) =>
-                    setPreferences(prev => ({
-                      ...prev,
-                      notifications: {
-                        ...prev.notifications,
-                        errorAlerts: checked,
-                      },
-                    }))
-                  }
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Langue et fuseau horaire */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Globe className="h-5 w-5" />
-              <span>Langue et fuseau horaire</span>
-            </CardTitle>
-            <CardDescription>Paramètres de localisation</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="language">Langue</Label>
-                <Select
-                  value={preferences.language}
-                  onValueChange={value =>
-                    setPreferences(prev => ({ ...prev, language: value }))
-                  }
-                  disabled={!isEditing}
+            {/* Actions rapides */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Actions rapides</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  asChild
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fr">Français</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Español</SelectItem>
-                    <SelectItem value="de">Deutsch</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="timezone">Fuseau horaire</Label>
-                <Select
-                  value={preferences.timezone}
-                  onValueChange={value =>
-                    setPreferences(prev => ({ ...prev, timezone: value }))
-                  }
-                  disabled={!isEditing}
+                  <Link href="/posts">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Mes posts
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  asChild
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Europe/Paris">
-                      Europe/Paris (UTC+1)
-                    </SelectItem>
-                    <SelectItem value="Europe/London">
-                      Europe/London (UTC+0)
-                    </SelectItem>
-                    <SelectItem value="America/New_York">
-                      America/New_York (UTC-5)
-                    </SelectItem>
-                    <SelectItem value="America/Los_Angeles">
-                      America/Los_Angeles (UTC-8)
-                    </SelectItem>
-                    <SelectItem value="Asia/Tokyo">
-                      Asia/Tokyo (UTC+9)
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Préférences de publication */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <FileText className="h-5 w-5" />
-              <span>Préférences de publication</span>
-            </CardTitle>
-            <CardDescription>
-              Configurez comment vos posts sont générés et publiés
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Génération automatique</Label>
-                <p className="text-sm text-muted-foreground">
-                  Générer automatiquement des posts à partir de vos commits
-                </p>
-              </div>
-              <Switch
-                checked={preferences.posting.autoGenerate}
-                onCheckedChange={(checked: boolean) =>
-                  setPreferences(prev => ({
-                    ...prev,
-                    posting: { ...prev.posting, autoGenerate: checked },
-                  }))
-                }
-                disabled={!isEditing}
-              />
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Approbation requise</Label>
-                <p className="text-sm text-muted-foreground">
-                  Approuver manuellement chaque post avant publication
-                </p>
-              </div>
-              <Switch
-                checked={preferences.posting.requireApproval}
-                onCheckedChange={(checked: boolean) =>
-                  setPreferences(prev => ({
-                    ...prev,
-                    posting: { ...prev.posting, requireApproval: checked },
-                  }))
-                }
-                disabled={!isEditing}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="style">Style de rédaction préféré</Label>
-                <Select
-                  value={preferences.posting.preferredStyle}
-                  onValueChange={value =>
-                    setPreferences(prev => ({
-                      ...prev,
-                      posting: { ...prev.posting, preferredStyle: value },
-                    }))
-                  }
-                  disabled={!isEditing}
+                  <Link href="/repositories">
+                    <Github className="mr-2 h-4 w-4" />
+                    Mes dépôts
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  asChild
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="professionnel">Professionnel</SelectItem>
-                    <SelectItem value="decontracte">Décontracté</SelectItem>
-                    <SelectItem value="technique">Technique</SelectItem>
-                    <SelectItem value="inspirant">Inspirant</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="maxPosts">Posts maximum par jour</Label>
-                <Select
-                  value={preferences.posting.maxPostsPerDay.toString()}
-                  onValueChange={value =>
-                    setPreferences(prev => ({
-                      ...prev,
-                      posting: {
-                        ...prev.posting,
-                        maxPostsPerDay: parseInt(value),
-                      },
-                    }))
-                  }
-                  disabled={!isEditing}
+                  <Link href="/analytics">
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Analytics
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  asChild
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 post</SelectItem>
-                    <SelectItem value="2">2 posts</SelectItem>
-                    <SelectItem value="3">3 posts</SelectItem>
-                    <SelectItem value="5">5 posts</SelectItem>
-                    <SelectItem value="10">10 posts</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                  <Link href="/settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Paramètres
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
 
-        {/* Confidentialité */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Shield className="h-5 w-5" />
-              <span>Confidentialité</span>
-            </CardTitle>
-            <CardDescription>
-              Contrôlez la visibilité de votre profil et activité
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Profil public</Label>
-                <p className="text-sm text-muted-foreground">
-                  Permettre aux autres utilisateurs de voir votre profil
-                </p>
-              </div>
-              <Switch
-                checked={preferences.privacy.showProfile}
-                onCheckedChange={(checked: boolean) =>
-                  setPreferences(prev => ({
-                    ...prev,
-                    privacy: { ...prev.privacy, showProfile: checked },
-                  }))
-                }
-                disabled={!isEditing}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Activité publique</Label>
-                <p className="text-sm text-muted-foreground">
-                  Afficher votre activité de publication dans les statistiques
-                  globales
-                </p>
-              </div>
-              <Switch
-                checked={preferences.privacy.showActivity}
-                onCheckedChange={(checked: boolean) =>
-                  setPreferences(prev => ({
-                    ...prev,
-                    privacy: { ...prev.privacy, showActivity: checked },
-                  }))
-                }
-                disabled={!isEditing}
-              />
-            </div>
-          </CardContent>
-        </Card>
+            {/* Badge de profil */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Badge de profil</CardTitle>
+                <CardDescription>Partagez votre profil Quori</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
+                  <div className="text-center">
+                    <Avatar className="h-12 w-12 mx-auto mb-2">
+                      <AvatarImage
+                        src={user.image || user.avatarUrl}
+                        alt={user.name}
+                      />
+                      <AvatarFallback>
+                        {user.name?.charAt(0) || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <h4 className="font-medium">{user.name}</h4>
+                    <p className="text-xs text-gray-600">Quori Creator</p>
+                    <div className="mt-2 text-xs">
+                      {profileStats.totalPosts} posts •{" "}
+                      {profileStats.totalCommits} commits
+                    </div>
+                  </div>
+                </div>
+                <Button variant="outline" className="w-full mt-3" size="sm">
+                  Copier le lien du profil
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
