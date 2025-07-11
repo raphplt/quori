@@ -1,9 +1,5 @@
 "use client";
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
-import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
-import { GitHubEvent } from "@/types/githubEvent";
+import { useGitHubEvents } from "@/hooks/useGitHubEvents";
 import {
   Card,
   CardContent,
@@ -16,21 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Activity, GitCommit, GitPullRequest, RefreshCw } from "lucide-react";
 
 export default function ActivityFeed() {
-  const { data: session } = useSession();
-
-  const { data, isLoading, error, refetch } = useQuery<GitHubEvent[]>({
-    queryKey: ["events"],
-    queryFn: () => authenticatedFetcher<GitHubEvent[]>("/github/events"),
-    refetchInterval: 10000,
-    refetchOnWindowFocus: true,
-    enabled: !!session,
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-  });
-
-  useEffect(() => {
-    // Optional: Add any side effects when data changes
-  }, [data, error, isLoading, session]);
+  const {
+    events: data,
+    isLoading,
+    error,
+    refetch,
+    createTestEvent,
+  } = useGitHubEvents();
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -69,18 +57,7 @@ export default function ActivityFeed() {
           />
           Actualiser
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={async () => {
-            try {
-              await authenticatedFetcher("/github/test-event");
-              setTimeout(() => refetch(), 1000);
-            } catch (error) {
-              console.error("Error creating test event:", error);
-            }
-          }}
-        >
+        <Button variant="outline" size="sm" onClick={createTestEvent}>
           Créer événement test
         </Button>
       </div>

@@ -6,6 +6,7 @@ import MainLayout from "../components/layout/MainLayout";
 import { NextAuthProvider } from "@/contexts/NextAuthContext";
 import { ReactQueryProvider } from "@/contexts/QueryClientContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
+import { EventsProvider } from "@/contexts/EventsContext";
 
 export const metadata: Metadata = {
   title: "Quori",
@@ -22,11 +23,13 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col">
         <ReactQueryProvider>
           <NextAuthProvider>
-            <SidebarProvider>
-              <Header />
-              <MainLayout>{children}</MainLayout>
-              <Footer />
-            </SidebarProvider>
+            <EventsProvider>
+              <SidebarProvider>
+                <Header />
+                <MainLayout>{children}</MainLayout>
+                <Footer />
+              </SidebarProvider>
+            </EventsProvider>
           </NextAuthProvider>
         </ReactQueryProvider>
       </body>
