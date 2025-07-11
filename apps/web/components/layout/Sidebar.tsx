@@ -12,7 +12,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronRight, ChevronDown, PanelLeft } from "lucide-react";
-import { sidebarItems } from "@/utils/sidebar";
+import { useSidebarItems } from "@/hooks/useSidebarItems";
 import { useSidebar } from "@/contexts/SidebarContext";
 
 export interface SidebarItem {
@@ -44,7 +44,6 @@ const SidebarItem: React.FC<{
     }
   }, [isChildActive, isCollapsed]);
 
-  // Si la sidebar est collapsed, on ne montre que l'icône pour les items de niveau 0
   if (isCollapsed && level === 0) {
     return (
       <Button
@@ -141,6 +140,7 @@ const SidebarItem: React.FC<{
 const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const pathname = usePathname();
   const { isOpen, toggle } = useSidebar();
+  const sidebarItems = useSidebarItems();
 
   return (
     <div className={cn("pb-12", isOpen ? "w-64" : "w-16", className)}>

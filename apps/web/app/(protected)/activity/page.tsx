@@ -2,6 +2,7 @@
 
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ActivityFeed from "@/components/ActivityFeed";
+import EventsSummary from "@/components/EventsSummary";
 
 export default function ActivityPage() {
   //test
@@ -14,6 +15,7 @@ export default function ActivityPage() {
             Chronologie de vos événements Git avec génération de posts en 1-clic
           </p>
         </div>
+        <EventsSummary />
         <ActivityFeed />
       </div>
     </ProtectedRoute>
