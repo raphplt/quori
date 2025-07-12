@@ -5,6 +5,7 @@ export interface ParsedGitEvent {
   desc: string;
   filesChanged: string[];
   diffStats: {
+    filePath: string;
     additions: number;
     deletions: number;
     changes: number;
@@ -19,154 +20,171 @@ export async function parseGitEvent(
   event: string,
   octokit?: Octokit,
 ): Promise<ParsedGitEvent> {
-  let title = '';
-  let desc = '';
-  let filesChanged: string[] = [];
-  const diffStats: { additions: number; deletions: number; changes: number }[] = [];
-  let repoFullName = '';
-  let commitCount = 0;
-  let timestamp = '';
-
   if (event === 'push') {
-    const repo = payload.repository;
-    const commitId = payload.after;
-    const commits: any[] = payload.commits ?? [];
-    const head = payload.head_commit ?? commits[commits.length - 1];
-    if (!repo || !commitId || !head) {
-      throw new Error('Invalid push payload');
-    }
-    repoFullName = repo.full_name ?? '';
-    commitCount = commits.length;
-    timestamp = head.timestamp ?? '';
-
-    title = head.message?.split('\n')[0] || `Commit ${commitId}`;
-    desc = commits.length > 0 ? commits.map(c => c.message).join('\n') : head.message || '';
-
-    const fileMap = new Map<string, { additions: number; deletions: number; changes: number }>();
-
-    for (const commit of commits.length ? commits : [head]) {
-      for (const name of [...(commit.added || []), ...(commit.modified || []), ...(commit.removed || [])]) {
-        if (!fileMap.has(name)) {
-          fileMap.set(name, { additions: 0, deletions: 0, changes: 0 });
-        }
-      }
-
-      if (commit.stats) {
-        if (Array.isArray(commit.stats)) {
-          for (const fs of commit.stats) {
-            const current = fileMap.get(fs.filename) ?? { additions: 0, deletions: 0, changes: 0 };
-            current.additions += fs.additions ?? 0;
-            current.deletions += fs.deletions ?? 0;
-            current.changes += fs.changes ?? ((fs.additions ?? 0) + (fs.deletions ?? 0));
-            fileMap.set(fs.filename, current);
-          }
-        } else {
-          for (const [fname, fs] of Object.entries(commit.stats)) {
-            const fileStat = fileMap.get(fname) ?? { additions: 0, deletions: 0, changes: 0 };
-            const adds = (fs as any).additions ?? 0;
-            const dels = (fs as any).deletions ?? 0;
-            const chgs = (fs as any).changes ?? adds + dels;
-            fileStat.additions += adds;
-            fileStat.deletions += dels;
-            fileStat.changes += chgs;
-            fileMap.set(fname, fileStat);
-          }
-        }
-      }
-    }
-
-    filesChanged = Array.from(fileMap.keys());
-    if (filesChanged.length) {
-      diffStats.push(...filesChanged.map(f => fileMap.get(f)!));
-    }
-
-    // fallback to GitHub compare API if we have no stats
-    if (!diffStats.length && octokit && payload.compare) {
-      try {
-        const compareMatch = payload.compare.match(/repos\/([^/]+)\/([^/]+)\/compare\/(.+)\.\.\.(.+)$/);
-        if (compareMatch) {
-          const [, owner, repoName, base, headSha] = compareMatch;
-          const { data } = await octokit.rest.repos.compareCommits({
-            owner,
-            repo: repoName,
-            base,
-            head: headSha,
-          });
-          filesChanged = data.files?.map(f => f.filename) ?? filesChanged;
-          diffStats.push(
-            ...(data.files ?? []).map(f => ({
-              additions: f.additions ?? 0,
-              deletions: f.deletions ?? 0,
-              changes: f.changes ?? 0,
-            })),
-          );
-        }
-      } catch {
-        // ignored, keep whatever we have
-      }
-    }
-
-    if (!filesChanged.length) {
-      filesChanged = [
-        ...(head.added || []),
-        ...(head.modified || []),
-        ...(head.removed || []),
-      ];
-    }
-    if (!diffStats.length) {
-      diffStats.push(...filesChanged.map(() => ({ additions: 0, deletions: 0, changes: 0 })));
-    }
+    return parsePushEvent(payload, octokit);
   } else if (event === 'pull_request') {
-    const repo = payload.repository;
-    const pr = payload.pull_request;
-    if (!repo || !pr) {
-      throw new Error('Invalid pull_request payload');
-    }
-    repoFullName = repo.full_name ?? '';
-    title = pr.title;
-    desc = pr.body || '';
-    timestamp = pr.updated_at ?? '';
-    if (octokit) {
-      try {
-        const files = await octokit.paginate(
-          octokit.rest.pulls.listFiles,
-          {
-            owner: repo.owner.login,
-            repo: repo.name,
-            pull_number: pr.number,
-            per_page: 100,
-          },
-          res => res.data,
-        );
-        filesChanged = files.map(f => f.filename);
-        diffStats.push(
-          ...files.map(f => ({
-            additions: f.additions ?? 0,
-            deletions: f.deletions ?? 0,
-            changes: f.changes ?? 0,
-          })),
-        );
-      } catch {
-        filesChanged = [];
-      }
-    } else {
-      filesChanged = pr.files?.map((f: any) => f.filename) ?? [];
-      if (pr.files) {
-        diffStats.push(
-          ...pr.files.map((f: any) => ({
-            additions: f.additions ?? 0,
-            deletions: f.deletions ?? 0,
-            changes: f.changes ?? ((f.additions ?? 0) + (f.deletions ?? 0)),
-          })),
-        );
-      } else {
-        diffStats.push(...filesChanged.map(() => ({ additions: 0, deletions: 0, changes: 0 })));
-      }
-    }
-  }
-  else {
+    return parsePullRequestEvent(payload, octokit);
+  } else {
     throw new Error(`Unsupported event type: ${event}`);
   }
+}
+
+async function parsePushEvent(
+  payload: Record<string, any>,
+  octokit?: Octokit,
+): Promise<ParsedGitEvent> {
+  const repo = payload.repository;
+  const commitId = payload.after;
+  const commits: any[] = payload.commits ?? [];
+  const head = payload.head_commit ?? commits[commits.length - 1];
+
+  if (!repo || !commitId || !head) {
+    throw new Error(
+      'Invalid push payload: missing repository, commit ID, or head commit',
+    );
+  }
+
+  const repoFullName = repo.full_name ?? '';
+  const commitCount = commits.length;
+  const timestamp = head.timestamp ?? '';
+
+  // Title = message of the last commit (head_commit)
+  const title = head.message?.split('\n')[0] || `Commit ${commitId}`;
+
+  // Description = concatenation of all commit messages with double line breaks
+  const desc =
+    commits.length > 0
+      ? commits
+          .map((c: any) => c.message || '')
+          .filter(Boolean)
+          .join('\n\n')
+      : head.message || '';
+
+  // Aggregate file stats across all commits
+  const fileStatsMap = new Map<
+    string,
+    {
+      additions: number;
+      deletions: number;
+      changes: number;
+    }
+  >();
+
+  let hasValidStats = false;
+
+  // Process each commit to collect file stats
+  for (const commit of commits.length ? commits : [head]) {
+    // Add all changed files to the map
+    const changedFiles = [
+      ...(commit.added || []),
+      ...(commit.modified || []),
+      ...(commit.removed || []),
+    ];
+
+    for (const fileName of changedFiles) {
+      if (!fileStatsMap.has(fileName)) {
+        fileStatsMap.set(fileName, { additions: 0, deletions: 0, changes: 0 });
+      }
+    }
+
+    // Process commit stats if available
+    if (commit.stats) {
+      hasValidStats = true;
+
+      if (Array.isArray(commit.stats)) {
+        // stats is an array of file objects
+        for (const fileStat of commit.stats) {
+          const fileName = fileStat.filename;
+          if (!fileName) continue;
+
+          const current = fileStatsMap.get(fileName) ?? {
+            additions: 0,
+            deletions: 0,
+            changes: 0,
+          };
+          current.additions += fileStat.additions ?? 0;
+          current.deletions += fileStat.deletions ?? 0;
+          current.changes +=
+            fileStat.changes ??
+            (fileStat.additions ?? 0) + (fileStat.deletions ?? 0);
+          fileStatsMap.set(fileName, current);
+        }
+      } else {
+        // stats is an object with filename as keys
+        for (const [fileName, fileStat] of Object.entries(commit.stats)) {
+          const current = fileStatsMap.get(fileName) ?? {
+            additions: 0,
+            deletions: 0,
+            changes: 0,
+          };
+          const fs = fileStat as any;
+          const additions = fs.additions ?? 0;
+          const deletions = fs.deletions ?? 0;
+          const changes = fs.changes ?? additions + deletions;
+
+          current.additions += additions;
+          current.deletions += deletions;
+          current.changes += changes;
+          fileStatsMap.set(fileName, current);
+        }
+      }
+    }
+  }
+
+  // If no valid stats were found in commits, try GitHub Compare API
+  if (!hasValidStats && octokit && payload.compare) {
+    try {
+      const compareMatch = payload.compare.match(
+        /repos\/([^/]+)\/([^/]+)\/compare\/(.+)\.\.\.(.+)$/,
+      );
+      if (!compareMatch) {
+        throw new Error(`Invalid compare URL format: ${payload.compare}`);
+      }
+
+      const [, owner, repoName, base, headSha] = compareMatch;
+      const { data } = await octokit.rest.repos.compareCommits({
+        owner,
+        repo: repoName,
+        base,
+        head: headSha,
+      });
+
+      if (!data.files) {
+        throw new Error('No files data returned from GitHub Compare API');
+      }
+
+      // Clear the map and populate with API data
+      fileStatsMap.clear();
+      for (const file of data.files) {
+        fileStatsMap.set(file.filename, {
+          additions: file.additions ?? 0,
+          deletions: file.deletions ?? 0,
+          changes: file.changes ?? 0,
+        });
+      }
+
+      hasValidStats = true;
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch diff stats from GitHub Compare API: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  // If still no stats, throw an error
+  if (!hasValidStats && fileStatsMap.size === 0) {
+    throw new Error(
+      'No file changes or diff stats could be determined for this push event',
+    );
+  }
+
+  const filesChanged = Array.from(fileStatsMap.keys());
+  const diffStats = Array.from(fileStatsMap.entries()).map(
+    ([filePath, stats]) => ({
+      filePath,
+      ...stats,
+    }),
+  );
 
   return {
     title,
@@ -175,6 +193,85 @@ export async function parseGitEvent(
     diffStats,
     repoFullName,
     commitCount,
+    timestamp,
+  };
+}
+
+async function parsePullRequestEvent(
+  payload: Record<string, any>,
+  octokit?: Octokit,
+): Promise<ParsedGitEvent> {
+  const repo = payload.repository;
+  const pr = payload.pull_request;
+
+  if (!repo || !pr) {
+    throw new Error(
+      'Invalid pull_request payload: missing repository or pull_request data',
+    );
+  }
+
+  const repoFullName = repo.full_name ?? '';
+  const title = pr.title || 'Pull Request';
+  const desc = pr.body || '';
+  const timestamp = pr.updated_at ?? '';
+
+  let filesChanged: string[] = [];
+  let diffStats: {
+    filePath: string;
+    additions: number;
+    deletions: number;
+    changes: number;
+  }[] = [];
+
+  if (octokit) {
+    try {
+      const files = await octokit.paginate(
+        octokit.rest.pulls.listFiles,
+        {
+          owner: repo.owner.login,
+          repo: repo.name,
+          pull_number: pr.number,
+          per_page: 100,
+        },
+        (res) => res.data,
+      );
+
+      filesChanged = files.map((f) => f.filename);
+      diffStats = files.map((f) => ({
+        filePath: f.filename,
+        additions: f.additions ?? 0,
+        deletions: f.deletions ?? 0,
+        changes: f.changes ?? 0,
+      }));
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch pull request files: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  } else {
+    // Fallback to data from payload if available
+    if (pr.files) {
+      filesChanged = pr.files.map((f: any) => f.filename);
+      diffStats = pr.files.map((f: any) => ({
+        filePath: f.filename,
+        additions: f.additions ?? 0,
+        deletions: f.deletions ?? 0,
+        changes: f.changes ?? (f.additions ?? 0) + (f.deletions ?? 0),
+      }));
+    } else {
+      throw new Error(
+        'No Octokit instance provided and no files data in pull request payload',
+      );
+    }
+  }
+
+  return {
+    title,
+    desc,
+    filesChanged,
+    diffStats,
+    repoFullName,
+    commitCount: 0, // Pull requests don't have a commit count in the same sense
     timestamp,
   };
 }

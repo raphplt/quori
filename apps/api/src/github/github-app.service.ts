@@ -302,6 +302,7 @@ export class GithubAppService {
         filesChanged: ['test.txt'],
         diffStats: [
           {
+            filePath: 'test.txt',
             additions: 5,
             deletions: 0,
             changes: 5,
