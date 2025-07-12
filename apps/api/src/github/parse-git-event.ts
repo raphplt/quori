@@ -33,6 +33,11 @@ async function parsePushEvent(
   payload: Record<string, any>,
   octokit?: Octokit,
 ): Promise<ParsedGitEvent> {
+  // DEBUG: Log de l'objet d'entrée
+  console.debug('DEBUG ▶ commits:', payload.commits);
+  console.debug('DEBUG ▶ compare URL:', payload.compare);
+  console.debug('DEBUG ▶ payload complet:', JSON.stringify(payload, null, 2));
+
   const repo = payload.repository;
   const commitId = payload.after;
   const commits: any[] = payload.commits ?? [];
@@ -74,12 +79,17 @@ async function parsePushEvent(
 
   // Process each commit to collect file stats
   for (const commit of commits.length ? commits : [head]) {
+    console.debug(`DEBUG ▶ Processing commit ${commit.id || 'unknown'}`);
+    console.debug(`DEBUG ▶ Commit stats brut:`, commit.stats);
+    
     // Add all changed files to the map
     const changedFiles = [
       ...(commit.added || []),
       ...(commit.modified || []),
       ...(commit.removed || []),
     ];
+
+    console.debug(`DEBUG ▶ Changed files for commit:`, changedFiles);
 
     for (const fileName of changedFiles) {
       if (!fileStatsMap.has(fileName)) {
@@ -90,8 +100,10 @@ async function parsePushEvent(
     // Process commit stats if available
     if (commit.stats) {
       hasValidStats = true;
+      console.debug(`DEBUG ▶ Found stats for commit ${commit.id || 'unknown'}`);
 
       if (Array.isArray(commit.stats)) {
+        console.debug(`DEBUG ▶ Stats is array format:`, commit.stats);
         // stats is an array of file objects
         for (const fileStat of commit.stats) {
           const fileName = fileStat.filename;
@@ -102,14 +114,21 @@ async function parsePushEvent(
             deletions: 0,
             changes: 0,
           };
-          current.additions += fileStat.additions ?? 0;
-          current.deletions += fileStat.deletions ?? 0;
-          current.changes +=
-            fileStat.changes ??
-            (fileStat.additions ?? 0) + (fileStat.deletions ?? 0);
+          const statsToAdd = {
+            additions: fileStat.additions ?? 0,
+            deletions: fileStat.deletions ?? 0,
+            changes: fileStat.changes ?? (fileStat.additions ?? 0) + (fileStat.deletions ?? 0)
+          };
+          
+          console.debug(`DEBUG ▶ Adding stats for ${fileName}:`, statsToAdd);
+          
+          current.additions += statsToAdd.additions;
+          current.deletions += statsToAdd.deletions;
+          current.changes += statsToAdd.changes;
           fileStatsMap.set(fileName, current);
         }
       } else {
+        console.debug(`DEBUG ▶ Stats is object format:`, commit.stats);
         // stats is an object with filename as keys
         for (const [fileName, fileStat] of Object.entries(commit.stats)) {
           const current = fileStatsMap.get(fileName) ?? {
@@ -122,17 +141,29 @@ async function parsePushEvent(
           const deletions = fs.deletions ?? 0;
           const changes = fs.changes ?? additions + deletions;
 
+          console.debug(`DEBUG ▶ Adding object stats for ${fileName}:`, { additions, deletions, changes });
+
           current.additions += additions;
           current.deletions += deletions;
           current.changes += changes;
           fileStatsMap.set(fileName, current);
         }
       }
+    } else {
+      console.debug(
+        `DEBUG ▶ No stats found for commit ${commit.id || 'unknown'}`,
+      );
     }
+    
+    console.debug(`DEBUG ▶ FileStatsMap after commit ${commit.id || 'unknown'}:`, Object.fromEntries(fileStatsMap));
   }
+
+  console.debug(`DEBUG ▶ hasValidStats after all commits:`, hasValidStats);
+  console.debug(`DEBUG ▶ Final fileStatsMap before API fallback:`, Object.fromEntries(fileStatsMap));
 
   // If no valid stats were found in commits, try GitHub Compare API
   if (!hasValidStats && octokit && payload.compare) {
+    console.debug(`DEBUG ▶ Attempting GitHub Compare API fallback with URL:`, payload.compare);
     try {
       const compareMatch = payload.compare.match(
         /repos\/([^/]+)\/([^/]+)\/compare\/(.+)\.\.\.(.+)$/,
@@ -142,12 +173,17 @@ async function parsePushEvent(
       }
 
       const [, owner, repoName, base, headSha] = compareMatch;
+      console.debug(`DEBUG ▶ Compare API params:`, { owner, repoName, base, headSha });
+      
       const { data } = await octokit.rest.repos.compareCommits({
         owner,
         repo: repoName,
         base,
         head: headSha,
       });
+
+      console.debug('DEBUG ▶ Compare API response data:', data);
+      console.debug('DEBUG ▶ Compare API files:', data.files);
 
       if (!data.files) {
         throw new Error('No files data returned from GitHub Compare API');
@@ -156,15 +192,19 @@ async function parsePushEvent(
       // Clear the map and populate with API data
       fileStatsMap.clear();
       for (const file of data.files) {
-        fileStatsMap.set(file.filename, {
+        const fileStats = {
           additions: file.additions ?? 0,
           deletions: file.deletions ?? 0,
           changes: file.changes ?? 0,
-        });
+        };
+        console.debug(`DEBUG ▶ Setting API stats for ${file.filename}:`, fileStats);
+        fileStatsMap.set(file.filename, fileStats);
       }
 
       hasValidStats = true;
+      console.debug(`DEBUG ▶ Successfully retrieved stats from Compare API`);
     } catch (error) {
+      console.error('ERROR ▶ échec du compare API:', error);
       throw new Error(
         `Failed to fetch diff stats from GitHub Compare API: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
@@ -173,10 +213,15 @@ async function parsePushEvent(
 
   // If still no stats, throw an error
   if (!hasValidStats && fileStatsMap.size === 0) {
+    console.error('ERROR ▶ No file changes or diff stats could be determined');
+    console.debug('DEBUG ▶ Final state - hasValidStats:', hasValidStats);
+    console.debug('DEBUG ▶ Final state - fileStatsMap size:', fileStatsMap.size);
     throw new Error(
       'No file changes or diff stats could be determined for this push event',
     );
   }
+
+  console.debug('DEBUG ▶ Stats agrégés avant construction finale:', Object.fromEntries(fileStatsMap));
 
   const filesChanged = Array.from(fileStatsMap.keys());
   const diffStats = Array.from(fileStatsMap.entries()).map(
@@ -186,7 +231,10 @@ async function parsePushEvent(
     }),
   );
 
-  return {
+  console.debug('DEBUG ▶ diffStats final:', diffStats);
+  console.debug('DEBUG ▶ filesChanged final:', filesChanged);
+
+  const result = {
     title,
     desc,
     filesChanged,
@@ -195,6 +243,10 @@ async function parsePushEvent(
     commitCount,
     timestamp,
   };
+
+  console.debug('DEBUG ▶ Final result object:', result);
+
+  return result;
 }
 
 async function parsePullRequestEvent(
