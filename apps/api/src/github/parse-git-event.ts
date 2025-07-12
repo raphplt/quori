@@ -100,7 +100,9 @@ async function parsePushEvent(
     // Process commit stats if available
     if (commit.stats) {
       hasValidStats = true;
-      console.debug(`DEBUG ▶ Found stats for commit ${commit.id || 'unknown'}`);
+      console.debug(
+        `DEBUG ▶ Found stats for commit ${commit.id || 'unknown'}`,
+      );
 
       if (Array.isArray(commit.stats)) {
         console.debug(`DEBUG ▶ Stats is array format:`, commit.stats);
@@ -117,7 +119,9 @@ async function parsePushEvent(
           const statsToAdd = {
             additions: fileStat.additions ?? 0,
             deletions: fileStat.deletions ?? 0,
-            changes: fileStat.changes ?? (fileStat.additions ?? 0) + (fileStat.deletions ?? 0)
+            changes:
+              fileStat.changes ??
+              (fileStat.additions ?? 0) + (fileStat.deletions ?? 0),
           };
 
           console.debug(`DEBUG ▶ Adding stats for ${fileName}:`, statsToAdd);
@@ -141,7 +145,11 @@ async function parsePushEvent(
           const deletions = fs.deletions ?? 0;
           const changes = fs.changes ?? additions + deletions;
 
-          console.debug(`DEBUG ▶ Adding object stats for ${fileName}:`, { additions, deletions, changes });
+          console.debug(`DEBUG ▶ Adding object stats for ${fileName}:`, {
+            additions,
+            deletions,
+            changes,
+          });
 
           current.additions += additions;
           current.deletions += deletions;
@@ -155,11 +163,17 @@ async function parsePushEvent(
       );
     }
 
-    console.debug(`DEBUG ▶ FileStatsMap after commit ${commit.id || 'unknown'}:`, Object.fromEntries(fileStatsMap));
+    console.debug(
+      `DEBUG ▶ FileStatsMap after commit ${commit.id || 'unknown'}:`,
+      Object.fromEntries(fileStatsMap),
+    );
   }
 
   console.debug(`DEBUG ▶ hasValidStats after all commits:`, hasValidStats);
-  console.debug(`DEBUG ▶ Final fileStatsMap before API fallback:`, Object.fromEntries(fileStatsMap));
+  console.debug(
+    `DEBUG ▶ Final fileStatsMap before API fallback:`,
+    Object.fromEntries(fileStatsMap),
+  );
   console.debug(
     `DEBUG ▶ Checking fallback conditions - hasValidStats:`,
     hasValidStats,
@@ -171,23 +185,40 @@ async function parsePushEvent(
 
   // If no valid stats were found in commits, try GitHub Compare API
   if (!hasValidStats && octokit && payload.compare) {
-    console.debug(`DEBUG ▶ Attempting GitHub Compare API fallback with URL:`, payload.compare);
+    console.debug(
+      `DEBUG ▶ Attempting GitHub Compare API fallback with URL:`,
+      payload.compare,
+    );
     try {
+      // GitHub compare URLs can be in format: https://github.com/owner/repo/compare/base...head
       const compareMatch = payload.compare.match(
-        /repos\/([^/]+)\/([^/]+)\/compare\/(.+)\.\.\.(.+)$/,
+        /github\.com\/([^/]+)\/([^/]+)\/compare\/(.+)\.\.\.(.+)$/,
       );
       if (!compareMatch) {
         throw new Error(`Invalid compare URL format: ${payload.compare}`);
       }
 
-      const [, owner, repoName, base, headSha] = compareMatch;
-      console.debug(`DEBUG ▶ Compare API params:`, { owner, repoName, base, headSha });
+      const [, owner, repoName, baseSha, headSha] = compareMatch;
+      console.debug(`DEBUG ▶ Compare API params:`, {
+        owner,
+        repoName,
+        baseSha,
+        headSha,
+      });
+
+      // Use the full SHAs from the payload for more reliable API calls
+      const fullBaseSha = payload.before || baseSha;
+      const fullHeadSha = payload.after || headSha;
+
+      console.debug(
+        `DEBUG ▶ Using full SHAs - base: ${fullBaseSha}, head: ${fullHeadSha}`,
+      );
 
       const { data } = await octokit.rest.repos.compareCommits({
         owner,
         repo: repoName,
-        base,
-        head: headSha,
+        base: fullBaseSha,
+        head: fullHeadSha,
       });
 
       console.debug('DEBUG ▶ Compare API response data:', data);
@@ -205,7 +236,10 @@ async function parsePushEvent(
           deletions: file.deletions ?? 0,
           changes: file.changes ?? 0,
         };
-        console.debug(`DEBUG ▶ Setting API stats for ${file.filename}:`, fileStats);
+        console.debug(
+          `DEBUG ▶ Setting API stats for ${file.filename}:`,
+          fileStats,
+        );
         fileStatsMap.set(file.filename, fileStats);
       }
 
@@ -223,13 +257,19 @@ async function parsePushEvent(
   if (!hasValidStats && fileStatsMap.size === 0) {
     console.error('ERROR ▶ No file changes or diff stats could be determined');
     console.debug('DEBUG ▶ Final state - hasValidStats:', hasValidStats);
-    console.debug('DEBUG ▶ Final state - fileStatsMap size:', fileStatsMap.size);
+    console.debug(
+      'DEBUG ▶ Final state - fileStatsMap size:',
+      fileStatsMap.size,
+    );
     throw new Error(
       'No file changes or diff stats could be determined for this push event',
     );
   }
 
-  console.debug('DEBUG ▶ Stats agrégés avant construction finale:', Object.fromEntries(fileStatsMap));
+  console.debug(
+    'DEBUG ▶ Stats agrégés avant construction finale:',
+    Object.fromEntries(fileStatsMap),
+  );
 
   const filesChanged = Array.from(fileStatsMap.keys());
   const diffStats = Array.from(fileStatsMap.entries()).map(
