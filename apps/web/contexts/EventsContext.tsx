@@ -4,7 +4,7 @@ import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
 import { GitHubEvent } from "@/types/githubEvent";
-import { useEventToasts } from "@/hooks/useEventToasts";
+import { useEventNotifications } from "@/hooks/useEventNotifications";
 
 interface EventsContextType {
   events: GitHubEvent[] | undefined;
@@ -23,7 +23,7 @@ interface EventsProviderProps {
 export function EventsProvider({ children }: EventsProviderProps) {
   const { data: session } = useSession();
   const previousEventsRef = useRef<GitHubEvent[]>([]);
-  const { showEventToast, showTestEventToast } = useEventToasts();
+  const { notifyNewEvent } = useEventNotifications();
 
   const {
     data: events,
@@ -57,16 +57,16 @@ export function EventsProvider({ children }: EventsProviderProps) {
     );
 
     newEvents.forEach(event => {
-      showEventToast(event, "success");
+      notifyNewEvent(event);
     });
 
     previousEventsRef.current = events;
-  }, [events, showEventToast]);
+  }, [events, notifyNewEvent]);
 
   const createTestEvent = async () => {
     try {
       await authenticatedFetcher("/github/test-event");
-      showTestEventToast();
+      // La notification sera ajoutée automatiquement via l'effet de détection des nouveaux événements
       setTimeout(() => refetch(), 1000);
     } catch (error) {
       console.error("Error creating test event:", error);

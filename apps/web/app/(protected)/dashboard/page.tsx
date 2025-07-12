@@ -23,6 +23,7 @@ import {
   Eye,
   ArrowUpRight,
   Plus,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { GitHubAppAlert } from "@/components/GitHubAppAlert";
@@ -122,7 +123,8 @@ function DashboardContent() {
             </Button>
             <Button asChild>
               <Link href="/posts">
-                <Plus className="mr-2 h-4 w-4" />
+                {/* <Plus className="mr-2 h-4 w-4" /> */}
+                <Sparkles className="mr-2 h-4 w-4" />
                 Nouveau post
               </Link>
             </Button>

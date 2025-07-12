@@ -7,6 +7,7 @@ import { NextAuthProvider } from "@/contexts/NextAuthContext";
 import { ReactQueryProvider } from "@/contexts/QueryClientContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { EventsProvider } from "@/contexts/EventsContext";
+import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import { Toaster } from "react-hot-toast";
 import { DataProvider } from "@/contexts/DataContext";
 
@@ -25,16 +26,18 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col">
         <ReactQueryProvider>
           <NextAuthProvider>
-            <EventsProvider>
-              <DataProvider>
-                <SidebarProvider>
-                  <Header />
-                  <MainLayout>{children}</MainLayout>
-                  <Footer />
-                  <Toaster position="top-right" />
-                </SidebarProvider>
-              </DataProvider>
-            </EventsProvider>
+            <NotificationsProvider>
+              <EventsProvider>
+                <DataProvider>
+                  <SidebarProvider>
+                    <Header />
+                    <MainLayout>{children}</MainLayout>
+                    <Footer />
+                    <Toaster position="top-right" />
+                  </SidebarProvider>
+                </DataProvider>
+              </EventsProvider>
+            </NotificationsProvider>
           </NextAuthProvider>
         </ReactQueryProvider>
       </body>

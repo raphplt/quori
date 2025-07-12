@@ -16,6 +16,7 @@ export interface ToastOptions {
 
 /**
  * Hook personnalisé pour gérer l'affichage des toasts liés aux événements GitHub
+ * @deprecated Utilisez useEventNotifications à la place pour afficher les notifications dans l'Inbox
  */
 export function useEventToasts(options: ToastOptions = {}) {
   const {

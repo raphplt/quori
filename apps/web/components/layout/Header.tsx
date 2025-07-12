@@ -16,6 +16,7 @@ import {
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Sidebar from "./Sidebar";
+import InboxPopover from "../InboxPopover";
 
 import {
   Search,
@@ -23,7 +24,6 @@ import {
   Plus,
   Circle,
   GitBranch,
-  Inbox,
   ChevronDown,
   User,
   Settings,
@@ -193,10 +193,7 @@ const Header: React.FC = () => {
             <Button variant="ghost" size="icon">
               <GitBranch className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="relative">
-              <Inbox className="h-5 w-5" />
-              <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background" />
-            </Button>
+            <InboxPopover />
           </nav>
         )}
 
