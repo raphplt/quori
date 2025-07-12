@@ -82,7 +82,7 @@ const InboxPopover: React.FC<InboxPopoverProps> = ({ className }) => {
                   <div
                     className={`group relative rounded-lg p-3 hover:bg-muted/50 transition-colors ${
                       !notification.isRead
-                        ? "bg-blue-50 border-l-4 border-l-primary"
+                        ? "bg-purple-50 border-l-4 border-l-primary"
                         : ""
                     }`}
                   >
