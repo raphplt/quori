@@ -228,16 +228,27 @@ export class GithubAppService {
         ?.full_name ?? '';
 
     let metadata: Record<string, unknown> | undefined;
+    console.debug(
+      'DEBUG ▶ About to parse event with installationId:',
+      installationId,
+    );
     try {
       const octokit = await this.getInstallationOctokit(installationId);
+      console.debug('DEBUG ▶ Successfully got Octokit instance');
       const parsedEvent = await parseGitEvent(payload, event, octokit);
+      console.debug('DEBUG ▶ Successfully parsed event with Octokit');
       metadata = {
         title: parsedEvent.title,
         desc: parsedEvent.desc,
         filesChanged: parsedEvent.filesChanged,
         diffStats: parsedEvent.diffStats,
       };
-    } catch {
+    } catch (error) {
+      console.warn(
+        'Failed to parse event with Octokit, falling back without API calls:',
+        error,
+      );
+      console.debug('DEBUG ▶ Falling back to parse without Octokit');
       const parsedEvent = await parseGitEvent(payload, event);
       metadata = {
         title: parsedEvent.title,

@@ -81,7 +81,7 @@ async function parsePushEvent(
   for (const commit of commits.length ? commits : [head]) {
     console.debug(`DEBUG ▶ Processing commit ${commit.id || 'unknown'}`);
     console.debug(`DEBUG ▶ Commit stats brut:`, commit.stats);
-    
+
     // Add all changed files to the map
     const changedFiles = [
       ...(commit.added || []),
@@ -119,9 +119,9 @@ async function parsePushEvent(
             deletions: fileStat.deletions ?? 0,
             changes: fileStat.changes ?? (fileStat.additions ?? 0) + (fileStat.deletions ?? 0)
           };
-          
+
           console.debug(`DEBUG ▶ Adding stats for ${fileName}:`, statsToAdd);
-          
+
           current.additions += statsToAdd.additions;
           current.deletions += statsToAdd.deletions;
           current.changes += statsToAdd.changes;
@@ -154,12 +154,20 @@ async function parsePushEvent(
         `DEBUG ▶ No stats found for commit ${commit.id || 'unknown'}`,
       );
     }
-    
+
     console.debug(`DEBUG ▶ FileStatsMap after commit ${commit.id || 'unknown'}:`, Object.fromEntries(fileStatsMap));
   }
 
   console.debug(`DEBUG ▶ hasValidStats after all commits:`, hasValidStats);
   console.debug(`DEBUG ▶ Final fileStatsMap before API fallback:`, Object.fromEntries(fileStatsMap));
+  console.debug(
+    `DEBUG ▶ Checking fallback conditions - hasValidStats:`,
+    hasValidStats,
+    ', octokit:',
+    !!octokit,
+    ', compare URL:',
+    payload.compare,
+  );
 
   // If no valid stats were found in commits, try GitHub Compare API
   if (!hasValidStats && octokit && payload.compare) {
@@ -174,7 +182,7 @@ async function parsePushEvent(
 
       const [, owner, repoName, base, headSha] = compareMatch;
       console.debug(`DEBUG ▶ Compare API params:`, { owner, repoName, base, headSha });
-      
+
       const { data } = await octokit.rest.repos.compareCommits({
         owner,
         repo: repoName,
