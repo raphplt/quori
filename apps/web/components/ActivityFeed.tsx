@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Activity, GitCommit, GitPullRequest, RefreshCw } from "lucide-react";
+import Link from "next/link";
 
 export default function ActivityFeed() {
   const {
@@ -94,33 +95,35 @@ export default function ActivityFeed() {
 
       {data?.map(activity => (
         <Card key={activity.delivery_id}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {getIcon(activity.event)}
-                <CardTitle className="text-lg">
-                  {activity.metadata?.title || activity.event}
-                </CardTitle>
+          <Link href={`/event/${activity.delivery_id}`}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  {getIcon(activity.event)}
+                  <CardTitle className="text-lg">
+                    {activity.metadata?.title || activity.event}
+                  </CardTitle>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {getBadge(activity.event)}
+                </div>
               </div>
+              <CardDescription>
+                {activity.repo_full_name} •{" "}
+                {new Date(activity.received_at).toLocaleString()}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {activity.metadata?.desc && (
+                <p className="mb-2 text-sm text-muted-foreground">
+                  {activity.metadata.desc}
+                </p>
+              )}
               <div className="flex items-center space-x-2">
-                {getBadge(activity.event)}
+                <Button size="sm">Generer un post</Button>
               </div>
-            </div>
-            <CardDescription>
-              {activity.repo_full_name} •{" "}
-              {new Date(activity.received_at).toLocaleString()}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {activity.metadata?.desc && (
-              <p className="mb-2 text-sm text-muted-foreground">
-                {activity.metadata.desc}
-              </p>
-            )}
-            <div className="flex items-center space-x-2">
-              <Button size="sm">Generer un post</Button>
-            </div>
-          </CardContent>
+            </CardContent>
+          </Link>
         </Card>
       ))}
     </div>

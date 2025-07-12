@@ -22,7 +22,6 @@ import {
   Target,
   Eye,
   ArrowUpRight,
-  Plus,
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
