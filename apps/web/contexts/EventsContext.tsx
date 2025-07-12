@@ -1,9 +1,10 @@
 "use client";
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useRef, useEffect } from "react";
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
 import { GitHubEvent } from "@/types/githubEvent";
+import { useEventToasts } from "@/hooks/useEventToasts";
 
 interface EventsContextType {
   events: GitHubEvent[] | undefined;
@@ -21,6 +22,8 @@ interface EventsProviderProps {
 
 export function EventsProvider({ children }: EventsProviderProps) {
   const { data: session } = useSession();
+  const previousEventsRef = useRef<GitHubEvent[]>([]);
+  const { showEventToast, showTestEventToast } = useEventToasts();
 
   const {
     data: events,
@@ -37,9 +40,33 @@ export function EventsProvider({ children }: EventsProviderProps) {
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
+  // Effet pour détecter les nouveaux événements
+  useEffect(() => {
+    if (!events || !Array.isArray(events)) return;
+
+    const previousEvents = previousEventsRef.current;
+
+    if (previousEvents.length === 0) {
+      previousEventsRef.current = events;
+      return;
+    }
+
+    const previousIds = new Set(previousEvents.map(event => event.delivery_id));
+    const newEvents = events.filter(
+      event => !previousIds.has(event.delivery_id)
+    );
+
+    newEvents.forEach(event => {
+      showEventToast(event, "success");
+    });
+
+    previousEventsRef.current = events;
+  }, [events, showEventToast]);
+
   const createTestEvent = async () => {
     try {
       await authenticatedFetcher("/github/test-event");
+      showTestEventToast();
       setTimeout(() => refetch(), 1000);
     } catch (error) {
       console.error("Error creating test event:", error);

@@ -7,6 +7,7 @@ import { NextAuthProvider } from "@/contexts/NextAuthContext";
 import { ReactQueryProvider } from "@/contexts/QueryClientContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { EventsProvider } from "@/contexts/EventsContext";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "Quori",
@@ -28,6 +29,7 @@ export default function RootLayout({
                 <Header />
                 <MainLayout>{children}</MainLayout>
                 <Footer />
+                <Toaster position="top-right" />
               </SidebarProvider>
             </EventsProvider>
           </NextAuthProvider>

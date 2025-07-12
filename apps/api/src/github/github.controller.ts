@@ -155,18 +155,6 @@ export class GithubController {
     return installations;
   }
 
-  @Get('create-installation/:id')
-  async createInstallation(@Param('id') installationId: string) {
-    const id = parseInt(installationId, 10);
-    await this.appService.upsertInstallation({
-      installation_id: id,
-      account_login: 'raphplt', // Your GitHub username
-      account_id: 110672162, // Your GitHub user ID (from the webhook)
-      repositories: ['raphplt/melodix'], // Your repo
-    });
-    return { message: 'Installation created', installationId: id };
-  }
-
   @UseGuards(JwtAuthGuard)
   @Get('app/status')
   async getAppInstallationStatus(@Request() req: AuthenticatedRequest) {
@@ -223,14 +211,6 @@ export class GithubController {
         `Failed to revoke installation: ${errorMessage}`,
       );
     }
-  }
-
-  @Get('debug/installation-url')
-  getInstallationUrl() {
-    return {
-      installUrl: this.appService.getInstallationUrl(),
-      message: "URL d'installation de la GitHub App",
-    };
   }
 
   @UseGuards(JwtAuthGuard)
