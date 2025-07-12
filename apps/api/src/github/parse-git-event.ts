@@ -7,8 +7,8 @@ export interface ParsedGitEvent {
   diffStats: {
     additions: number;
     deletions: number;
-    total: number;
-  };
+    changes: number;
+  }[];
 }
 
 export async function parseGitEvent(
@@ -19,15 +19,17 @@ export async function parseGitEvent(
   let title = '';
   let desc = '';
   let filesChanged: string[] = [];
-  let additions = 0;
-  let deletions = 0;
+  const diffStats: { additions: number; deletions: number; changes: number }[] = [];
 
   if (event === 'push') {
     const repo = payload.repository;
     const commitId = payload.after;
     const head = payload.head_commit ?? payload.commits?.[payload.commits.length - 1];
-    title = head?.message?.split('\n')[0] || `Commit ${commitId}`;
-    desc = head?.message || '';
+    if (!repo || !commitId || !head) {
+      throw new Error('Invalid push payload');
+    }
+    title = head.message?.split('\n')[0] || `Commit ${commitId}`;
+    desc = head.message || '';
     if (octokit) {
       try {
         const { data } = await octokit.rest.repos.getCommit({
@@ -36,8 +38,13 @@ export async function parseGitEvent(
           ref: commitId,
         });
         filesChanged = data.files?.map(f => f.filename) ?? [];
-        additions = data.stats?.additions ?? 0;
-        deletions = data.stats?.deletions ?? 0;
+        for (const f of data.files ?? []) {
+          diffStats.push({
+            additions: f.additions ?? 0,
+            deletions: f.deletions ?? 0,
+            changes: f.changes ?? 0,
+          });
+        }
       } catch {
         // fallback to payload info
         filesChanged = [
@@ -52,17 +59,19 @@ export async function parseGitEvent(
         ...(head.modified || []),
         ...(head.removed || []),
       ];
+      diffStats.push(...filesChanged.map(() => ({ additions: 0, deletions: 0, changes: 0 })));
     }
   } else if (event === 'pull_request') {
     const repo = payload.repository;
     const pr = payload.pull_request;
+    if (!repo || !pr) {
+      throw new Error('Invalid pull_request payload');
+    }
     title = pr.title;
     desc = pr.body || '';
-    additions = pr.additions ?? 0;
-    deletions = pr.deletions ?? 0;
     if (octokit) {
       try {
-        filesChanged = await octokit.paginate(
+        const files = await octokit.paginate(
           octokit.rest.pulls.listFiles,
           {
             owner: repo.owner.login,
@@ -70,22 +79,32 @@ export async function parseGitEvent(
             pull_number: pr.number,
             per_page: 100,
           },
-          res => res.data.map(f => f.filename),
+          res => res.data,
+        );
+        filesChanged = files.map(f => f.filename);
+        diffStats.push(
+          ...files.map(f => ({
+            additions: f.additions ?? 0,
+            deletions: f.deletions ?? 0,
+            changes: f.changes ?? 0,
+          })),
         );
       } catch {
         filesChanged = [];
       }
+    } else {
+      filesChanged = pr.files?.map((f: any) => f.filename) ?? [];
+      diffStats.push(...filesChanged.map(() => ({ additions: 0, deletions: 0, changes: 0 })));
     }
+  }
+  else {
+    throw new Error(`Unsupported event type: ${event}`);
   }
 
   return {
     title,
     desc,
     filesChanged,
-    diffStats: {
-      additions,
-      deletions,
-      total: additions + deletions,
-    },
+    diffStats,
   };
 }
