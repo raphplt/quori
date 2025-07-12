@@ -15,7 +15,7 @@ export default function ActivityPage() {
             Chronologie de vos événements Git avec génération de posts en 1-clic
           </p>
         </div>
-        <EventsSummary />
+        {/* <EventsSummary /> */}
         <ActivityFeed />
       </div>
     </ProtectedRoute>
