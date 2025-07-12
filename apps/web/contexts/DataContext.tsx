@@ -36,8 +36,6 @@ export function DataProvider({ children }: DataProviderProps) {
     // Logic to refetch data
   };
 
-  console.log("repositoriesLength", repositoriesLength);
-
   return (
     <DataContext.Provider
       value={{

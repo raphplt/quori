@@ -47,7 +47,13 @@ export function useSidebarBadgeData(): SidebarBadgeData {
       drafts: "5", // TODO: Connecter à une vraie source de données
       scheduled: "8", // TODO: Connecter à une vraie source de données
     };
-  }, [total, hasRecentActivity, isLoading]);
+  }, [
+    total,
+    hasRecentActivity,
+    isLoading,
+    repositoriesLength,
+    isLoadingRepositories,
+  ]);
 
   return badgeData;
 }

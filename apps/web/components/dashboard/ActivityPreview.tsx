@@ -16,7 +16,7 @@ const ActivityPreview = () => {
   const { events, isLoading: eventsLoading, error: eventsError } = useEvents();
 
   const recentActivity =
-    events?.slice(0, 10).map(event => ({
+    events?.slice(0, 5).map(event => ({
       id: event.delivery_id,
       type:
         event.event === "push"
