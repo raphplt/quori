@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Octokit } from '@octokit/rest';
-import { parseGitEvent, ParsedGitEvent } from './parse-git-event';
+import { parseGitEvent } from './parse-git-event';
 
 describe('parseGitEvent', () => {
   let mockOctokit: Partial<Octokit>;
