@@ -106,6 +106,17 @@ export class GithubController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('events/paginated')
+  async getEventsPaginated(
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+  ) {
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    return this.appService.getEventsPaginated(pageNum, limitNum);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('events/:id')
   async getEventById(@Param('id') id: string) {
     const event = await this.appService.getEventById(id);

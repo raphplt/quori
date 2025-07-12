@@ -174,6 +174,37 @@ export class GithubAppService {
     });
   }
 
+  async getEventsPaginated(
+    page = 1,
+    limit = 10,
+  ): Promise<{
+    events: GithubEvent[];
+    total: number;
+    page: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+  }> {
+    const offset = (page - 1) * limit;
+
+    const [events, total] = await this.events.findAndCount({
+      order: { received_at: 'DESC' },
+      take: limit,
+      skip: offset,
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      events,
+      total,
+      page,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrevious: page > 1,
+    };
+  }
+
   async getEventById(id: string): Promise<GithubEvent | null> {
     return this.events.findOne({
       where: { delivery_id: id },
@@ -228,15 +259,10 @@ export class GithubAppService {
         ?.full_name ?? '';
 
     let metadata: Record<string, unknown> | undefined;
-    console.debug(
-      'DEBUG ▶ About to parse event with installationId:',
-      installationId,
-    );
+
     try {
       const octokit = await this.getInstallationOctokit(installationId);
-      console.debug('DEBUG ▶ Successfully got Octokit instance');
       const parsedEvent = await parseGitEvent(payload, event, octokit);
-      console.debug('DEBUG ▶ Successfully parsed event with Octokit');
       metadata = {
         title: parsedEvent.title,
         desc: parsedEvent.desc,
@@ -248,7 +274,6 @@ export class GithubAppService {
         'Failed to parse event with Octokit, falling back without API calls:',
         error,
       );
-      console.debug('DEBUG ▶ Falling back to parse without Octokit');
       const parsedEvent = await parseGitEvent(payload, event);
       metadata = {
         title: parsedEvent.title,

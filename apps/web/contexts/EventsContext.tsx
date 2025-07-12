@@ -11,7 +11,6 @@ interface EventsContextType {
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
-  createTestEvent: () => Promise<void>;
 }
 
 const EventsContext = createContext<EventsContextType | undefined>(undefined);
@@ -63,23 +62,11 @@ export function EventsProvider({ children }: EventsProviderProps) {
     previousEventsRef.current = events;
   }, [events, notifyNewEvent]);
 
-  const createTestEvent = async () => {
-    try {
-      await authenticatedFetcher("/github/test-event");
-      // La notification sera ajoutée automatiquement via l'effet de détection des nouveaux événements
-      setTimeout(() => refetch(), 1000);
-    } catch (error) {
-      console.error("Error creating test event:", error);
-      throw error;
-    }
-  };
-
   const value: EventsContextType = {
     events,
     isLoading,
     error,
     refetch,
-    createTestEvent,
   };
 
   return (

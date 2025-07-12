@@ -1,5 +1,6 @@
 "use client";
-import { useGitHubEvents } from "@/hooks/useGitHubEvents";
+import { useState } from "react";
+import { useGitHubEventsPaginated } from "@/hooks/useGitHubEventsPaginated";
 import {
   Card,
   CardContent,
@@ -11,15 +12,28 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Activity, GitCommit, GitPullRequest, RefreshCw } from "lucide-react";
 import Link from "next/link";
+import { PaginationControls } from "@/app/(protected)/repositories/_components/PaginationControls";
 
 export default function ActivityFeed() {
-  const {
-    events: data,
-    isLoading,
-    error,
-    refetch,
-    createTestEvent,
-  } = useGitHubEvents();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const { data, isLoading, error, refetch } = useGitHubEventsPaginated(
+    currentPage,
+    itemsPerPage
+  );
+
+  const events = data?.events || [];
+  const totalPages = data?.totalPages || 0;
+
+  // Fonctions de pagination similaires à Repositories.tsx
+  const goToPage = (p: number) => {
+    setCurrentPage(Math.max(1, Math.min(totalPages, p)));
+  };
+  const goToPrevious = () => goToPage(currentPage - 1);
+  const goToNext = () => goToPage(currentPage + 1);
+  const canGoPrevious = currentPage > 1;
+  const canGoNext = currentPage < totalPages;
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -46,7 +60,15 @@ export default function ActivityFeed() {
   return (
     <div className="grid gap-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Activité Git</h2>
+        <div>
+          <h2 className="text-lg font-semibold">Activité Git</h2>
+          {data && (
+            <p className="text-sm text-muted-foreground">
+              {data.total} événement{data.total > 1 ? "s" : ""} trouvé
+              {data.total > 1 ? "s" : ""}
+            </p>
+          )}
+        </div>
         <Button
           variant="outline"
           size="sm"
@@ -57,9 +79,6 @@ export default function ActivityFeed() {
             className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
           />
           Actualiser
-        </Button>
-        <Button variant="outline" size="sm" onClick={createTestEvent}>
-          Créer événement test
         </Button>
       </div>
       {isLoading && (
@@ -82,7 +101,7 @@ export default function ActivityFeed() {
         </Card>
       )}
 
-      {data && data.length === 0 && (
+      {data && data.events.length === 0 && (
         <Card>
           <CardContent className="p-6">
             <div className="text-center text-muted-foreground">
@@ -93,7 +112,7 @@ export default function ActivityFeed() {
         </Card>
       )}
 
-      {data?.map(activity => (
+      {events.map(activity => (
         <Card key={activity.delivery_id}>
           <Link href={`/event/${activity.delivery_id}`}>
             <CardHeader>
@@ -126,6 +145,17 @@ export default function ActivityFeed() {
           </Link>
         </Card>
       ))}
+
+      {/* Pagination */}
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={goToPage}
+        onPrevious={goToPrevious}
+        onNext={goToNext}
+        canGoPrevious={canGoPrevious}
+        canGoNext={canGoNext}
+      />
     </div>
   );
 }
