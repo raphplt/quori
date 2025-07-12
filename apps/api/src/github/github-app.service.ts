@@ -174,6 +174,12 @@ export class GithubAppService {
     });
   }
 
+  async getEventById(id: string): Promise<GithubEvent | null> {
+    return this.events.findOne({
+      where: { delivery_id: id },
+    });
+  }
+
   async recordEvent(
     delivery: string,
     installationId: number,

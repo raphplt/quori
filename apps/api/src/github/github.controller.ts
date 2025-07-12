@@ -68,6 +68,18 @@ export class GithubController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('repositories/length')
+  async getRepositoriesLength(
+    @Request() req: AuthenticatedRequest,
+  ): Promise<number> {
+    const user = req.user;
+    if (!user?.githubAccessToken) {
+      throw new UnauthorizedException('No GitHub access token found for user');
+    }
+    return this.githubService.getUserRepositoriesLength(user.githubAccessToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('repositories/:owner/:repo')
   async getRepository(
     @Request() req: AuthenticatedRequest,
@@ -91,6 +103,16 @@ export class GithubController {
     const num = parseInt(limit, 10) || 20;
     const events = await this.appService.getRecentEvents(num);
     return events;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('events/:id')
+  async getEventById(@Param('id') id: string) {
+    const event = await this.appService.getEventById(id);
+    if (!event) {
+      throw new UnauthorizedException('Event not found');
+    }
+    return event;
   }
 
   @Sse('events/stream')
@@ -132,7 +154,10 @@ export class GithubController {
 
   @Options('events/stream')
   handleEventStreamOptions(@Res() res: Response) {
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.setHeader(
+      'Access-Control-Allow-Origin',
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+    );
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     res.setHeader(

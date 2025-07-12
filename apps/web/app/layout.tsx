@@ -8,6 +8,7 @@ import { ReactQueryProvider } from "@/contexts/QueryClientContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { EventsProvider } from "@/contexts/EventsContext";
 import { Toaster } from "react-hot-toast";
+import { DataProvider } from "@/contexts/DataContext";
 
 export const metadata: Metadata = {
   title: "Quori",
@@ -25,12 +26,14 @@ export default function RootLayout({
         <ReactQueryProvider>
           <NextAuthProvider>
             <EventsProvider>
-              <SidebarProvider>
-                <Header />
-                <MainLayout>{children}</MainLayout>
-                <Footer />
-                <Toaster position="top-right" />
-              </SidebarProvider>
+              <DataProvider>
+                <SidebarProvider>
+                  <Header />
+                  <MainLayout>{children}</MainLayout>
+                  <Footer />
+                  <Toaster position="top-right" />
+                </SidebarProvider>
+              </DataProvider>
             </EventsProvider>
           </NextAuthProvider>
         </ReactQueryProvider>

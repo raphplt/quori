@@ -19,7 +19,7 @@ interface CachedUserRepositories {
 @Injectable()
 export class GithubService {
   private readonly GITHUB_API_BASE = 'https://api.github.com';
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes en millisecondes
+  private readonly CACHE_TTL = 5 * 60 * 1000;
   private repositoriesCache = new Map<string, CachedUserRepositories>();
 
   async getUserRepositories(
@@ -65,6 +65,11 @@ export class GithubService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  async getUserRepositoriesLength(accessToken: string): Promise<number> {
+    const allRepositories = await this.getAllUserRepositories(accessToken);
+    return allRepositories.repositories.length;
   }
 
   private async getAllUserRepositories(

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -38,7 +38,7 @@ const SidebarItem: React.FC<{
   const isActive = pathname === item.href;
   const isChildActive = item.children?.some(child => pathname === child.href);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isChildActive && !isCollapsed) {
       setIsOpen(true);
     }
@@ -68,7 +68,6 @@ const SidebarItem: React.FC<{
     );
   }
 
-  // Si la sidebar est collapsed, on n'affiche pas les sous-éléments
   if (isCollapsed && level > 0) {
     return null;
   }
