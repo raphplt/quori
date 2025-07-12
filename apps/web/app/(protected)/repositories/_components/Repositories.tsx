@@ -6,7 +6,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useGitHubRepositories } from "@/hooks/useGitHub";
+import {
+  useGitHubRepositories,
+  useAvailableLanguages,
+} from "@/hooks/useGitHub";
 import { useSession } from "next-auth/react";
 import { useRepositoryFilters } from "@/hooks/useRepositoryFilters";
 import { useState, useEffect } from "react";
@@ -19,12 +22,9 @@ const Repositories = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
-  // Récupérer tous les repositories d'un coup avec une limite élevée
-  const { data, isLoading, error } = useGitHubRepositories(1, 1000);
-  const repositories = data?.repositories;
-
   const {
     searchTerm,
+    debouncedSearchTerm,
     setSearchTerm,
     languageFilter,
     setLanguageFilter,
@@ -34,21 +34,42 @@ const Repositories = () => {
     setSortBy,
     sortDirection,
     setSortDirection,
-    availableLanguages,
-    filteredAndSortedRepos,
-  } = useRepositoryFilters({ repositories });
+  } = useRepositoryFilters();
 
-  // Pagination côté client sur les repositories filtrés
-  const totalFilteredCount = filteredAndSortedRepos.length;
-  const totalPages = Math.ceil(totalFilteredCount / itemsPerPage);
+  // Préparer les filtres pour l'API (utiliser debouncedSearchTerm)
+  const filters = {
+    search: debouncedSearchTerm || undefined,
+    language: languageFilter !== "all" ? languageFilter : undefined,
+    visibility: visibilityFilter as "all" | "public" | "private",
+    sort: sortBy,
+    direction: sortDirection,
+  };
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedRepos = filteredAndSortedRepos.slice(startIndex, endIndex);
+  // Récupérer les repositories avec pagination backend
+  const { data, isLoading, error } = useGitHubRepositories(
+    currentPage,
+    itemsPerPage,
+    filters
+  );
 
+  // Récupérer les langages disponibles
+  const { data: languagesData } = useAvailableLanguages();
+  const availableLanguages = languagesData?.availableLanguages || [];
+
+  const repositories = data?.repositories || [];
+  const totalCount = data?.totalCount || 0;
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, languageFilter, visibilityFilter, sortBy, sortDirection]);
+  }, [
+    debouncedSearchTerm,
+    languageFilter,
+    visibilityFilter,
+    sortBy,
+    sortDirection,
+  ]);
 
   const goToPage = (p: number) => {
     setCurrentPage(Math.max(1, Math.min(totalPages, p)));
@@ -105,15 +126,9 @@ const Repositories = () => {
           Mes Repositories GitHub
         </h1>
         <p className="text-muted-foreground">
-          {totalFilteredCount} repository
-          {totalFilteredCount > 1 ? "s" : ""} trouvé
-          {totalFilteredCount > 1 ? "s" : ""}
-          {repositories && repositories.length !== totalFilteredCount && (
-            <span className="text-sm text-muted-foreground/70">
-              {" "}
-              (sur {repositories.length} au total)
-            </span>
-          )}
+          {totalCount} repository
+          {totalCount > 1 ? "s" : ""} trouvé
+          {totalCount > 1 ? "s" : ""}
         </p>
       </div>
 
@@ -133,7 +148,7 @@ const Repositories = () => {
       />
 
       {/* Repository List */}
-      <RepositoryList repositories={paginatedRepos} />
+      <RepositoryList repositories={repositories} />
 
       {/* Pagination */}
       <PaginationControls

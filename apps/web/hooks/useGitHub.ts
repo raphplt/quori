@@ -19,40 +19,56 @@ interface GitHubRepository {
 interface GitHubRepositoriesPage {
   repositories: GitHubRepository[];
   totalCount: number;
+  availableLanguages?: string[];
 }
 
 /**
- * Hook pour récupérer les repositories GitHub de l'utilisateur connecté
+ * Hook pour récupérer les repositories GitHub de l'utilisateur connecté avec filtres
  */
 export function useGitHubRepositories(
   page = 1,
-  perPage = 100,
-  sort = "updated",
-  direction = "desc",
-  type = "all"
+  perPage = 6,
+  filters?: {
+    search?: string;
+    language?: string;
+    visibility?: "all" | "public" | "private";
+    sort?: "name" | "stars" | "forks" | "updated" | "created";
+    direction?: "asc" | "desc";
+  }
 ) {
   const params = new URLSearchParams({
     page: String(page),
     perPage: String(perPage),
-    sort,
-    direction,
-    type,
+    sort: filters?.sort || "updated",
+    direction: filters?.direction || "desc",
+    visibility: filters?.visibility || "all",
   });
+
+  if (filters?.search) {
+    params.set("search", filters.search);
+  }
+  if (filters?.language && filters.language !== "all") {
+    params.set("language", filters.language);
+  }
+
   return useAuthenticatedQuery<GitHubRepositoriesPage>(
-    ["github", "repositories", page, perPage, sort, direction, type],
+    ["github", "repositories", page, perPage, filters],
     `/github/repositories?${params.toString()}`,
     { method: "GET" }
   );
 }
 
 /**
- * Hook pour récupérer TOUS les repositories GitHub de l'utilisateur connecté
+ * Hook pour récupérer les langages disponibles (utilisé par les filtres)
  */
-export function useAllGitHubRepositories() {
-  return useAuthenticatedQuery<GitHubRepositoriesPage>(
-    ["github", "repositories", "all"],
-    `/github/repositories?page=1&perPage=1000`,
-    { method: "GET" }
+export function useAvailableLanguages() {
+  return useAuthenticatedQuery<{ availableLanguages: string[] }>(
+    ["github", "repositories", "languages"],
+    `/github/repositories?page=1&perPage=1`,
+    { method: "GET" },
+    {
+      select: data => ({ availableLanguages: data.availableLanguages || [] }),
+    }
   );
 }
 

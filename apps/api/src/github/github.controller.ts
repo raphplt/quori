@@ -40,24 +40,30 @@ export class GithubController {
   async getMyRepositories(
     @Request() req: AuthenticatedRequest,
     @Query('page') page = '1',
-    @Query('perPage') perPage = '100',
-    @Query('sort') sort = 'updated',
-    @Query('direction') direction = 'desc',
-    @Query('type') type = 'all',
+    @Query('perPage') perPage = '6',
+    @Query('sort')
+    sort: 'name' | 'stars' | 'forks' | 'updated' | 'created' = 'updated',
+    @Query('direction') direction: 'asc' | 'desc' = 'desc',
+    @Query('search') search?: string,
+    @Query('language') language?: string,
+    @Query('visibility') visibility: 'all' | 'public' | 'private' = 'all',
   ): Promise<GitHubRepositoriesPage> {
     const user = req.user;
     if (!user?.githubAccessToken) {
       throw new UnauthorizedException('No GitHub access token found for user');
     }
     const pageNum = parseInt(page, 10) || 1;
-    const perPageNum = parseInt(perPage, 10) || 100;
+    const perPageNum = parseInt(perPage, 10) || 6;
+
     return this.githubService.getUserRepositories(
       user.githubAccessToken,
       pageNum,
       perPageNum,
       sort,
       direction,
-      type,
+      search,
+      language,
+      visibility,
     );
   }
 
@@ -225,5 +231,18 @@ export class GithubController {
       installUrl: this.appService.getInstallationUrl(),
       message: "URL d'installation de la GitHub App",
     };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('repositories/cache')
+  clearRepositoriesCache(@Request() req: AuthenticatedRequest) {
+    const user = req.user;
+    if (!user?.githubAccessToken) {
+      throw new UnauthorizedException('No GitHub access token found for user');
+    }
+
+    // Vider le cache pour cet utilisateur
+    this.githubService.clearUserCache(user.githubAccessToken);
+    return { message: 'Cache cleared successfully' };
   }
 }

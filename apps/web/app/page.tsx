@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/spinner";
 
 const HomePage = () => {
   const { data: session, status } = useSession();
@@ -23,7 +24,7 @@ const HomePage = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="text-center max-w-4xl mx-auto">
           <div className="flex justify-center items-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+           <Spinner />
             <span className="ml-2 text-muted-foreground">Chargement...</span>
           </div>
         </div>
