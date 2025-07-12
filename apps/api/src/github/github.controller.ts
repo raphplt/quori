@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  Post,
+  Body,
   Param,
   UseGuards,
   Request,
@@ -21,6 +23,8 @@ import { GitHubRepositoriesPage } from './interfaces/github-repositories-page.in
 import { User } from '../users/user.interface';
 import { GithubAppService } from './github-app.service';
 import { JwtService } from '@nestjs/jwt';
+import { GenerateService } from './services/generate.service';
+import { GenerateDto, GenerateResultDto } from './dto/generate.dto';
 
 interface AuthenticatedRequest {
   user: User;
@@ -33,6 +37,7 @@ export class GithubController {
     private readonly usersService: UsersService,
     private readonly appService: GithubAppService,
     private readonly jwtService: JwtService,
+    private readonly generateService: GenerateService,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -260,5 +265,16 @@ export class GithubController {
     // Vider le cache pour cet utilisateur
     this.githubService.clearUserCache(user.githubAccessToken);
     return { message: 'Cache cleared successfully' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('generate')
+  async generatePost(
+    @Request() req: AuthenticatedRequest,
+    @Body() body: GenerateDto,
+  ): Promise<GenerateResultDto> {
+    const user = req.user;
+    const userId = user.id;
+    return this.generateService.generate(userId, body);
   }
 }
