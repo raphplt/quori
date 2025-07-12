@@ -5,8 +5,8 @@ export interface GitHubEventMeta {
   diffStats: {
     additions: number;
     deletions: number;
-    total: number;
-  };
+    changes: number;
+  }[];
 }
 
 export interface GitHubEvent {

@@ -294,11 +294,13 @@ export class GithubAppService {
         title: 'Test commit for activity feed',
         desc: 'This is a test commit to verify the activity feed is working',
         filesChanged: ['test.txt'],
-        diffStats: {
-          additions: 5,
-          deletions: 0,
-          total: 5,
-        },
+        diffStats: [
+          {
+            additions: 5,
+            deletions: 0,
+            changes: 5,
+          },
+        ],
       },
     };
 
