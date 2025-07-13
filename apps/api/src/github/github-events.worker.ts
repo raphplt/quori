@@ -54,35 +54,60 @@ async function bootstrap() {
         where: { delivery_id },
         relations: ['installation'],
       });
-      if (!event || event.processed) return;
-      const installationId = event.installation.id;
-      const octokit = await service.getInstallationOctokit(installationId);
-      let repoFullName = '';
-      if (event.event === 'push') {
-        const payload = event.payload as unknown as PushPayload;
-        repoFullName = payload.repository.full_name;
-        await octokit.rest.repos.getCommit({
-          owner: payload.repository.owner.login,
-          repo: payload.repository.name,
-          ref: payload.after,
+      if (!event || event.status === 'processed' || event.status === 'ignored')
+        return;
+
+      try {
+        // Marquer comme en cours de traitement
+        await eventsRepository.update(
+          { delivery_id },
+          { status: 'processing', processed_at: new Date() },
+        );
+        const installationId = event.installation.id;
+        const octokit = await service.getInstallationOctokit(installationId);
+        let repoFullName = '';
+        if (event.event === 'push') {
+          const payload = event.payload as unknown as PushPayload;
+          repoFullName = payload.repository.full_name;
+          await octokit.rest.repos.getCommit({
+            owner: payload.repository.owner.login,
+            repo: payload.repository.name,
+            ref: payload.after,
+          });
+        } else if (event.event === 'pull_request') {
+          const payload = event.payload as unknown as PullRequestPayload;
+          repoFullName = payload.repository.full_name;
+          await octokit.rest.pulls.get({
+            owner: payload.repository.owner.login,
+            repo: payload.repository.name,
+            pull_number: payload.number,
+          });
+        }
+        const content = `Draft for ${event.event} on ${repoFullName}`;
+        await service.savePost({
+          installationId,
+          repo: repoFullName,
+          eventType: event.event,
+          content,
         });
-      } else if (event.event === 'pull_request') {
-        const payload = event.payload as unknown as PullRequestPayload;
-        repoFullName = payload.repository.full_name;
-        await octokit.rest.pulls.get({
-          owner: payload.repository.owner.login,
-          repo: payload.repository.name,
-          pull_number: payload.number,
-        });
+        await eventsRepository.update(
+          { delivery_id },
+          { status: 'processed', processed_at: new Date() },
+        );
+      } catch (error) {
+        // Incrémenter le compteur de retry et marquer comme failed
+        await eventsRepository.update(
+          { delivery_id },
+          {
+            status: 'failed',
+            processed_at: new Date(),
+            error_message:
+              error instanceof Error ? error.message : 'Unknown error',
+            retry_count: () => 'retry_count + 1',
+          },
+        );
+        throw error; // Re-throw pour que BullMQ puisse gérer le retry
       }
-      const content = `Draft for ${event.event} on ${repoFullName}`;
-      await service.savePost({
-        installationId,
-        repo: repoFullName,
-        eventType: event.event,
-        content,
-      });
-      await eventsRepository.update({ delivery_id }, { processed: true });
     },
     {
       connection: { url: config.get<string>('REDIS_URL') },

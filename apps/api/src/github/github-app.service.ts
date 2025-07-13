@@ -10,7 +10,7 @@ import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Installation } from './entities/installation.entity';
-import { Event as GithubEvent } from './entities/event.entity';
+import { Event as GithubEvent, EventType } from './entities/event.entity';
 import { Post } from './entities/post.entity';
 import { parseGitEvent } from './parse-git-event';
 
@@ -225,6 +225,31 @@ export class GithubAppService {
     });
   }
 
+  private mapEventToType(event: string): EventType {
+    switch (event) {
+      case 'push':
+        return 'push';
+      case 'pull_request':
+        return 'pull_request';
+      case 'issues':
+        return 'issues';
+      case 'release':
+        return 'release';
+      case 'fork':
+        return 'fork';
+      case 'watch':
+        return 'star';
+      case 'create':
+        return 'create';
+      case 'delete':
+        return 'delete';
+      case 'workflow_run':
+        return 'workflow_run';
+      default:
+        return 'other';
+    }
+  }
+
   async recordEvent(
     delivery: string,
     installationId: number,
@@ -272,6 +297,16 @@ export class GithubAppService {
       (payload as { repository?: { full_name?: string } }).repository
         ?.full_name ?? '';
 
+    // Extract author information
+    const author = (
+      payload as {
+        sender?: { login?: string; avatar_url?: string };
+      }
+    ).sender;
+
+    // Determine event type
+    const eventType = this.mapEventToType(event);
+
     let metadata: Record<string, unknown> | undefined;
 
     try {
@@ -301,9 +336,13 @@ export class GithubAppService {
       delivery_id: delivery,
       installation,
       event,
+      event_type: eventType,
       payload,
       repo_full_name: repoFullName,
+      author_login: author?.login,
+      author_avatar_url: author?.avatar_url,
       metadata,
+      status: 'pending',
     });
 
     this.eventSubject.next(savedEvent);

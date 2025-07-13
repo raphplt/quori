@@ -1,4 +1,6 @@
 "use client";
+
+import Link from "next/link";
 import { useState } from "react";
 import {
   Dialog,
@@ -21,6 +23,7 @@ import {
   Calendar,
   GitBranch,
   AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import { GitHubEvent } from "@/types/githubEvent";
 import {
@@ -55,17 +58,20 @@ export function GeneratePostDialog({
 
   const handleGenerate = () => {
     const request = createGenerateRequestFromEvent(event);
-    generatePost.mutate(request, {
-      onSuccess: () => {
-        showFeedback("success", "Post généré avec succès !");
-      },
-      onError: error => {
-        showFeedback(
-          "error",
-          "Erreur lors de la génération : " + error.message
-        );
-      },
-    });
+    generatePost.mutate(
+      { request, event },
+      {
+        onSuccess: () => {
+          showFeedback("success", "Post généré avec succès et sauvegardé !");
+        },
+        onError: error => {
+          showFeedback(
+            "error",
+            "Erreur lors de la génération : " + error.message
+          );
+        },
+      }
+    );
   };
 
   const copyToClipboard = async (text: string, type: "summary" | "post") => {
@@ -345,6 +351,29 @@ export function GeneratePostDialog({
                       readOnly
                       className="min-h-[150px] resize-none bg-white/50 border-blue-200 focus:border-blue-300"
                     />
+                  </CardContent>
+                </Card>
+
+                {/* Action pour voir tous les posts */}
+                <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-purple-900">
+                          Post sauvegardé !
+                        </h4>
+                        <p className="text-sm text-purple-700">
+                          Votre post a été automatiquement sauvegardé et vous
+                          pouvez le gérer depuis vos brouillons.
+                        </p>
+                      </div>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href="/posts/drafts">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Voir mes posts
+                        </Link>
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               </div>

@@ -25,6 +25,7 @@ import { GithubAppService } from './github-app.service';
 import { JwtService } from '@nestjs/jwt';
 import { GenerateService } from './services/generate.service';
 import { GenerateDto, GenerateResultDto } from './dto/generate.dto';
+import { UpdatePostStatusDto } from './dto/post.dto';
 
 interface AuthenticatedRequest {
   user: User;
@@ -143,7 +144,10 @@ export class GithubController {
     @Res({ passthrough: true }) res: Response,
   ) {
     // Configuration CORS spécifique pour les SSE
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.setHeader(
+      'Access-Control-Allow-Origin',
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+    );
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     res.setHeader(
@@ -195,7 +199,10 @@ export class GithubController {
     @Res({ passthrough: true }) res: Response,
   ): Observable<{ data: string; type: string }> {
     // Configuration CORS spécifique pour les SSE
-    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.setHeader(
+      'Access-Control-Allow-Origin',
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+    );
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     res.setHeader(
@@ -328,9 +335,55 @@ export class GithubController {
   async generatePost(
     @Request() req: AuthenticatedRequest,
     @Body() body: GenerateDto,
+    @Query('installationId') installationId?: string,
+    @Query('eventDeliveryId') eventDeliveryId?: string,
   ): Promise<GenerateResultDto> {
     const user = req.user;
     const userId = user.id;
-    return this.generateService.generate(userId, body);
+
+    const installationIdNum = installationId
+      ? parseInt(installationId, 10)
+      : undefined;
+
+    return this.generateService.generate(
+      userId,
+      body,
+      installationIdNum,
+      eventDeliveryId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('posts')
+  async getPosts(
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+    @Query('status') status?: string,
+  ) {
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    return await this.generateService.getPosts(pageNum, limitNum, status);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('posts/:id')
+  async getPostById(@Param('id') id: string) {
+    const postId = parseInt(id, 10);
+    const post = await this.generateService.getPostById(postId);
+    if (!post) {
+      throw new UnauthorizedException('Post not found');
+    }
+    return post;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('posts/:id/status')
+  async updatePostStatus(
+    @Param('id') id: string,
+    @Body() body: UpdatePostStatusDto,
+  ) {
+    const postId = parseInt(id, 10);
+
+    return await this.generateService.updatePostStatus(postId, body.status);
   }
 }

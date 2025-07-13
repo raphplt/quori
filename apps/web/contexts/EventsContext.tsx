@@ -13,7 +13,6 @@ interface EventsContextType {
   error: Error | null;
   refetch: () => void;
   eventsLength?: number;
-  isEventsLengthLoading?: boolean;
 }
 
 const EventsContext = createContext<EventsContextType | undefined>(undefined);
@@ -74,7 +73,6 @@ export function EventsProvider({ children }: EventsProviderProps) {
     error,
     refetch,
     eventsLength,
-    isEventsLengthLoading: false, // SSE n'a pas de concept de loading, toujours false
   };
 
   return (

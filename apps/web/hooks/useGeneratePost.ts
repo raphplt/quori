@@ -6,20 +6,22 @@
  * - Transformation des données d'événements GitHub en format requis par l'API
  * - Support des options de personnalisation (langue, ton, plateformes)
  * - Gestion d'erreurs et de succès intégrée
+ * - Sauvegarde automatique des posts générés
  *
  * Usage dans ActivityFeed :
  * 1. L'utilisateur clique sur "Générer un post" dans une carte d'événement
  * 2. Le dialog s'ouvre avec les détails de l'événement
  * 3. L'utilisateur peut personnaliser les options et générer le contenu
- * 4. Le résultat est affiché avec options de copie
+ * 4. Le résultat est affiché avec options de copie et sauvegardé automatiquement
  *
  * API endpoint : POST /github/generate
  * - Authentification JWT requise
- * - Données d'événement + options de génération
+ * - Données d'événement + options de génération + paramètres de sauvegarde
  * - Retourne un résumé et un post formaté
+ * - Sauvegarde automatiquement dans l'entité Post
  */
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authenticatedFetcher } from "./useAuthenticatedQuery";
 import { GitHubEvent } from "@/types/githubEvent";
 
@@ -54,12 +56,29 @@ interface GeneratePostResponse {
  * Hook principal pour la génération de posts
  */
 export function useGeneratePost() {
-  return useMutation<GeneratePostResponse, Error, GeneratePostRequest>({
-    mutationFn: async (data: GeneratePostRequest) => {
-      console.log("Sending generate request:", data);
-      return authenticatedFetcher<GeneratePostResponse>("/github/generate", {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    GeneratePostResponse,
+    Error,
+    { request: GeneratePostRequest; event: GitHubEvent }
+  >({
+    mutationFn: async ({ request, event }) => {
+      console.log("Sending generate request:", request);
+
+      // Construire les paramètres de query pour la sauvegarde
+      const params = new URLSearchParams();
+
+      // Ajouter l'eventDeliveryId pour lier le post à l'événement
+      if (event.delivery_id) {
+        params.append("eventDeliveryId", event.delivery_id);
+      }
+
+      const url = `/github/generate${params.toString() ? `?${params.toString()}` : ""}`;
+
+      return authenticatedFetcher<GeneratePostResponse>(url, {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify(request),
       });
     },
     onError: error => {
@@ -67,6 +86,12 @@ export function useGeneratePost() {
     },
     onSuccess: data => {
       console.log("Generate post success:", data);
+
+      // Invalider les requêtes liées aux posts pour actualiser la liste
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
+
+      // Optionnel: invalider aussi les événements pour refléter qu'ils ont été traités
+      queryClient.invalidateQueries({ queryKey: ["events"] });
     },
   });
 }

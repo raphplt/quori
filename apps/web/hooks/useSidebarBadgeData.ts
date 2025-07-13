@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useGitHubEvents } from "@/hooks/useGitHubEvents";
 import { useDataContext } from "@/contexts/DataContext";
 import { useEvents } from "@/contexts/EventsContext";
+import { usePostsStats } from "@/hooks/usePostsStats";
 
 export interface SidebarBadgeData {
   repositories: string;
@@ -18,6 +19,7 @@ export function useSidebarBadgeData(): SidebarBadgeData {
   const { eventsLength } = useEvents();
   const { repositoriesLength, isLoading: isLoadingRepositories } =
     useDataContext();
+  const { data: postsStats } = usePostsStats();
 
   const badgeData = useMemo(() => {
     let gitActivityBadge: string | undefined;
@@ -45,10 +47,16 @@ export function useSidebarBadgeData(): SidebarBadgeData {
     return {
       repositories: repositoriesBadge,
       gitActivity: gitActivityBadge,
-      drafts: "5", // TODO: Connecter à une vraie source de données
-      scheduled: "8", // TODO: Connecter à une vraie source de données
+      drafts: postsStats?.drafts ? postsStats.drafts.toString() : "0",
+      scheduled: postsStats?.scheduled ? postsStats.scheduled.toString() : "0",
     };
-  }, [eventsLength, isLoading, repositoriesLength, isLoadingRepositories]);
+  }, [
+    eventsLength,
+    isLoading,
+    repositoriesLength,
+    isLoadingRepositories,
+    postsStats,
+  ]);
 
   return badgeData;
 }
