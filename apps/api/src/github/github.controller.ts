@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 import { GithubService } from './github.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GitHubRepository } from './interfaces/github-repository.interface';
@@ -175,6 +176,56 @@ export class GithubController {
 
   @Options('events/stream')
   handleEventStreamOptions(@Res() res: Response) {
+    res.setHeader(
+      'Access-Control-Allow-Origin',
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+    );
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Cache-Control, Last-Event-ID',
+    );
+    res.status(200).send();
+  }
+
+  @Sse('events/length/stream')
+  streamEventsLength(
+    @Query('token') token: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Observable<{ data: string; type: string }> {
+    // Configuration CORS spécifique pour les SSE
+    res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Cache-Control, Last-Event-ID',
+    );
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+
+    if (!token) {
+      throw new UnauthorizedException('Token required');
+    }
+
+    try {
+      this.jwtService.verify(token);
+    } catch {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    return this.appService.getEventsCountStream().pipe(
+      map((count) => ({
+        data: JSON.stringify({ count }),
+        type: 'count',
+      })),
+    );
+  }
+
+  @Options('events/length/stream')
+  handleEventsLengthStreamOptions(@Res() res: Response) {
     res.setHeader(
       'Access-Control-Allow-Origin',
       process.env.FRONTEND_URL || 'http://localhost:3000',

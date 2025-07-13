@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
 import { GitHubEvent } from "@/types/githubEvent";
 import { useEventNotifications } from "@/hooks/useEventNotifications";
+import { useEventsCountSSE } from "@/hooks/useEventsCountSSE";
 
 interface EventsContextType {
   events: GitHubEvent[] | undefined;
@@ -26,6 +27,9 @@ export function EventsProvider({ children }: EventsProviderProps) {
   const previousEventsRef = useRef<GitHubEvent[]>([]);
   const { notifyNewEvent } = useEventNotifications();
 
+  // Utilisation du SSE pour obtenir le count en temps réel
+  const { eventsLength } = useEventsCountSSE();
+
   const {
     data: events,
     isLoading,
@@ -36,18 +40,6 @@ export function EventsProvider({ children }: EventsProviderProps) {
     queryFn: () => authenticatedFetcher<GitHubEvent[]>("/github/events"),
     refetchInterval: 10000,
     refetchOnWindowFocus: true,
-    enabled: !!session,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-  });
-
-  const {
-    data: eventsLength,
-    isLoading: isEventsLengthLoading,
-  }: UseQueryResult<{ count: number }, Error> = useQuery({
-    queryKey: ["eventsLength"],
-    queryFn: () =>
-      authenticatedFetcher<{ count: number }>("/github/events/length"),
     enabled: !!session,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -81,8 +73,8 @@ export function EventsProvider({ children }: EventsProviderProps) {
     isLoading,
     error,
     refetch,
-    eventsLength: eventsLength?.count,
-    isEventsLengthLoading,
+    eventsLength,
+    isEventsLengthLoading: false, // SSE n'a pas de concept de loading, toujours false
   };
 
   return (

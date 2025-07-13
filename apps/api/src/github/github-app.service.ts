@@ -3,7 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { sign } from 'jsonwebtoken';
 import { Octokit } from '@octokit/rest';
 import { Queue } from 'bullmq';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, from } from 'rxjs';
+import { startWith, switchMap } from 'rxjs/operators';
 import * as crypto from 'crypto';
 import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -165,6 +166,15 @@ export class GithubAppService {
 
   getEventStream(): Observable<GithubEvent> {
     return this.eventSubject.asObservable();
+  }
+
+  getEventsCountStream(): Observable<number> {
+    return this.eventSubject.asObservable().pipe(
+      startWith(null),
+      switchMap(() => {
+        return from(this.getEventsCount());
+      }),
+    );
   }
 
   async getRecentEvents(limit = 20): Promise<GithubEvent[]> {
