@@ -264,68 +264,31 @@ export class GithubController {
   async getAppInstallationStatus(@Request() req: AuthenticatedRequest) {
     const user = req.user;
 
-    console.log('🔍 DEBUG app/status - User info:', {
-      userId: user.id,
-      githubId: user.githubId,
-      username: user.username,
-    });
-
     // Rechercher les installations liées au compte GitHub de l'utilisateur
     let installations = await this.appService.getUserInstallations(
       user.githubId,
     );
-
-    console.log('🔍 DEBUG app/status - Installations found in DB:', {
-      count: installations.length,
-      installations: installations.map((install) => ({
-        id: install.id,
-        account_id: install.account_id,
-        account_login: install.account_login,
-        created_at: install.created_at,
-        repos_count: install.repos?.length || 0,
-      })),
-    });
 
     // Si aucune installation trouvée en BDD, essayer de synchroniser depuis GitHub
     if (installations.length === 0 && user.githubAccessToken) {
       console.log('🔄 No installations found in DB, syncing from GitHub...');
 
       try {
-        const syncedInstallations =
-          await this.appService.syncUserInstallationsFromGitHub(
-            user.githubAccessToken,
-            user.githubId,
-          );
+        installations = await this.appService.syncUserInstallationsFromGitHub(
+          user.githubAccessToken,
+          user.githubId,
+        );
 
-        console.log('✅ Synced installations from GitHub:', {
-          count: syncedInstallations.length,
-          installations: syncedInstallations.map((install) => ({
-            id: install.id,
-            account_id: install.account_id,
-            account_login: install.account_login,
-            repos_count: install.repos?.length || 0,
-          })),
-        });
-
-        installations = syncedInstallations;
+        console.log(
+          `✅ Synced ${installations.length} installations from GitHub`,
+        );
       } catch (error) {
         console.error('❌ Failed to sync installations from GitHub:', error);
         // Continue avec les installations vides, ne pas faire échouer la requête
       }
     }
 
-    // Vérifier aussi toutes les installations pour debug
-    const allInstallations = await this.appService.getAllInstallations();
-    console.log('🔍 DEBUG app/status - All installations in DB:', {
-      total_count: allInstallations.length,
-      all_installations: allInstallations.map((install) => ({
-        id: install.id,
-        account_id: install.account_id,
-        account_login: install.account_login,
-      })),
-    });
-
-    const result = {
+    return {
       installed: installations.length > 0,
       installations: installations.map((install) => ({
         id: install.id,
@@ -335,10 +298,6 @@ export class GithubController {
       })),
       installUrl: this.appService.getInstallationUrl(),
     };
-
-    console.log('🔍 DEBUG app/status - Final result:', result);
-
-    return result;
   }
 
   @UseGuards(JwtAuthGuard)

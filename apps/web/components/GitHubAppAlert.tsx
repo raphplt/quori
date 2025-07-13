@@ -30,14 +30,18 @@ export function GitHubAppAlert() {
           </p>
         </div>
         <div className="flex items-center space-x-2 ml-4">
-          <Button 
-            onClick={handleForceSync} 
-            variant="outline" 
+          <Button
+            onClick={handleForceSync}
+            variant="outline"
             size="sm"
             disabled={forceSyncMutation.isPending}
           >
-            <RefreshCw className={`mr-2 h-4 w-4 ${forceSyncMutation.isPending ? 'animate-spin' : ''}`} />
-            {forceSyncMutation.isPending ? 'Synchronisation...' : 'Synchroniser'}
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${forceSyncMutation.isPending ? "animate-spin" : ""}`}
+            />
+            {forceSyncMutation.isPending
+              ? "Synchronisation..."
+              : "Synchroniser"}
           </Button>
           <Button asChild variant="outline" size="sm">
             <Link href="/settings">

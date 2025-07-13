@@ -14,6 +14,18 @@ import { Event as GithubEvent, EventType } from './entities/event.entity';
 import { Post } from './entities/post.entity';
 import { parseGitEvent } from './parse-git-event';
 
+interface GitHubAccount {
+  id: number;
+  login?: string;
+  name?: string;
+}
+
+interface GitHubInstallation {
+  id: number;
+  account?: GitHubAccount | null;
+  created_at: string;
+}
+
 @Injectable()
 export class GithubAppService {
   private cache = new Map<number, { token: string; expires: number }>();
@@ -114,36 +126,11 @@ export class GithubAppService {
 
       for (const installation of installations) {
         try {
-          // Récupérer les dépôts pour cette installation
-          const installationOctokit = await this.getInstallationOctokit(
-            installation.id,
-          );
-          const { data: repos } = await installationOctokit.request(
-            'GET /installation/repositories',
-          );
-
-          const repoNames = repos.repositories.map((repo) => repo.full_name);
-
-          // Déterminer le nom de compte selon le type (User ou Organization)
-          const accountLogin =
-            'login' in (installation.account || {})
-              ? (installation.account as { login: string }).login
-              : (installation.account as { name: string })?.name || '';
-
-          console.log(
-            `📦 Installation ${installation.id} (${accountLogin}) has ${repoNames.length} repos`,
-          );
-
-          // Upsert l'installation en BDD
-          const savedInstallation = await this.installations.save({
-            id: installation.id,
-            account_login: accountLogin,
-            account_id: installation.account?.id || 0,
-            repos: repoNames,
-            created_at: new Date(installation.created_at),
-          });
-
-          syncedInstallations.push(savedInstallation);
+          const syncedInstallation =
+            await this.syncSingleInstallation(installation);
+          if (syncedInstallation) {
+            syncedInstallations.push(syncedInstallation);
+          }
         } catch (error) {
           console.error(
             `❌ Failed to sync installation ${installation.id}:`,
@@ -160,6 +147,57 @@ export class GithubAppService {
       console.error('❌ Failed to sync installations from GitHub:', error);
       throw error;
     }
+  }
+
+  /**
+   * Synchronise une installation unique
+   */
+  private async syncSingleInstallation(
+    installation: GitHubInstallation,
+  ): Promise<Installation | null> {
+    try {
+      // Récupérer les dépôts pour cette installation
+      const installationOctokit = await this.getInstallationOctokit(
+        installation.id,
+      );
+      const { data: repos } = await installationOctokit.request(
+        'GET /installation/repositories',
+      );
+
+      const repoNames = repos.repositories.map((repo) => repo.full_name);
+
+      // Déterminer le nom de compte selon le type (User ou Organization)
+      const accountLogin = this.getAccountLogin(installation.account);
+
+      console.log(
+        `📦 Installation ${installation.id} (${accountLogin}) has ${repoNames.length} repos`,
+      );
+
+      // Upsert l'installation en BDD
+      const savedInstallation = await this.installations.save({
+        id: installation.id,
+        account_login: accountLogin,
+        account_id: installation.account?.id || 0,
+        repos: repoNames,
+        created_at: new Date(installation.created_at),
+      });
+
+      return savedInstallation;
+    } catch (error) {
+      console.error(
+        `❌ Failed to sync installation ${installation.id}:`,
+        error,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Détermine le nom de compte selon le type (User ou Organization)
+   */
+  private getAccountLogin(account?: GitHubAccount | null): string {
+    if (!account) return '';
+    return account.login || account.name || '';
   }
 
   /**
@@ -517,9 +555,6 @@ export class GithubAppService {
     console.log('🔄 Force syncing ALL installations from GitHub...');
 
     try {
-      // Vider d'abord toutes les installations en BDD (optionnel)
-      // await this.installations.clear();
-
       // Synchroniser depuis GitHub
       const syncedInstallations = await this.syncInstallationsFromGitHub();
 
