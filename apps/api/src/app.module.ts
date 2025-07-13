@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { GithubModule } from './github/github.module';
+import { QuotaModule } from './quota/quota.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
@@ -26,6 +27,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     AuthModule,
     UsersModule,
     GithubModule,
+    QuotaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
