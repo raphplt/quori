@@ -55,29 +55,62 @@ export class GenerateService {
     const { event, options } = dto;
     const lang = options?.lang ?? 'français';
     const tone = options?.tone ?? 'accessible, professionnel, léger humour';
-    const output = options?.output?.join(', ');
+    const outputs = options?.output?.join(', ') ?? 'summary, post';
 
-    const stats = event.diffStats
+    // Prépare les stats en bloc
+    const statsBlock = event.diffStats
       .map(
         (s) =>
-          `${s.filePath}: +${s.additions} -${s.deletions} (Δ ${s.changes})`,
+          `• ${s.filePath}: +${s.additions} −${s.deletions} (Δ${s.changes})`,
       )
       .join('\n');
 
-    return [
-      `Contexte : dépôt ${event.repoFullName}, ${event.commitCount} commits, date ${event.timestamp}.`,
-      `Titre : ${event.title}`,
-      `Description : ${event.desc}`,
-      `Fichiers modifiés : ${event.filesChanged.join(', ')}`,
-      `Statistiques :\n${stats}`,
-      `Langue : ${lang}. Ton : ${tone}.`,
-      output ? `Sortie attendue : ${output}.` : '',
-      'Instructions : résumé en 3 phrases, puis une leçon à retenir, terminer par une question.',
-      'IMPORTANT: Réponds UNIQUEMENT avec un objet JSON valide, sans backticks, sans ```json, sans autre texte.',
-      'Format exact attendu : {"summary": "texte du résumé", "post": "texte du post"}',
-    ]
-      .filter(Boolean)
-      .join('\n');
+    return `
+# System
+Tu es un expert en création de contenu LinkedIn pour développeurs, avec un œil marketing et design. Tes posts doivent :
+- Captiver dès la première ligne (hook fort)
+- Illustrer de façon concrète l’impact technique
+- Apporter une vraie leçon/apprentissage
+- Inviter à l’échange avec une question ou call-to-action
+- Rester professionnel, crédible et optimisé pour l’algorithme LinkedIn (paragraphes courts, listes à puces, hashtags pertinents, ton adapté)
+
+# User
+Contexte :
+- Dépôt : ${event.repoFullName}
+- Commits : ${event.commitCount}
+- Date : ${event.timestamp}
+
+Détails techniques :
+- Titre : ${event.title}
+- Description : ${event.desc}
+- Fichiers modifiés : ${event.filesChanged.join(', ')}
+- Statistiques de diff :
+${statsBlock}
+
+Consignes :
+1. **Résumé** (champ \`"summary"\`) : 2–3 phrases très claires qui reprennent l’essentiel du changement et son impact.
+2. **Post complet** (champ \`"post"\`) :
+   - **Hook** (1 phrase d’accroche percutante).
+   - **Contexte** (1 phrase rappel).
+   - **Détails** : 2–3 bullets illustrant les changements clés et leur bénéfice.
+   - **Leçon** : insight ou apprentissage en 1 phrase.
+   - **Call-to-action** : invitation à commenter ou partager (question ouverte).
+   - **Hashtags** : 3 à 5 mots-clés pertinents (#dev, #opensource, …).
+
+Langue : ${lang}
+Ton : ${tone}
+Sortie attendue : ${outputs}
+
+IMPORTANT :
+– Tu réponds **uniquement** par un objet JSON valide, sans aucune explication supplémentaire.
+– Format exact :
+\`\`\`json
+{
+  "summary": "…",
+  "post": "…"
+}
+\`\`\`
+`.trim();
   }
 
   private cleanJsonResponse(content: string): string {
