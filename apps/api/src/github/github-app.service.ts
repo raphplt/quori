@@ -92,6 +92,153 @@ export class GithubAppService {
     return new Octokit({ auth: token });
   }
 
+  /**
+   * Synchronise les installations GitHub avec la base de données
+   * Récupère toutes les installations via l'API GitHub et les met à jour en BDD
+   */
+  async syncInstallationsFromGitHub(): Promise<Installation[]> {
+    try {
+      const jwt = this.generateJwt();
+      const octokit = new Octokit({ auth: jwt });
+
+      console.log('🔄 Syncing installations from GitHub...');
+
+      // Récupérer toutes les installations de l'app GitHub
+      const { data: installations } = await octokit.request(
+        'GET /app/installations',
+      );
+
+      console.log(`📥 Found ${installations.length} installations on GitHub`);
+
+      const syncedInstallations: Installation[] = [];
+
+      for (const installation of installations) {
+        try {
+          // Récupérer les dépôts pour cette installation
+          const installationOctokit = await this.getInstallationOctokit(
+            installation.id,
+          );
+          const { data: repos } = await installationOctokit.request(
+            'GET /installation/repositories',
+          );
+
+          const repoNames = repos.repositories.map((repo) => repo.full_name);
+
+          // Déterminer le nom de compte selon le type (User ou Organization)
+          const accountLogin =
+            'login' in (installation.account || {})
+              ? (installation.account as { login: string }).login
+              : (installation.account as { name: string })?.name || '';
+
+          console.log(
+            `📦 Installation ${installation.id} (${accountLogin}) has ${repoNames.length} repos`,
+          );
+
+          // Upsert l'installation en BDD
+          const savedInstallation = await this.installations.save({
+            id: installation.id,
+            account_login: accountLogin,
+            account_id: installation.account?.id || 0,
+            repos: repoNames,
+            created_at: new Date(installation.created_at),
+          });
+
+          syncedInstallations.push(savedInstallation);
+        } catch (error) {
+          console.error(
+            `❌ Failed to sync installation ${installation.id}:`,
+            error,
+          );
+        }
+      }
+
+      console.log(
+        `✅ Successfully synced ${syncedInstallations.length} installations`,
+      );
+      return syncedInstallations;
+    } catch (error) {
+      console.error('❌ Failed to sync installations from GitHub:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Synchronise les installations pour un utilisateur spécifique
+   * Utilise le token d'accès de l'utilisateur pour récupérer ses installations
+   */
+  async syncUserInstallationsFromGitHub(
+    githubAccessToken: string,
+    githubId: string,
+  ): Promise<Installation[]> {
+    try {
+      const octokit = new Octokit({ auth: githubAccessToken });
+
+      console.log(`🔄 Syncing installations for user ${githubId}...`);
+
+      // Récupérer les installations accessibles par l'utilisateur
+      const { data: userInstallations } = await octokit.request(
+        'GET /user/installations',
+      );
+
+      console.log(
+        `📥 Found ${userInstallations.total_count} installations for user ${githubId}`,
+      );
+
+      const syncedInstallations: Installation[] = [];
+
+      for (const installation of userInstallations.installations) {
+        try {
+          // Vérifier si cette installation appartient à l'utilisateur
+          if (installation.account?.id?.toString() === githubId) {
+            // Récupérer les dépôts pour cette installation
+            const { data: repos } = await octokit.request(
+              'GET /user/installations/{installation_id}/repositories',
+              { installation_id: installation.id },
+            );
+
+            const repoNames = repos.repositories.map((repo) => repo.full_name);
+
+            console.log(
+              `📦 User installation ${installation.id} has ${repoNames.length} repos`,
+            );
+
+            // Upsert l'installation en BDD
+            const accountLogin =
+              'login' in (installation.account || {})
+                ? (installation.account as { login: string }).login
+                : (installation.account as { name: string })?.name || '';
+
+            const savedInstallation = await this.installations.save({
+              id: installation.id,
+              account_login: accountLogin,
+              account_id: installation.account?.id || 0,
+              repos: repoNames,
+              created_at: new Date(installation.created_at),
+            });
+
+            syncedInstallations.push(savedInstallation);
+          }
+        } catch (error) {
+          console.error(
+            `❌ Failed to sync user installation ${installation.id}:`,
+            error,
+          );
+        }
+      }
+
+      console.log(
+        `✅ Successfully synced ${syncedInstallations.length} installations for user ${githubId}`,
+      );
+      return syncedInstallations;
+    } catch (error) {
+      console.error(
+        `❌ Failed to sync installations for user ${githubId}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
   async upsertInstallation(data: {
     installation_id: number;
     account_login: string;

@@ -51,4 +51,26 @@ export function useRevokeGitHubApp() {
   });
 }
 
+/**
+ * Hook pour synchroniser manuellement les installations GitHub
+ */
+export function useSyncGitHubApp() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await authenticatedFetch("/github/app/sync", {
+        method: "POST",
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalider le cache du statut d'installation après la synchronisation
+      queryClient.invalidateQueries({
+        queryKey: ["github", "app", "status"],
+      });
+    },
+  });
+}
+
 export type { Installation, AppInstallationStatus };
