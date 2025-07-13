@@ -14,7 +14,7 @@
  * 3. L'utilisateur peut personnaliser les options et générer le contenu
  * 4. Le résultat est affiché avec options de copie et sauvegardé automatiquement
  *
- * API endpoint : POST /github/generate
+ * API endpoint : POST /generate
  * - Authentification JWT requise
  * - Données d'événement + options de génération + paramètres de sauvegarde
  * - Retourne un résumé et un post formaté
@@ -23,6 +23,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authenticatedFetcher } from "./useAuthenticatedQuery";
+import { useQuota } from "@/contexts/QuotaContext";
 import { GitHubEvent } from "@/types/githubEvent";
 
 interface GeneratePostRequest {
@@ -58,6 +59,8 @@ interface GeneratePostResponse {
 export function useGeneratePost() {
   const queryClient = useQueryClient();
 
+  const { refresh } = useQuota();
+
   return useMutation<
     GeneratePostResponse,
     Error,
@@ -74,7 +77,7 @@ export function useGeneratePost() {
         params.append("eventDeliveryId", event.delivery_id);
       }
 
-      const url = `/github/generate${params.toString() ? `?${params.toString()}` : ""}`;
+      const url = `/generate${params.toString() ? `?${params.toString()}` : ""}`;
 
       return authenticatedFetcher<GeneratePostResponse>(url, {
         method: "POST",
@@ -92,6 +95,7 @@ export function useGeneratePost() {
 
       // Optionnel: invalider aussi les événements pour refléter qu'ils ont été traités
       queryClient.invalidateQueries({ queryKey: ["events"] });
+      refresh();
     },
   });
 }

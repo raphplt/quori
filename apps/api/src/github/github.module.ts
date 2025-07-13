@@ -19,5 +19,6 @@ import { Post } from './entities/post.entity';
   ],
   controllers: [GithubController, WebhooksController],
   providers: [GithubService, GithubAppService, GenerateService],
+  exports: [GenerateService],
 })
 export class GithubModule {}

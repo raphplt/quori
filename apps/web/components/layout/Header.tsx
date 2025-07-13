@@ -17,6 +17,7 @@ import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Sidebar from "./Sidebar";
 import InboxPopover from "../InboxPopover";
+import QuotaBadge from "../QuotaBadge";
 
 import {
   Search,
@@ -194,6 +195,7 @@ const Header: React.FC = () => {
               <GitBranch className="h-5 w-5" />
             </Button>
             <InboxPopover />
+            <QuotaBadge />
           </nav>
         )}
 

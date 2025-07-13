@@ -5,6 +5,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: ['src/github/parse-git-event.spec.ts'],
+    include: [
+      'src/github/parse-git-event.spec.ts',
+      'src/quota/quota.service.spec.ts',
+    ],
   },
 });
