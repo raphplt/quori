@@ -14,7 +14,7 @@ interface QuotaContextType {
   quota: Quota | undefined;
   isLoading: boolean;
   error: Error | null;
-  refetch: () => void;
+  refetchQuota: () => void;
 }
 
 const QuotaContext = createContext<QuotaContextType | undefined>(undefined);
@@ -36,11 +36,15 @@ export function QuotaProvider({ children }: { children: ReactNode }) {
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 
+  const refetchQuota = () => {
+    refetch();
+  };
+
   const value: QuotaContextType = {
     quota,
     isLoading,
     error,
-    refetch,
+    refetchQuota,
   };
 
   return (

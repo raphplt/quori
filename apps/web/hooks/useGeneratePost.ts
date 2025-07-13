@@ -59,7 +59,7 @@ interface GeneratePostResponse {
 export function useGeneratePost() {
   const queryClient = useQueryClient();
 
-  const { refresh } = useQuota();
+  const { refetchQuota } = useQuota();
 
   return useMutation<
     GeneratePostResponse,
@@ -69,10 +69,8 @@ export function useGeneratePost() {
     mutationFn: async ({ request, event }) => {
       console.log("Sending generate request:", request);
 
-      // Construire les paramètres de query pour la sauvegarde
       const params = new URLSearchParams();
 
-      // Ajouter l'eventDeliveryId pour lier le post à l'événement
       if (event.delivery_id) {
         params.append("eventDeliveryId", event.delivery_id);
       }
@@ -90,12 +88,10 @@ export function useGeneratePost() {
     onSuccess: data => {
       console.log("Generate post success:", data);
 
-      // Invalider les requêtes liées aux posts pour actualiser la liste
       queryClient.invalidateQueries({ queryKey: ["posts"] });
 
-      // Optionnel: invalider aussi les événements pour refléter qu'ils ont été traités
       queryClient.invalidateQueries({ queryKey: ["events"] });
-      refresh();
+      refetchQuota();
     },
   });
 }

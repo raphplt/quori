@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Clock, Send, Archive, Plus } from "lucide-react";
+import Link from "next/link";
 
 const PostsPage = () => {
   const mockPosts = [
@@ -74,8 +75,10 @@ const PostsPage = () => {
             </p>
           </div>
           <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Nouveau post
+            <Link href="/posts/new" className="flex items-center">
+              <Plus className="mr-2 h-4 w-4" />
+              Nouveau post
+            </Link>
           </Button>
         </div>
 

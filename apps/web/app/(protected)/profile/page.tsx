@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
+import QuotaRate from "@/components/profile/QuotaRate";
 
 type ExtendedUser = {
   id: string;
@@ -347,6 +348,9 @@ function Profile() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Quotas */}
+            <QuotaRate />
 
             {/* Dépôts principaux */}
             <Card>
