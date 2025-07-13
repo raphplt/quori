@@ -117,6 +117,20 @@ NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your_nextauth_secret"
 ````
 
+## API Quota
+
+Deux routes sont disponibles pour suivre la consommation d'appels OpenAI :
+
+```http
+POST /api/generate
+GET  /api/quota
+```
+
+- `POST /api/generate` : génère un contenu et consomme 1 quota. Authentification JWT requise.
+- `GET /api/quota` : retourne l'utilisation courante `{ used: number, remaining: number }`.
+
+La limite est fixée à **5 requêtes par utilisateur et par jour**. Au-delà, l'API renvoie `429 Quota journalier dépassé`.
+
 ## Workflow de développement
 
 1. **Webhook GitHub** reçoit push/PR → parse les changements
