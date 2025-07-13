@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Activity,
+  CheckCircle,
   GitCommit,
   GitPullRequest,
   RefreshCw,
@@ -59,7 +60,25 @@ export default function ActivityFeed() {
     }
   };
 
-  const getBadge = (type: string) => {
+  const getBadge = (type: string, status?: string) => {
+    // Badge pour le statut de l'événement
+    if (status === "processed") {
+      return (
+        <Badge variant="default" className="bg-green-100 text-green-800">
+          Traité
+        </Badge>
+      );
+    } else if (status === "processing") {
+      return (
+        <Badge variant="default" className="bg-yellow-100 text-yellow-800">
+          En cours
+        </Badge>
+      );
+    } else if (status === "failed") {
+      return <Badge variant="destructive">Échec</Badge>;
+    }
+
+    // Badge pour le type d'événement
     switch (type) {
       case "push":
         return <Badge variant="default">Push</Badge>;
@@ -153,7 +172,7 @@ export default function ActivityFeed() {
                   </CardTitle>
                 </div>
                 <div className="flex items-center space-x-2">
-                  {getBadge(activity.event)}
+                  {getBadge(activity.event, activity.status)}
                 </div>
               </div>
               <CardDescription>
@@ -168,24 +187,40 @@ export default function ActivityFeed() {
                 </p>
               )}
               <div className="flex items-center space-x-2">
-                <Button
-                  size="sm"
-                  onClick={e => handleGeneratePost(activity, e)}
-                  disabled={generatingForEvent === activity.delivery_id}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  {generatingForEvent === activity.delivery_id ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                      Génération...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 mr-1" />
-                      Générer un post
-                    </>
-                  )}
-                </Button>
+                {activity.status === "processed" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled
+                    className="opacity-50 cursor-not-allowed"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1 text-green-600" />
+                    Post généré
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={e => handleGeneratePost(activity, e)}
+                    disabled={
+                      generatingForEvent === activity.delivery_id ||
+                      activity.status === "processing"
+                    }
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    {generatingForEvent === activity.delivery_id ||
+                    activity.status === "processing" ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                        Génération...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-1" />
+                        Générer un post
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Link>

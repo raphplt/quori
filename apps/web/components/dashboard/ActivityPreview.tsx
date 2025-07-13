@@ -11,6 +11,7 @@ import {
 import { useEvents } from "@/contexts/EventsContext";
 import { Badge } from "../ui/badge";
 import Link from "next/link";
+import { getEventStatusLabel } from "@/utils/events";
 
 const ActivityPreview = () => {
   const { events, isLoading: eventsLoading, error: eventsError } = useEvents();
@@ -30,7 +31,7 @@ const ActivityPreview = () => {
         hour: "2-digit",
         minute: "2-digit",
       }),
-      processed: Math.random() > 0.3, // Mock du statut de traitement
+      status: event.status,
     })) || [];
 
   return (
@@ -67,8 +68,12 @@ const ActivityPreview = () => {
                   </p>
                 </div>
                 <div className="flex-shrink-0">
-                  <Badge variant={activity.processed ? "default" : "secondary"}>
-                    {activity.processed ? "Traité" : "En cours"}
+                  <Badge
+                    variant={
+                      activity.status === "processed" ? "default" : "secondary"
+                    }
+                  >
+                    {getEventStatusLabel(activity.status)}
                   </Badge>
                 </div>
               </Link>

@@ -131,6 +131,15 @@ export class GenerateService {
       });
       if (event) {
         post.event = event;
+
+        // Mettre à jour le statut de l'event à "processed" quand un post est généré
+        await this.eventRepository.update(
+          { delivery_id: eventDeliveryId },
+          {
+            status: 'processed',
+            processed_at: new Date(),
+          },
+        );
       }
     }
 

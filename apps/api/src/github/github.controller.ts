@@ -246,12 +246,6 @@ export class GithubController {
     res.status(200).send();
   }
 
-  @Get('test-event')
-  async createTestEvent() {
-    const saved = await this.appService.createTestEvent();
-    return { message: 'Test event created', event: saved };
-  }
-
   @Get('installations')
   async getInstallations() {
     // This is a debug endpoint - in production you'd want auth and proper filtering
@@ -452,11 +446,9 @@ export class GithubController {
     console.log(`🔄 Force syncing installations for user ${user.githubId}...`);
 
     try {
-      // Forcer la synchronisation de toutes les installations depuis GitHub
       const allInstallations =
         await this.appService.forceSyncAllInstallations();
 
-      // Filtrer celles pour l'utilisateur
       const userInstallations = allInstallations.filter(
         (installation) => installation.account_id.toString() === user.githubId,
       );
