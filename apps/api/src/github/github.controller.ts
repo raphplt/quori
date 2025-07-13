@@ -485,4 +485,44 @@ export class GithubController {
       );
     }
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('app/force-sync')
+  async forceSync(@Request() req: AuthenticatedRequest) {
+    const user = req.user;
+    console.log(`🔄 Force syncing installations for user ${user.githubId}...`);
+
+    try {
+      // Forcer la synchronisation de toutes les installations depuis GitHub
+      const allInstallations =
+        await this.appService.forceSyncAllInstallations();
+
+      // Filtrer celles pour l'utilisateur
+      const userInstallations = allInstallations.filter(
+        (installation) => installation.account_id.toString() === user.githubId,
+      );
+
+      console.log(
+        `✅ Force sync completed. Found ${userInstallations.length} installations for user ${user.githubId}`,
+      );
+
+      return {
+        message: 'Force sync completed successfully',
+        allCount: allInstallations.length,
+        userCount: userInstallations.length,
+        userInstallations: userInstallations.map((install) => ({
+          id: install.id,
+          account_login: install.account_login,
+          repos: install.repos || [],
+          created_at: install.created_at,
+        })),
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      throw new UnauthorizedException(
+        `Failed to force sync installations: ${errorMessage}`,
+      );
+    }
+  }
 }

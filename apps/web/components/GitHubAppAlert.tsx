@@ -1,17 +1,22 @@
 "use client";
 
-import { useGitHubAppStatus } from "@/hooks/useGitHubApp";
+import { useGitHubAppStatus, useForceSyncGitHubApp } from "@/hooks/useGitHubApp";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Github, ExternalLink, Settings } from "lucide-react";
+import { Github, ExternalLink, Settings, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 export function GitHubAppAlert() {
   const { data, isLoading } = useGitHubAppStatus();
+  const forceSyncMutation = useForceSyncGitHubApp();
 
   if (isLoading || data?.installed) {
     return null;
   }
+
+  const handleForceSync = () => {
+    forceSyncMutation.mutate();
+  };
 
   return (
     <Alert className="border-orange-200 bg-orange-50">
@@ -25,6 +30,15 @@ export function GitHubAppAlert() {
           </p>
         </div>
         <div className="flex items-center space-x-2 ml-4">
+          <Button 
+            onClick={handleForceSync} 
+            variant="outline" 
+            size="sm"
+            disabled={forceSyncMutation.isPending}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${forceSyncMutation.isPending ? 'animate-spin' : ''}`} />
+            {forceSyncMutation.isPending ? 'Synchronisation...' : 'Synchroniser'}
+          </Button>
           <Button asChild variant="outline" size="sm">
             <Link href="/settings">
               <Settings className="mr-2 h-4 w-4" />

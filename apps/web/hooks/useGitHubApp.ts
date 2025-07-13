@@ -73,4 +73,26 @@ export function useSyncGitHubApp() {
   });
 }
 
+/**
+ * Hook pour forcer la synchronisation de toutes les installations GitHub
+ */
+export function useForceSyncGitHubApp() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await authenticatedFetch("/github/app/force-sync", {
+        method: "POST",
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalider le cache du statut d'installation après la synchronisation
+      queryClient.invalidateQueries({
+        queryKey: ["github", "app", "status"],
+      });
+    },
+  });
+}
+
 export type { Installation, AppInstallationStatus };

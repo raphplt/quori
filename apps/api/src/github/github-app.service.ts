@@ -164,72 +164,29 @@ export class GithubAppService {
 
   /**
    * Synchronise les installations pour un utilisateur spécifique
-   * Utilise le token d'accès de l'utilisateur pour récupérer ses installations
+   * Utilise l'API GitHub App avec JWT pour récupérer toutes les installations
+   * puis filtre celles qui appartiennent à l'utilisateur
    */
   async syncUserInstallationsFromGitHub(
     githubAccessToken: string,
     githubId: string,
   ): Promise<Installation[]> {
     try {
-      const octokit = new Octokit({ auth: githubAccessToken });
-
       console.log(`🔄 Syncing installations for user ${githubId}...`);
 
-      // Récupérer les installations accessibles par l'utilisateur
-      const { data: userInstallations } = await octokit.request(
-        'GET /user/installations',
+      // D'abord, synchroniser toutes les installations via l'API GitHub App
+      const allInstallations = await this.syncInstallationsFromGitHub();
+
+      // Ensuite, filtrer celles qui appartiennent à l'utilisateur
+      const userInstallations = allInstallations.filter(
+        (installation) => installation.account_id.toString() === githubId,
       );
 
       console.log(
-        `📥 Found ${userInstallations.total_count} installations for user ${githubId}`,
+        `✅ Found ${userInstallations.length} installations for user ${githubId} out of ${allInstallations.length} total`,
       );
 
-      const syncedInstallations: Installation[] = [];
-
-      for (const installation of userInstallations.installations) {
-        try {
-          // Vérifier si cette installation appartient à l'utilisateur
-          if (installation.account?.id?.toString() === githubId) {
-            // Récupérer les dépôts pour cette installation
-            const { data: repos } = await octokit.request(
-              'GET /user/installations/{installation_id}/repositories',
-              { installation_id: installation.id },
-            );
-
-            const repoNames = repos.repositories.map((repo) => repo.full_name);
-
-            console.log(
-              `📦 User installation ${installation.id} has ${repoNames.length} repos`,
-            );
-
-            // Upsert l'installation en BDD
-            const accountLogin =
-              'login' in (installation.account || {})
-                ? (installation.account as { login: string }).login
-                : (installation.account as { name: string })?.name || '';
-
-            const savedInstallation = await this.installations.save({
-              id: installation.id,
-              account_login: accountLogin,
-              account_id: installation.account?.id || 0,
-              repos: repoNames,
-              created_at: new Date(installation.created_at),
-            });
-
-            syncedInstallations.push(savedInstallation);
-          }
-        } catch (error) {
-          console.error(
-            `❌ Failed to sync user installation ${installation.id}:`,
-            error,
-          );
-        }
-      }
-
-      console.log(
-        `✅ Successfully synced ${syncedInstallations.length} installations for user ${githubId}`,
-      );
-      return syncedInstallations;
+      return userInstallations;
     } catch (error) {
       console.error(
         `❌ Failed to sync installations for user ${githubId}:`,
@@ -550,5 +507,30 @@ export class GithubAppService {
     const saved = await this.events.save(testEvent);
     this.eventSubject.next(saved);
     return saved;
+  }
+
+  /**
+   * Force la synchronisation de toutes les installations depuis GitHub
+   * Utile pour déboguer ou forcer la mise à jour
+   */
+  async forceSyncAllInstallations(): Promise<Installation[]> {
+    console.log('🔄 Force syncing ALL installations from GitHub...');
+
+    try {
+      // Vider d'abord toutes les installations en BDD (optionnel)
+      // await this.installations.clear();
+
+      // Synchroniser depuis GitHub
+      const syncedInstallations = await this.syncInstallationsFromGitHub();
+
+      console.log(
+        `✅ Force sync completed: ${syncedInstallations.length} installations`,
+      );
+
+      return syncedInstallations;
+    } catch (error) {
+      console.error('❌ Failed to force sync installations:', error);
+      throw error;
+    }
   }
 }
