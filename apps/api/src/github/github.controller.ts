@@ -246,24 +246,15 @@ export class GithubController {
     res.status(200).send();
   }
 
-  @Get('installations')
-  async getInstallations() {
-    // This is a debug endpoint - in production you'd want auth and proper filtering
-    const installations = await this.appService.getAllInstallations();
-    return installations;
-  }
-
   @UseGuards(JwtAuthGuard)
   @Get('app/status')
   async getAppInstallationStatus(@Request() req: AuthenticatedRequest) {
     const user = req.user;
 
-    // Rechercher les installations liées au compte GitHub de l'utilisateur
     let installations = await this.appService.getUserInstallations(
       user.githubId,
     );
 
-    // Si aucune installation trouvée en BDD, essayer de synchroniser depuis GitHub
     if (installations.length === 0 && user.githubAccessToken) {
       console.log('🔄 No installations found in DB, syncing from GitHub...');
 
@@ -278,7 +269,6 @@ export class GithubController {
         );
       } catch (error) {
         console.error('❌ Failed to sync installations from GitHub:', error);
-        // Continue avec les installations vides, ne pas faire échouer la requête
       }
     }
 
@@ -304,7 +294,6 @@ export class GithubController {
     const id = parseInt(installationId, 10);
 
     try {
-      // Vérifier que l'installation appartient bien à l'utilisateur
       const installation = await this.appService.getInstallationById(id);
       if (
         !installation ||
@@ -340,7 +329,6 @@ export class GithubController {
       throw new UnauthorizedException('No GitHub access token found for user');
     }
 
-    // Vider le cache pour cet utilisateur
     this.githubService.clearUserCache(user.githubAccessToken);
     return { message: 'Cache cleared successfully' };
   }

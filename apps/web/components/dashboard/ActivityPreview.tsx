@@ -50,7 +50,7 @@ const ActivityPreview = () => {
               <Link
                 key={activity.id}
                 href={`/event/${activity.id}`}
-                className="flex items-center space-x-4 border-l-2 border-l-primary pl-4 hover:bg-gray-50 transition-colors duration-200"
+                className="flex items-center space-x-4 border-l-2 border-l-primary pl-4 hover:bg-gray-100 transition-all duration-200 hover:shadow-sm"
               >
                 <div className="flex-shrink-0">
                   {activity.type === "commit" || activity.type === "push" ? (
