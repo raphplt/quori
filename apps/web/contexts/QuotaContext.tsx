@@ -1,7 +1,9 @@
 "use client";
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
+
+import { createContext, useContext, ReactNode } from "react";
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
 
 interface Quota {
   used: number;
@@ -9,47 +11,41 @@ interface Quota {
 }
 
 interface QuotaContextType {
-  quota: Quota | null;
+  quota: Quota | undefined;
   isLoading: boolean;
-  error: string | null;
-  refresh: () => void;
+  error: Error | null;
+  refetch: () => void;
 }
 
 const QuotaContext = createContext<QuotaContextType | undefined>(undefined);
 
 export function QuotaProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
-  const [quota, setQuota] = useState<Quota | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchQuota = async () => {
-    setIsLoading(true);
-    try {
-      const data = await authenticatedFetcher<Quota>("/quota");
-      setQuota(data);
-      setError(null);
-    } catch {
-      setError("Impossible de récupérer le quota");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (session) {
-      fetchQuota();
-    }
-  }, [session]);
+  const {
+    data: quota,
+    isLoading,
+    error,
+    refetch,
+  }: UseQueryResult<Quota, Error> = useQuery({
+    queryKey: ["quota"],
+    queryFn: () => authenticatedFetcher<Quota>("/quota"),
+    enabled: !!session,
+    refetchOnWindowFocus: true,
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
+  });
 
   const value: QuotaContextType = {
     quota,
     isLoading,
     error,
-    refresh: fetchQuota,
+    refetch,
   };
 
-  return <QuotaContext.Provider value={value}>{children}</QuotaContext.Provider>;
+  return (
+    <QuotaContext.Provider value={value}>{children}</QuotaContext.Provider>
+  );
 }
 
 export function useQuota() {

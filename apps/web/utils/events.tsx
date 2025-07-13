@@ -19,6 +19,31 @@ export const getEventStatusLabel = (status: EventStatus): string => {
   }
 };
 
+export const getEventTypeLabel = (type: string): string => {
+  switch (type) {
+    case "push":
+      return "Push";
+    case "pull_request":
+      return "Pull Request";
+    case "issues":
+      return "Issue";
+    case "release":
+      return "Release";
+    case "fork":
+      return "Fork";
+    case "star":
+      return "Star";
+    case "create":
+      return "Création";
+    case "delete":
+      return "Suppression";
+    case "workflow_run":
+      return "Exécution de workflow";
+    default:
+      return "Autre";
+  }
+};
+
 export const getIcon = (type: string) => {
   switch (type) {
     case "push":
