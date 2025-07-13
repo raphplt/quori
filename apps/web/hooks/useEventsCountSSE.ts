@@ -29,7 +29,6 @@ export function useEventsCountSSE(): UseEventsCountSSEReturn {
     }
 
     const connectSSE = () => {
-      // Nettoyer la connexion précédente si elle existe
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
       }
@@ -77,7 +76,6 @@ export function useEventsCountSSE(): UseEventsCountSSEReturn {
         console.error("SSE Events Count error:", err);
         setIsConnected(false);
 
-        // Tentative de reconnexion avec backoff exponentiel
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
           const delay = Math.min(
             1000 * Math.pow(2, reconnectAttemptsRef.current),

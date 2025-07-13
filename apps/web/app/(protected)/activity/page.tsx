@@ -2,20 +2,14 @@
 
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ActivityFeed from "@/components/ActivityFeed";
-import EventsSummary from "@/components/EventsSummary";
+import StatCard from "@/components/activity/StatsCard";
 
 export default function ActivityPage() {
-  //test
   return (
     <ProtectedRoute>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Flux Git</h1>
-          <p className="text-muted-foreground">
-            Chronologie de vos événements Git avec génération de posts en 1-clic
-          </p>
-        </div>
-        {/* <EventsSummary /> */}
+        <h1 className="text-3xl font-bold">Flux Git</h1>
+        <StatCard />
         <ActivityFeed />
       </div>
     </ProtectedRoute>
