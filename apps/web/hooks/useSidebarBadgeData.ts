@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useGitHubEvents } from "@/hooks/useGitHubEvents";
-import { useEventsStats } from "@/hooks/useEventsStats";
 import { useDataContext } from "@/contexts/DataContext";
+import { useEvents } from "@/contexts/EventsContext";
 
 export interface SidebarBadgeData {
   repositories: string;
@@ -15,7 +15,7 @@ export interface SidebarBadgeData {
  */
 export function useSidebarBadgeData(): SidebarBadgeData {
   const { isLoading } = useGitHubEvents();
-  const { total, hasRecentActivity } = useEventsStats();
+  const { eventsLength } = useEvents();
   const { repositoriesLength, isLoading: isLoadingRepositories } =
     useDataContext();
 
@@ -24,12 +24,13 @@ export function useSidebarBadgeData(): SidebarBadgeData {
     let repositoriesBadge: string;
 
     if (isLoading) {
-      gitActivityBadge = "...";
-    } else if (total > 0) {
-      gitActivityBadge = total > 99 ? "99+" : total.toString();
+      gitActivityBadge = "0";
+    } else if ((eventsLength ?? 0) > 0) {
+      gitActivityBadge =
+        (eventsLength ?? 0) > 99 ? "99+" : (eventsLength ?? 0).toString();
 
-      if (!hasRecentActivity && total > 0) {
-        gitActivityBadge = total.toString();
+      if ((eventsLength ?? 0) > 0) {
+        gitActivityBadge = (eventsLength ?? 0).toString();
       }
     }
 
@@ -47,13 +48,7 @@ export function useSidebarBadgeData(): SidebarBadgeData {
       drafts: "5", // TODO: Connecter à une vraie source de données
       scheduled: "8", // TODO: Connecter à une vraie source de données
     };
-  }, [
-    total,
-    hasRecentActivity,
-    isLoading,
-    repositoriesLength,
-    isLoadingRepositories,
-  ]);
+  }, [eventsLength, isLoading, repositoriesLength, isLoadingRepositories]);
 
   return badgeData;
 }

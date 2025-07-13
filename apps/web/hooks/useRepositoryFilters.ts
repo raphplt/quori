@@ -11,18 +11,17 @@ export const useRepositoryFilters = () => {
   const [sortBy, setSortBy] = useState<SortOption>("updated");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
-  // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-    }, 300); // 300ms de délai
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
   return {
-    searchTerm, // Valeur immédiate pour l'input
-    debouncedSearchTerm, // Valeur debounced pour l'API
+    searchTerm,
+    debouncedSearchTerm,
     setSearchTerm,
     languageFilter,
     setLanguageFilter,

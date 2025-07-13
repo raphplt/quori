@@ -10,12 +10,25 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, GitCommit, GitPullRequest, RefreshCw } from "lucide-react";
+import {
+  Activity,
+  GitCommit,
+  GitPullRequest,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
 import Link from "next/link";
 import { PaginationControls } from "@/app/(protected)/repositories/_components/PaginationControls";
+import { GeneratePostDialog } from "./GeneratePostDialog";
+import { GitHubEvent } from "@/types/githubEvent";
 
 export default function ActivityFeed() {
   const [currentPage, setCurrentPage] = useState(1);
+  const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<GitHubEvent | null>(null);
+  const [generatingForEvent, setGeneratingForEvent] = useState<string | null>(
+    null
+  );
   const itemsPerPage = 10;
 
   const { data, isLoading, error, refetch } = useGitHubEventsPaginated(
@@ -54,6 +67,22 @@ export default function ActivityFeed() {
         return <Badge variant="secondary">Pull Request</Badge>;
       default:
         return <Badge variant="secondary">Event</Badge>;
+    }
+  };
+
+  const handleGeneratePost = (event: GitHubEvent, e: React.MouseEvent) => {
+    e.preventDefault(); // Empêcher la navigation du Link
+    e.stopPropagation();
+    setGeneratingForEvent(event.delivery_id);
+    setSelectedEvent(event);
+    setGenerateDialogOpen(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setGenerateDialogOpen(open);
+    if (!open) {
+      setGeneratingForEvent(null);
+      setSelectedEvent(null);
     }
   };
 
@@ -139,7 +168,24 @@ export default function ActivityFeed() {
                 </p>
               )}
               <div className="flex items-center space-x-2">
-                <Button size="sm">Generer un post</Button>
+                <Button
+                  size="sm"
+                  onClick={e => handleGeneratePost(activity, e)}
+                  disabled={generatingForEvent === activity.delivery_id}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  {generatingForEvent === activity.delivery_id ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                      Génération...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-1" />
+                      Générer un post
+                    </>
+                  )}
+                </Button>
               </div>
             </CardContent>
           </Link>
@@ -156,6 +202,15 @@ export default function ActivityFeed() {
         canGoPrevious={canGoPrevious}
         canGoNext={canGoNext}
       />
+
+      {/* Generate Post Dialog */}
+      {selectedEvent && (
+        <GeneratePostDialog
+          open={generateDialogOpen}
+          onOpenChange={handleDialogClose}
+          event={selectedEvent}
+        />
+      )}
     </div>
   );
 }

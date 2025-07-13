@@ -60,33 +60,66 @@ export class GenerateService {
       `Langue : ${lang}. Ton : ${tone}.`,
       output ? `Sortie attendue : ${output}.` : '',
       'Instructions : résumé en 3 phrases, puis une leçon à retenir, terminer par une question.',
-      'Réponds uniquement au format JSON strict : {"summary": "…", "post": "…"}',
+      'IMPORTANT: Réponds UNIQUEMENT avec un objet JSON valide, sans backticks, sans ```json, sans autre texte.',
+      'Format exact attendu : {"summary": "texte du résumé", "post": "texte du post"}',
     ]
       .filter(Boolean)
       .join('\n');
+  }
+
+  private cleanJsonResponse(content: string): string {
+    // Enlever les blocs de code markdown
+    const codeBlockPattern = /```(?:json)?\s*([\s\S]*?)\s*```/g;
+    const match = codeBlockPattern.exec(content);
+    if (match) {
+      return match[1].trim();
+    }
+
+    // Si pas de bloc de code, chercher JSON dans le texte
+    const jsonPattern = /\{[\s\S]*\}/;
+    const jsonMatch = content.match(jsonPattern);
+    if (jsonMatch) {
+      return jsonMatch[0];
+    }
+
+    return content.trim();
   }
 
   async generate(userId: string, dto: GenerateDto): Promise<GenerateResultDto> {
     this.checkQuota(userId);
     const prompt = this.buildPrompt(dto);
     console.debug('DEBUG ▶ prompt', prompt);
-    const res = await this.openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-    });
-    const content = res.choices[0]?.message?.content ?? '';
-    console.debug('DEBUG ▶ response', content);
+
     try {
-      const parsed = JSON.parse(content) as GenerateResultDto;
+      const res = await this.openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+      });
+
+      const content = res.choices[0]?.message?.content;
+      if (!content) {
+        throw new BadRequestException('No content received from OpenAI');
+      }
+
+      console.debug('DEBUG ▶ raw response', content);
+
+      const cleanedContent = this.cleanJsonResponse(content);
+      console.debug('DEBUG ▶ cleaned response', cleanedContent);
+
+      const parsed = JSON.parse(cleanedContent) as GenerateResultDto;
       if (
         typeof parsed.summary !== 'string' ||
         typeof parsed.post !== 'string'
       ) {
-        throw new Error('Invalid structure');
+        throw new Error('Invalid structure: missing summary or post');
       }
       return parsed;
     } catch (e) {
+      console.error('Error in generate service:', e);
+      if (e instanceof BadRequestException) {
+        throw e;
+      }
       throw new BadRequestException(
         `Failed to parse OpenAI response: ${(e as Error).message}`,
       );

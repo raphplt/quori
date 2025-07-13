@@ -174,6 +174,10 @@ export class GithubAppService {
     });
   }
 
+  async getEventsCount(): Promise<number> {
+    return this.events.count();
+  }
+
   async getEventsPaginated(
     page = 1,
     limit = 10,

@@ -17,7 +17,6 @@ import { Response } from 'express';
 import { map } from 'rxjs/operators';
 import { GithubService } from './github.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { UsersService } from '../users/users.service';
 import { GitHubRepository } from './interfaces/github-repository.interface';
 import { GitHubRepositoriesPage } from './interfaces/github-repositories-page.interface';
 import { User } from '../users/user.interface';
@@ -34,7 +33,6 @@ interface AuthenticatedRequest {
 export class GithubController {
   constructor(
     private readonly githubService: GithubService,
-    private readonly usersService: UsersService,
     private readonly appService: GithubAppService,
     private readonly jwtService: JwtService,
     private readonly generateService: GenerateService,
@@ -108,6 +106,13 @@ export class GithubController {
     const num = parseInt(limit, 10) || 20;
     const events = await this.appService.getRecentEvents(num);
     return events;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('events/length')
+  async getEventsLength() {
+    const count = await this.appService.getEventsCount();
+    return { count };
   }
 
   @UseGuards(JwtAuthGuard)

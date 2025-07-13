@@ -11,6 +11,8 @@ interface EventsContextType {
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
+  eventsLength?: number;
+  isEventsLengthLoading?: boolean;
 }
 
 const EventsContext = createContext<EventsContextType | undefined>(undefined);
@@ -34,6 +36,18 @@ export function EventsProvider({ children }: EventsProviderProps) {
     queryFn: () => authenticatedFetcher<GitHubEvent[]>("/github/events"),
     refetchInterval: 10000,
     refetchOnWindowFocus: true,
+    enabled: !!session,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
+
+  const {
+    data: eventsLength,
+    isLoading: isEventsLengthLoading,
+  }: UseQueryResult<{ count: number }, Error> = useQuery({
+    queryKey: ["eventsLength"],
+    queryFn: () =>
+      authenticatedFetcher<{ count: number }>("/github/events/length"),
     enabled: !!session,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
@@ -67,6 +81,8 @@ export function EventsProvider({ children }: EventsProviderProps) {
     isLoading,
     error,
     refetch,
+    eventsLength: eventsLength?.count,
+    isEventsLengthLoading,
   };
 
   return (

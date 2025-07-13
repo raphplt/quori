@@ -12,6 +12,7 @@ export interface EventsStats {
 /**
  * Hook pour obtenir des statistiques sur les événements GitHub
  */
+//TODO plus utile à supprimer ?
 export function useEventsStats(): EventsStats {
   const { events, getEventsByType } = useGitHubEvents();
 
