@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Inbox, Check, X, Trash2, CheckCheck } from "lucide-react";
 import { useEventNotifications } from "@/hooks/useEventNotifications";
+import Link from "next/link";
 
 interface InboxPopoverProps {
   className?: string;
@@ -91,7 +92,10 @@ const InboxPopover: React.FC<InboxPopoverProps> = ({ className }) => {
                         {getEventIcon(notification.event.event)}
                       </span>
 
-                      <div className="flex-1 min-w-0">
+                      <Link
+                        href={`/event/${notification.event.delivery_id}`}
+                        className="flex-1 min-w-0"
+                      >
                         <div className="flex items-center gap-2 mb-1">
                           <Badge variant="secondary" className="text-xs">
                             {getEventTypeDisplay(notification.event.event)}
@@ -122,7 +126,7 @@ const InboxPopover: React.FC<InboxPopoverProps> = ({ className }) => {
                             }
                           )}
                         </p>
-                      </div>
+                      </Link>
 
                       <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {!notification.isRead && (

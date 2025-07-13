@@ -138,6 +138,14 @@ export class GithubController {
     return event;
   }
 
+  // Récupération des events traités le mois actuel
+  @UseGuards(JwtAuthGuard)
+  @Get('events/current-month')
+  async getCurrentMonthEvents() {
+    const events = await this.appService.getCurrentMonthEvents();
+    return events;
+  }
+
   @Sse('events/stream')
   streamEvents(
     @Query('token') token: string,

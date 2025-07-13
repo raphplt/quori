@@ -8,7 +8,7 @@ import { startWith, switchMap } from 'rxjs/operators';
 import * as crypto from 'crypto';
 import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Installation } from './entities/installation.entity';
 import { Event as GithubEvent, EventType } from './entities/event.entity';
 import { Post } from './entities/post.entity';
@@ -364,6 +364,19 @@ export class GithubAppService {
   async getEventById(id: string): Promise<GithubEvent | null> {
     return this.events.findOne({
       where: { delivery_id: id },
+    });
+  }
+
+  async getCurrentMonthEvents(): Promise<GithubEvent[]> {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    return this.events.find({
+      where: {
+        received_at: MoreThanOrEqual(startOfMonth),
+      },
+      order: { received_at: 'DESC' },
     });
   }
 
