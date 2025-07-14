@@ -7,8 +7,6 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OpenAI } from 'openai';
-import * as fs from 'fs';
-import * as path from 'path';
 import { GenerateDto, GenerateResultDto } from '../dto/generate.dto';
 import { Post, PostStatus } from '../entities/post.entity';
 import { Installation } from '../entities/installation.entity';
@@ -22,9 +20,8 @@ interface QuotaInfo {
 @Injectable()
 export class GenerateService {
   private openai: OpenAI;
-  private quotas = new Map<string, QuotaInfo>();
-
   private promptTemplate: string;
+  private quotas = new Map<string, QuotaInfo>();
 
   constructor(
     private readonly config: ConfigService,
@@ -41,12 +38,14 @@ export class GenerateService {
     }
     this.openai = new OpenAI({ apiKey });
 
-    // Charge le prompt depuis le fichier externe
-    const promptPath = path.resolve(
-      __dirname,
-      '../prompts/generate-prompt.txt',
-    );
-    this.promptTemplate = fs.readFileSync(promptPath, 'utf-8');
+    this.promptTemplate = (
+      this.config.get<string>('GENERATE_PROMPT') ?? ''
+    ).trim();
+    if (!this.promptTemplate) {
+      throw new Error(
+        'GENERATE_PROMPT environment variable is missing or empty',
+      );
+    }
   }
 
   private checkQuota(userId: string): void {
@@ -68,7 +67,6 @@ export class GenerateService {
     const tone = options?.tone ?? 'accessible, professionnel, léger humour';
     const outputs = options?.output?.join(', ') ?? 'summary, post';
 
-    // Prépare les stats en bloc
     const statsBlock = event.diffStats
       .map(
         (s) =>
@@ -76,7 +74,7 @@ export class GenerateService {
       )
       .join('\n');
 
-    // Remplacement des variables dans le template externe
+    // Replace placeholders in the prompt template
     return this.promptTemplate
       .replace(/\{\{repoFullName\}\}/g, event.repoFullName)
       .replace(/\{\{commitCount\}\}/g, String(event.commitCount))
@@ -91,21 +89,16 @@ export class GenerateService {
   }
 
   private cleanJsonResponse(content: string): string {
-    // Enlever les blocs de code markdown
+    // Strip markdown code fences
     const codeBlockPattern = /```(?:json)?\s*([\s\S]*?)\s*```/g;
     const match = codeBlockPattern.exec(content);
     if (match) {
       return match[1].trim();
     }
-
-    // Si pas de bloc de code, chercher JSON dans le texte
+    // Fallback: extract JSON object
     const jsonPattern = /\{[\s\S]*\}/;
     const jsonMatch = content.match(jsonPattern);
-    if (jsonMatch) {
-      return jsonMatch[0];
-    }
-
-    return content.trim();
+    return jsonMatch ? jsonMatch[0] : content.trim();
   }
 
   private async savePostToDatabase(
@@ -124,36 +117,31 @@ export class GenerateService {
       generated_at: new Date().toISOString(),
     };
     post.status = 'draft';
-    post.tone = options?.tone || undefined;
+    post.tone = options?.tone;
 
     if (installationId) {
-      const installation = await this.installationRepository.findOne({
+      const inst = await this.installationRepository.findOne({
         where: { id: installationId },
       });
-      if (installation) {
-        post.installation = installation;
+      if (inst) {
+        post.installation = inst;
       }
     }
 
     if (eventDeliveryId) {
-      const event = await this.eventRepository.findOne({
+      const ev = await this.eventRepository.findOne({
         where: { delivery_id: eventDeliveryId },
       });
-      if (event) {
-        post.event = event;
-
-        // Mettre à jour le statut de l'event à "processed" quand un post est généré
+      if (ev) {
+        post.event = ev;
         await this.eventRepository.update(
           { delivery_id: eventDeliveryId },
-          {
-            status: 'processed',
-            processed_at: new Date(),
-          },
+          { status: 'processed', processed_at: new Date() },
         );
       }
     }
 
-    return await this.postRepository.save(post);
+    return this.postRepository.save(post);
   }
 
   async generate(
@@ -179,11 +167,10 @@ export class GenerateService {
       }
 
       console.debug('DEBUG ▶ raw response', content);
+      const cleaned = this.cleanJsonResponse(content);
+      console.debug('DEBUG ▶ cleaned response', cleaned);
 
-      const cleanedContent = this.cleanJsonResponse(content);
-      console.debug('DEBUG ▶ cleaned response', cleanedContent);
-
-      const parsed = JSON.parse(cleanedContent) as GenerateResultDto;
+      const parsed = JSON.parse(cleaned) as GenerateResultDto;
       if (
         typeof parsed.summary !== 'string' ||
         typeof parsed.post !== 'string'
@@ -202,9 +189,7 @@ export class GenerateService {
       return parsed;
     } catch (e) {
       console.error('Error in generate service:', e);
-      if (e instanceof BadRequestException) {
-        throw e;
-      }
+      if (e instanceof BadRequestException) throw e;
       throw new BadRequestException(
         `Failed to parse OpenAI response: ${(e as Error).message}`,
       );
@@ -217,50 +202,41 @@ export class GenerateService {
     status?: string,
   ): Promise<{ posts: Post[]; total: number; page: number; limit: number }> {
     const offset = (page - 1) * limit;
-
-    const whereCondition: Partial<Post> = {};
+    const where: Partial<Post> = {};
     if (
       status &&
       ['draft', 'ready', 'scheduled', 'published', 'failed'].includes(status)
     ) {
-      whereCondition.status = status as PostStatus;
+      where.status = status as PostStatus;
     }
-
     const [posts, total] = await this.postRepository.findAndCount({
-      where: whereCondition,
+      where,
       relations: ['installation', 'event'],
       order: { createdAt: 'DESC' },
       skip: offset,
       take: limit,
     });
-
-    return {
-      posts,
-      total,
-      page,
-      limit,
-    };
+    return { posts, total, page, limit };
   }
 
   async getPostById(id: number): Promise<Post | null> {
-    const post = await this.postRepository.findOne({
+    return this.postRepository.findOne({
       where: { id },
       relations: ['installation', 'event'],
     });
-    return post;
   }
 
   async updatePostStatus(id: number, status: PostStatus): Promise<Post> {
-    const post = await this.postRepository.findOne({ where: { id } });
+    const post = await this.postRepository.findOne({
+      where: { id },
+    });
     if (!post) {
       throw new BadRequestException('Post not found');
     }
-
     post.status = status;
     if (status === 'published') {
       post.publishedAt = new Date();
     }
-
-    return await this.postRepository.save(post);
+    return this.postRepository.save(post);
   }
 }
