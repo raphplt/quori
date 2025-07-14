@@ -10,12 +10,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Installation } from './entities/installation.entity';
 import { Event } from './entities/event.entity';
 import { Post } from './entities/post.entity';
+import { PreferencesModule } from '../preferences/preferences.module';
 
 @Module({
   imports: [
     UsersModule,
     AuthModule,
     TypeOrmModule.forFeature([Installation, Event, Post]),
+    PreferencesModule,
   ],
   controllers: [GithubController, WebhooksController],
   providers: [GithubService, GithubAppService, GenerateService],

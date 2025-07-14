@@ -5,27 +5,27 @@ import { useRouter, useSearchParams } from "next/navigation";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
 import QuotaRate from "@/components/profile/QuotaRate";
-import { useQuota } from "@/contexts/QuotaContext";
 import { useGitHubEvents } from "@/hooks/useGitHubEvents";
 import {
   useGeneratePost,
   createGenerateRequestFromEvent,
 } from "@/hooks/useGeneratePost";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 import { Spinner } from "@/components/ui/spinner";
 import EventCard from "@/components/activity/EventCard";
 import { z } from "zod";
+import { UserPreferencesForm } from "@/components/profile/UserPreferencesForm";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Settings } from "lucide-react";
 
 const postFormSchema = z.object({
   summary: z.string().min(10, "Résumé trop court"),
@@ -51,7 +51,6 @@ export default function NewPostPage() {
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId");
   const { events: allEvents, isLoading: eventsLoading } = useGitHubEvents();
-  const { quota, isLoading: quotaLoading } = useQuota();
   const [form, setForm] = useState<PostForm>({
     summary: "",
     postContent: "",
@@ -152,18 +151,6 @@ export default function NewPostPage() {
     }
   };
 
-  // Validation client
-  const validate = () => {
-    const res = postFormSchema.safeParse(form);
-    if (!res.success) {
-      setError(res.error.errors.map(e => e.message).join(", "));
-      return false;
-    }
-    setError(null);
-    return true;
-  };
-
-  // Layout wireframe
   return (
     <ProtectedRoute>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4 md:p-8">
@@ -271,7 +258,7 @@ export default function NewPostPage() {
                 <Spinner />
               ) : allEvents && allEvents.length > 0 ? (
                 <div className="flex flex-col gap-2">
-                  {allEvents.slice(0, 3).map(activity => (
+                  {allEvents.slice(0, 2).map(activity => (
                     <div
                       key={activity.delivery_id}
                       className={`cursor-pointer rounded transition border p-1 ${selectedEventId === activity.delivery_id ? "border-primary bg-primary/10" : "border-transparent"}`}
@@ -292,56 +279,32 @@ export default function NewPostPage() {
               )}
             </CardContent>
           </Card>
-          {/* Templates & ton */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Paramètres</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Template
-                </label>
-                <Input
-                  placeholder="LinkedIn"
-                  value={form.template}
-                  onChange={e =>
-                    setForm(f => ({ ...f, template: e.target.value }))
-                  }
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Ton</label>
-                <Select
-                  value={form.tone}
-                  onValueChange={val => setForm(f => ({ ...f, tone: val }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir un ton" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TONES.map(tone => (
-                      <SelectItem key={tone.value} value={tone.value}>
-                        {tone.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Programmer (date/heure)
-                </label>
-                <Input
-                  type="datetime-local"
-                  value={form.scheduledAt || ""}
-                  onChange={e =>
-                    setForm(f => ({ ...f, scheduledAt: e.target.value }))
-                  }
-                />
-              </div>
-            </CardContent>
-          </Card>
+          {/* Préférences utilisateur (modale) */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full mb-2">
+                <Settings className="mr-2 h-4 w-4" />
+                Préférences IA
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg w-full">
+              <DialogHeader>
+                <DialogTitle>Préférences de génération IA</DialogTitle>
+                <DialogDescription>
+                  Personnalisez le ton, la langue, les formats de sortie, le
+                  contexte et les réglages avancés pour la génération de vos
+                  posts.
+                </DialogDescription>
+              </DialogHeader>
+              <UserPreferencesForm />
+              <DialogClose asChild>
+                <Button variant="secondary" className="mt-4 w-full">
+                  Fermer
+                </Button>
+              </DialogClose>
+            </DialogContent>
+          </Dialog>
+
           {/* Quota IA restant */}
           <QuotaRate />
         </div>

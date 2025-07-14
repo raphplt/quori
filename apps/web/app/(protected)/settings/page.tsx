@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { GitHubAppSettings } from "@/components/GitHubAppSettings";
+import { UserPreferencesForm } from "@/components/profile/UserPreferencesForm";
 
 type ExtendedUser = {
   id: string;
@@ -432,150 +433,22 @@ function SettingsContent() {
               </CardContent>
             </Card>
 
-            {/* Preferences */}
-            <Card id="preferences">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Palette className="mr-2 h-5 w-5" />
-                  Préférences
-                </CardTitle>
-                <CardDescription>
-                  Personnalisez votre expérience d&apos;utilisation.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="theme">Thème</Label>
-                    <Select
-                      value={preferences.theme}
-                      onValueChange={value =>
-                        setPreferences(prev => ({ ...prev, theme: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="light">Clair</SelectItem>
-                        <SelectItem value="dark">Sombre</SelectItem>
-                        <SelectItem value="system">Système</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="language">Langue</Label>
-                    <Select
-                      value={preferences.language}
-                      onValueChange={value =>
-                        setPreferences(prev => ({ ...prev, language: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="fr">Français</SelectItem>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="es">Español</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="timezone">Fuseau horaire</Label>
-                    <Select
-                      value={preferences.timezone}
-                      onValueChange={value =>
-                        setPreferences(prev => ({ ...prev, timezone: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Europe/Paris">
-                          Europe/Paris
-                        </SelectItem>
-                        <SelectItem value="America/New_York">
-                          America/New_York
-                        </SelectItem>
-                        <SelectItem value="Asia/Tokyo">Asia/Tokyo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="postsPerPage">Posts par page</Label>
-                    <Select
-                      value={preferences.postsPerPage}
-                      onValueChange={value =>
-                        setPreferences(prev => ({
-                          ...prev,
-                          postsPerPage: value,
-                        }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="10">10</SelectItem>
-                        <SelectItem value="20">20</SelectItem>
-                        <SelectItem value="50">50</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Génération automatique</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Générer automatiquement des posts pour les nouveaux
-                        commits
-                      </p>
-                    </div>
-                    <Switch
-                      checked={preferences.autoGenerate}
-                      onCheckedChange={value =>
-                        setPreferences(prev => ({
-                          ...prev,
-                          autoGenerate: value,
-                        }))
-                      }
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Profil public</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Permettre aux autres de voir votre profil public
-                      </p>
-                    </div>
-                    <Switch
-                      checked={preferences.publicProfile}
-                      onCheckedChange={value =>
-                        setPreferences(prev => ({
-                          ...prev,
-                          publicProfile: value,
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
-
-                <Button>
-                  <Save className="mr-2 h-4 w-4" />
-                  Sauvegarder les préférences
-                </Button>
-              </CardContent>
-            </Card>
+            {/* Section Préférences utilisateur */}
+            <div id="preferences" className="lg:col-span-3">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Préférences de génération de contenu</CardTitle>
+                  <CardDescription>
+                    Personnalisez le ton, la langue, les formats de sortie, le
+                    contexte et les réglages avancés pour la génération de vos
+                    posts.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <UserPreferencesForm />
+                </CardContent>
+              </Card>
+            </div>
 
             {/* GitHub App Integration */}
             <div id="integrations">

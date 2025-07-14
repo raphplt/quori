@@ -6,8 +6,6 @@ export interface UseEventsReturn {
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
-  createTestEvent: () => Promise<void>;
-  // Méthodes utilitaires
   getEventsByType: (type: string) => GitHubEvent[];
   getRecentEvents: (limit?: number) => GitHubEvent[];
   hasEvents: boolean;
@@ -17,7 +15,7 @@ export interface UseEventsReturn {
  * Hook personnalisé pour accéder aux événements GitHub avec des méthodes utilitaires
  */
 export function useGitHubEvents(): UseEventsReturn {
-  const { events, isLoading, error, refetch, createTestEvent } = useEvents();
+  const { events, isLoading, error, refetch } = useEvents();
 
   const getEventsByType = (type: string): GitHubEvent[] => {
     if (!events) return [];
@@ -41,7 +39,6 @@ export function useGitHubEvents(): UseEventsReturn {
     isLoading,
     error,
     refetch,
-    createTestEvent,
     getEventsByType,
     getRecentEvents,
     hasEvents,

@@ -22,12 +22,12 @@ import {
   Target,
   Eye,
   ArrowUpRight,
-  Sparkles,
   Plus,
 } from "lucide-react";
 import Link from "next/link";
 import { GitHubAppAlert } from "@/components/GitHubAppAlert";
 import ActivityPreview from "@/components/dashboard/ActivityPreview";
+import { usePostsByStatus } from "@/hooks/usePostsStats";
 
 type ExtendedUser = {
   id: string;
@@ -53,11 +53,13 @@ function DashboardContent() {
   const { data: session } = useSession();
   const user = session?.user as ExtendedUser;
 
+  const { data: postsByStatus, isLoading } = usePostsByStatus();
+
   if (!user) {
     return null;
   }
 
-  // Mock data - dans un vrai projet, ces données viendraient de votre API
+  // KPI mock data conservé pour l'instant
   const stats = {
     thisMonth: {
       posts: 12,
@@ -71,37 +73,11 @@ function DashboardContent() {
     },
   };
 
-  const queuedPosts = [
-    {
-      id: 1,
-      title: "Nouvelle fonctionnalité de notifications",
-      status: "processing",
-      repo: "quori",
-      estimatedTime: "5 min",
-    },
-    {
-      id: 2,
-      title: "Correctifs d'authentification",
-      status: "queued",
-      repo: "api-service",
-      estimatedTime: "En attente",
-    },
-  ];
-
-  const upcomingPosts = [
-    {
-      id: 1,
-      title: "Amélioration de l'UI du dashboard",
-      scheduledFor: "2025-01-10T09:00:00Z",
-      repo: "web-app",
-    },
-    {
-      id: 2,
-      title: "Optimisation des performances API",
-      scheduledFor: "2025-01-11T14:30:00Z",
-      repo: "api-service",
-    },
-  ];
+  // Utiliser les vrais posts pour les files d'attente et les posts planifiés
+  const queuedPosts = postsByStatus
+    ? [...postsByStatus.drafts, ...postsByStatus.ready]
+    : [];
+  const upcomingPosts = postsByStatus ? postsByStatus.scheduled : [];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -215,39 +191,44 @@ function DashboardContent() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {queuedPosts.map(post => (
-                    <div
-                      key={post.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{post.title}</p>
-                        <p className="text-xs text-gray-500">{post.repo}</p>
+                  {isLoading ? (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      Chargement...
+                    </p>
+                  ) : queuedPosts.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      Aucun post en cours de génération
+                    </p>
+                  ) : (
+                    queuedPosts.map(post => (
+                      <div
+                        key={post.id}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{post.summary}</p>
+                          <p className="text-xs text-gray-500">
+                            {post.installation?.account_login || ""}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge
+                            variant={
+                              post.status === "ready" ? "default" : "secondary"
+                            }
+                          >
+                            {post.status === "ready"
+                              ? "Prêt à publier"
+                              : "Brouillon"}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {/* Pas d'estimation réelle, champ à adapter si besoin */}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge
-                          variant={
-                            post.status === "processing"
-                              ? "default"
-                              : "secondary"
-                          }
-                        >
-                          {post.status === "processing"
-                            ? "Traitement..."
-                            : "En attente"}
-                        </Badge>
-                        <span className="text-xs text-gray-500">
-                          {post.estimatedTime}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
-                {queuedPosts.length === 0 && (
-                  <p className="text-sm text-gray-500 text-center py-4">
-                    Aucun post en cours de génération
-                  </p>
-                )}
               </CardContent>
             </Card>
           </div>
@@ -265,28 +246,44 @@ function DashboardContent() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {upcomingPosts.map(post => (
-                    <div key={post.id} className="border rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className="text-xs">
-                          {new Date(post.scheduledFor).toLocaleDateString(
-                            "fr-FR"
-                          )}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(post.scheduledFor).toLocaleTimeString(
-                            "fr-FR",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </span>
+                  {isLoading ? (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      Chargement...
+                    </p>
+                  ) : upcomingPosts.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      Aucun post planifié
+                    </p>
+                  ) : (
+                    upcomingPosts.map(post => (
+                      <div key={post.id} className="border rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <Badge variant="outline" className="text-xs">
+                            {post.scheduledAt
+                              ? new Date(post.scheduledAt).toLocaleDateString(
+                                  "fr-FR"
+                                )
+                              : ""}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {post.scheduledAt
+                              ? new Date(post.scheduledAt).toLocaleTimeString(
+                                  "fr-FR",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  }
+                                )
+                              : ""}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium">{post.summary}</p>
+                        <p className="text-xs text-gray-500">
+                          {post.installation?.account_login || ""}
+                        </p>
                       </div>
-                      <p className="text-sm font-medium">{post.title}</p>
-                      <p className="text-xs text-gray-500">{post.repo}</p>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
                 <div className="mt-4">
                   <Button variant="outline" className="w-full" asChild>

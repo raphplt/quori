@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { GithubModule } from './github/github.module';
 import { QuotaModule } from './quota/quota.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { PreferencesModule } from './preferences/preferences.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     UsersModule,
     GithubModule,
     QuotaModule,
+    PreferencesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

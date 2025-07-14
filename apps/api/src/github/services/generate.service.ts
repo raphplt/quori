@@ -11,6 +11,7 @@ import { GenerateDto, GenerateResultDto } from '../dto/generate.dto';
 import { Post, PostStatus } from '../entities/post.entity';
 import { Installation } from '../entities/installation.entity';
 import { Event } from '../entities/event.entity';
+import { PreferencesService } from '../../preferences/preferences.service';
 
 interface QuotaInfo {
   date: string;
@@ -31,6 +32,7 @@ export class GenerateService {
     private readonly installationRepository: Repository<Installation>,
     @InjectRepository(Event)
     private readonly eventRepository: Repository<Event>,
+    private readonly preferencesService: PreferencesService,
   ) {
     const apiKey = this.config.get<string>('OPENAI_API_KEY');
     if (!apiKey) {
@@ -151,14 +153,53 @@ export class GenerateService {
     eventDeliveryId?: string,
   ): Promise<GenerateResultDto> {
     this.checkQuota(userId);
-    const prompt = this.buildPrompt(dto);
+
+    // Préférences utilisateur (fallback sur valeurs globales)
+    let preferences:
+      | import('../../preferences/entities/preference.entity').Preference
+      | null = null;
+    try {
+      preferences = await this.preferencesService.findByUserId(userId);
+    } catch (e) {
+      preferences = null; // NotFound = pas de préférences, fallback sur défauts
+    }
+
+    // Appliquer les préférences ou fallback
+    const lang =
+      preferences?.preferredLanguage || dto.options?.lang || 'français';
+    const tone =
+      preferences?.favoriteTone ||
+      dto.options?.tone ||
+      'accessible, professionnel, léger humour';
+    const outputs = preferences?.defaultOutputs ||
+      dto.options?.output || ['summary', 'post'];
+    const hashtags = preferences?.hashtagPreferences || [];
+    const customContext = preferences?.customContext || '';
+    const modelSettings = preferences?.modelSettings || {};
+
+    // Fusionner dans le DTO/options pour buildPrompt
+    const promptDto = {
+      ...dto,
+      options: {
+        ...dto.options,
+        lang,
+        tone,
+        output: outputs,
+        hashtags,
+        customContext,
+        ...modelSettings,
+      },
+    };
+
+    const prompt = this.buildPrompt(promptDto);
     console.debug('DEBUG ▶ prompt', prompt);
 
     try {
       const res = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: modelSettings.model || 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
+        temperature: modelSettings.temperature ?? 0.7,
+        top_p: modelSettings.top_p,
       });
 
       const content = res.choices[0]?.message?.content;
@@ -183,7 +224,7 @@ export class GenerateService {
         res,
         installationId,
         eventDeliveryId,
-        dto.options,
+        promptDto.options,
       );
 
       return parsed;
