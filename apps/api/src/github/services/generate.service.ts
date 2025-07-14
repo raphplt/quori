@@ -7,6 +7,8 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OpenAI } from 'openai';
+import * as fs from 'fs';
+import * as path from 'path';
 import { GenerateDto, GenerateResultDto } from '../dto/generate.dto';
 import { Post, PostStatus } from '../entities/post.entity';
 import { Installation } from '../entities/installation.entity';
@@ -22,6 +24,8 @@ export class GenerateService {
   private openai: OpenAI;
   private quotas = new Map<string, QuotaInfo>();
 
+  private promptTemplate: string;
+
   constructor(
     private readonly config: ConfigService,
     @InjectRepository(Post)
@@ -36,6 +40,13 @@ export class GenerateService {
       throw new Error('OPENAI_API_KEY is not configured');
     }
     this.openai = new OpenAI({ apiKey });
+
+    // Charge le prompt depuis le fichier externe
+    const promptPath = path.resolve(
+      __dirname,
+      '../prompts/generate-prompt.txt',
+    );
+    this.promptTemplate = fs.readFileSync(promptPath, 'utf-8');
   }
 
   private checkQuota(userId: string): void {
@@ -65,52 +76,18 @@ export class GenerateService {
       )
       .join('\n');
 
-    return `
-# System
-Tu es un expert en création de contenu LinkedIn pour développeurs, avec un œil marketing et design. Tes posts doivent :
-- Captiver dès la première ligne (hook fort)
-- Illustrer de façon concrète l’impact technique
-- Apporter une vraie leçon/apprentissage
-- Inviter à l’échange avec une question ou call-to-action
-- Rester professionnel, crédible et optimisé pour l’algorithme LinkedIn (paragraphes courts, listes à puces, hashtags pertinents, ton adapté)
-
-# User
-Contexte :
-- Dépôt : ${event.repoFullName}
-- Commits : ${event.commitCount}
-- Date : ${event.timestamp}
-
-Détails techniques :
-- Titre : ${event.title}
-- Description : ${event.desc}
-- Fichiers modifiés : ${event.filesChanged.join(', ')}
-- Statistiques de diff :
-${statsBlock}
-
-Consignes :
-1. **Résumé** (champ \`"summary"\`) : 2–3 phrases très claires qui reprennent l’essentiel du changement et son impact.
-2. **Post complet** (champ \`"post"\`) :
-   - **Hook** (1 phrase d’accroche percutante).
-   - **Contexte** (1 phrase rappel).
-   - **Détails** : 2–3 bullets illustrant les changements clés et leur bénéfice.
-   - **Leçon** : insight ou apprentissage en 1 phrase.
-   - **Call-to-action** : invitation à commenter ou partager (question ouverte).
-   - **Hashtags** : 3 à 5 mots-clés pertinents (#dev, #opensource, …).
-
-Langue : ${lang}
-Ton : ${tone}
-Sortie attendue : ${outputs}
-
-IMPORTANT :
-– Tu réponds **uniquement** par un objet JSON valide, sans aucune explication supplémentaire.
-– Format exact :
-\`\`\`json
-{
-  "summary": "…",
-  "post": "…"
-}
-\`\`\`
-`.trim();
+    // Remplacement des variables dans le template externe
+    return this.promptTemplate
+      .replace(/\{\{repoFullName\}\}/g, event.repoFullName)
+      .replace(/\{\{commitCount\}\}/g, String(event.commitCount))
+      .replace(/\{\{timestamp\}\}/g, event.timestamp)
+      .replace(/\{\{title\}\}/g, event.title)
+      .replace(/\{\{desc\}\}/g, event.desc)
+      .replace(/\{\{filesChanged\}\}/g, event.filesChanged.join(', '))
+      .replace(/\{\{statsBlock\}\}/g, statsBlock)
+      .replace(/\{\{lang\}\}/g, lang)
+      .replace(/\{\{tone\}\}/g, tone)
+      .replace(/\{\{outputs\}\}/g, outputs);
   }
 
   private cleanJsonResponse(content: string): string {
