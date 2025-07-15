@@ -38,13 +38,34 @@ const Header: React.FC = () => {
   const user = session?.user;
   const isLoading = status === "loading";
 
+
   const PublicNavLinks = () => (
-    <Link
-      href="/"
-      className="text-sm font-medium hover:text-primary transition-colors"
-    >
-      Accueil
-    </Link>
+    <>
+      <Link
+        href="/"
+        className="text-sm font-medium hover:text-primary transition-colors"
+      >
+        Accueil
+      </Link>
+      <Link
+        href="#features"
+        className="text-sm font-medium hover:text-primary transition-colors"
+      >
+        Fonctionnalités
+      </Link>
+      <Link
+        href="#pricing"
+        className="text-sm font-medium hover:text-primary transition-colors"
+      >
+        Tarifs
+      </Link>
+      <Link
+        href="#contact"
+        className="text-sm font-medium hover:text-primary transition-colors"
+      >
+        Contact
+      </Link>
+    </>
   );
 
   const UserMenu = () => {
@@ -107,7 +128,6 @@ const Header: React.FC = () => {
 
     return (
       <Button
-        variant="ghost"
         onClick={() => signIn("github")}
         className="flex items-center gap-2"
       >
@@ -199,14 +219,22 @@ const Header: React.FC = () => {
           </nav>
         )}
 
-        <div className="flex items-center space-x-4">
-          {!user && (
-            <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-              <PublicNavLinks />
-            </nav>
-          )}
-          <UserMenu />
-        </div>
+        {!user ? (
+          <>
+            <div className="hidden md:flex flex-1 justify-center">
+              <nav className="flex items-center space-x-6 text-sm font-medium">
+                <PublicNavLinks />
+              </nav>
+            </div>
+            <div className="flex items-center space-x-4">
+              <UserMenu />
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center space-x-4">
+            <UserMenu />
+          </div>
+        )}
       </div>
     </header>
   );

@@ -66,51 +66,67 @@ export function UserPreferencesForm() {
   return (
     <form className="space-y-6" onSubmit={handleSubmit}>
       <div>
-        <Label>Ton favori</Label>
-        <Select value={form.favoriteTone || ""} onValueChange={val => handleChange("favoriteTone", val)}>
+        <Label className="mb-2">Ton favori</Label>
+        <Select
+          value={form.favoriteTone || ""}
+          onValueChange={val => handleChange("favoriteTone", val)}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Choisir un ton" />
           </SelectTrigger>
           <SelectContent>
             {TONES.map(tone => (
-              <SelectItem key={tone.value} value={tone.value}>{tone.label}</SelectItem>
+              <SelectItem key={tone.value} value={tone.value}>
+                {tone.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
       <div>
-        <Label>Langue préférée</Label>
-        <Select value={form.preferredLanguage || ""} onValueChange={val => handleChange("preferredLanguage", val)}>
+        <Label className="mb-2">Langue préférée</Label>
+        <Select
+          value={form.preferredLanguage || ""}
+          onValueChange={val => handleChange("preferredLanguage", val)}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Choisir une langue" />
           </SelectTrigger>
           <SelectContent>
             {LANGUAGES.map(lang => (
-              <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
+              <SelectItem key={lang.value} value={lang.value}>
+                {lang.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
       <div>
-        <Label>Formats de sortie par défaut</Label>
+        <Label className="mb-2">Formats de sortie par défaut</Label>
         <Input
           placeholder="summary, post, tweet"
           value={form.defaultOutputs?.join(", ") || ""}
           onChange={e => handleArrayChange("defaultOutputs", e.target.value)}
         />
-        <div className="text-xs text-muted-foreground mt-1">Séparez par des virgules (ex: summary, post, tweet)</div>
+        <div className="text-xs text-muted-foreground mt-1">
+          Séparez par des virgules (ex: summary, post, tweet)
+        </div>
       </div>
       <div>
-        <Label>Mots-clés/hashtags prioritaires</Label>
+        <Label className="mb-2">Mots-clés/hashtags prioritaires</Label>
         <Input
           placeholder="#dev, #ai, #startup"
           value={form.hashtagPreferences?.join(", ") || ""}
-          onChange={e => handleArrayChange("hashtagPreferences", e.target.value)}
+          onChange={e =>
+            handleArrayChange("hashtagPreferences", e.target.value)
+          }
         />
-        <div className="text-xs text-muted-foreground mt-1">Séparez par des virgules</div>
+        <div className="text-xs text-muted-foreground mt-1">
+          Séparez par des virgules
+        </div>
       </div>
       <div>
-        <Label>Contexte personnalisé (Markdown ou JSON)</Label>
+        <Label className="mb-2">Contexte personnalisé (Markdown ou JSON)</Label>
         <Textarea
           placeholder="Décrivez votre contexte, votre audience, vos objectifs..."
           value={form.customContext || ""}
@@ -119,7 +135,7 @@ export function UserPreferencesForm() {
         />
       </div>
       <div>
-        <Label>Réglages avancés du modèle (JSON)</Label>
+        <Label className="mb-2">Réglages avancés du modèle (JSON)</Label>
         <Textarea
           placeholder='{"temperature":0.7, "top_p":0.9}'
           value={form.modelSettings ? JSON.stringify(form.modelSettings) : ""}
@@ -133,13 +149,17 @@ export function UserPreferencesForm() {
           }}
           rows={3}
         />
-        <div className="text-xs text-muted-foreground mt-1">Exemple: {`{"temperature":0.7, "top_p":0.9}`}</div>
+        <div className="text-xs text-muted-foreground mt-1">
+          Exemple: {`{"temperature":0.7, "top_p":0.9}`}
+        </div>
       </div>
       <Button type="submit" disabled={saving}>
         {saving ? <Spinner className="mr-2 h-4 w-4" /> : null}
         Sauvegarder
       </Button>
-      {success && <div className="text-green-600 text-sm">Préférences sauvegardées !</div>}
+      {success && (
+        <div className="text-green-600 text-sm">Préférences sauvegardées !</div>
+      )}
       {errMsg && <div className="text-red-500 text-sm">{errMsg}</div>}
     </form>
   );

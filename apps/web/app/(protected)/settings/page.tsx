@@ -18,13 +18,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Bell,
   Shield,
   Palette,
@@ -32,7 +25,6 @@ import {
   Database,
   Download,
   Trash2,
-  Save,
   Eye,
   EyeOff,
   Key,
@@ -74,15 +66,6 @@ function SettingsContent() {
     emailWeeklyReport: true,
     pushNotifications: true,
     slackIntegration: false,
-  });
-
-  const [preferences, setPreferences] = useState({
-    theme: "system",
-    language: "fr",
-    timezone: "Europe/Paris",
-    postsPerPage: "20",
-    autoGenerate: true,
-    publicProfile: false,
   });
 
   const [showApiKey, setShowApiKey] = useState(false);

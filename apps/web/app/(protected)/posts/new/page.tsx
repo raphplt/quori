@@ -246,9 +246,7 @@ export default function NewPostPage() {
             </Card>
           )}
         </div>
-        {/* Colonne droite : activité récente, templates, settings, quota */}
         <div className="flex flex-col gap-4">
-          {/* Activité récente (events) */}
           <Card>
             <CardHeader>
               <CardTitle>Activité récente</CardTitle>
