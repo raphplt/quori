@@ -24,6 +24,7 @@ export class GenerateOptionsDto {
 export class GenerateDto {
   event!: EventDto;
   options?: GenerateOptionsDto;
+  templateId?: number;
 }
 
 export class GenerateResultDto {

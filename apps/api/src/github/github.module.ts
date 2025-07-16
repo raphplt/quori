@@ -11,12 +11,13 @@ import { Installation } from './entities/installation.entity';
 import { Event } from './entities/event.entity';
 import { Post } from './entities/post.entity';
 import { PreferencesModule } from '../preferences/preferences.module';
+import { Template } from '../templates/entities/template.entity';
 
 @Module({
   imports: [
     UsersModule,
     AuthModule,
-    TypeOrmModule.forFeature([Installation, Event, Post]),
+    TypeOrmModule.forFeature([Installation, Event, Post, Template]),
     PreferencesModule,
   ],
   controllers: [GithubController, WebhooksController],

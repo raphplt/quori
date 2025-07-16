@@ -128,8 +128,11 @@ GET  /api/quota
 
 - `POST /api/generate` : génère un contenu et consomme 1 quota. Authentification JWT requise.
 - `GET /api/quota` : retourne l'utilisation courante `{ used: number, remaining: number }`.
+- `GET /api/templates` : liste les templates de style disponibles.
 
 La limite est fixée à **5 requêtes par utilisateur et par jour**. Au-delà, l'API renvoie `429 Quota journalier dépassé`.
+
+Pour ajouter un nouveau template global, insérez un enregistrement dans la table `templates` (nom, description, promptModifier). Les templates rattachés à une installation doivent renseigner la colonne `installation_id`.
 
 ## Workflow de développement
 

@@ -26,6 +26,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Settings } from "lucide-react";
+import TemplateSelector from "@/components/TemplateSelector";
+import { useGenerateContext } from "@/contexts/GenerateContext";
 
 const postFormSchema = z.object({
   summary: z.string().min(10, "Résumé trop court"),
@@ -93,6 +95,7 @@ export default function NewPostPage() {
 
   // Génération IA
   const generateMutation = useGeneratePost();
+  const { templateId } = useGenerateContext();
   const handleGenerate = async () => {
     setStatus("loading");
     setError(null);
@@ -104,6 +107,9 @@ export default function NewPostPage() {
         tone: form.tone,
         output: [form.template || DEFAULT_TEMPLATE],
       };
+      if (templateId) {
+        (request as any).templateId = templateId;
+      }
       const res = await generateMutation.mutateAsync({ request, event });
       setPreview(res);
       setForm(f => ({ ...f, summary: res.summary, postContent: res.post }));
@@ -216,7 +222,7 @@ export default function NewPostPage() {
             <Button
               variant="default"
               onClick={handleGenerate}
-              disabled={status === "loading" || !event}
+              disabled={status === "loading" || !event || !templateId}
             >
               {status === "loading" ? (
                 <Spinner className="mr-2 h-4 w-4" />
@@ -279,6 +285,7 @@ export default function NewPostPage() {
               )}
             </CardContent>
           </Card>
+          <TemplateSelector />
           {/* Préférences utilisateur (modale) */}
           <Dialog>
             <DialogTrigger asChild>
