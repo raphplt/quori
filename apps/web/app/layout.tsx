@@ -11,6 +11,7 @@ import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import { Toaster } from "react-hot-toast";
 import { DataProvider } from "@/contexts/DataContext";
 import { QuotaProvider } from "@/contexts/QuotaContext";
+import { GenerateProvider } from "@/contexts/GenerateContext";
 
 export const metadata: Metadata = {
   title: "Quori",
@@ -31,12 +32,14 @@ export default function RootLayout({
               <EventsProvider>
                 <DataProvider>
                   <QuotaProvider>
-                    <SidebarProvider>
-                      <Header />
-                      <MainLayout>{children}</MainLayout>
-                      <Footer />
-                      <Toaster position="top-right" />
-                    </SidebarProvider>
+                    <GenerateProvider>
+                      <SidebarProvider>
+                        <Header />
+                        <MainLayout>{children}</MainLayout>
+                        <Footer />
+                        <Toaster position="top-right" />
+                      </SidebarProvider>
+                    </GenerateProvider>
                   </QuotaProvider>
                 </DataProvider>
               </EventsProvider>

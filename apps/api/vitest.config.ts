@@ -8,6 +8,7 @@ export default defineConfig({
     include: [
       'src/github/parse-git-event.spec.ts',
       'src/quota/quota.service.spec.ts',
+      'src/github/generate.service.template.spec.ts',
     ],
   },
 });

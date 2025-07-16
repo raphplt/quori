@@ -8,6 +8,7 @@ import { GithubModule } from './github/github.module';
 import { QuotaModule } from './quota/quota.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PreferencesModule } from './preferences/preferences.module';
+import { TemplatesModule } from './templates/templates.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { PreferencesModule } from './preferences/preferences.module';
     GithubModule,
     QuotaModule,
     PreferencesModule,
+    TemplatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

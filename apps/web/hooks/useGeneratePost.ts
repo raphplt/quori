@@ -46,6 +46,7 @@ interface GeneratePostRequest {
     tone?: string;
     output?: string[];
   };
+  templateId?: number;
 }
 
 interface GeneratePostResponse {

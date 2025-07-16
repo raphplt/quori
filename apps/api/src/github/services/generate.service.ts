@@ -11,6 +11,7 @@ import { GenerateDto, GenerateResultDto } from '../dto/generate.dto';
 import { Post, PostStatus } from '../entities/post.entity';
 import { Installation } from '../entities/installation.entity';
 import { Event } from '../entities/event.entity';
+import { Template } from '../../templates/entities/template.entity';
 import { PreferencesService } from '../../preferences/preferences.service';
 
 interface QuotaInfo {
@@ -32,6 +33,8 @@ export class GenerateService {
     private readonly installationRepository: Repository<Installation>,
     @InjectRepository(Event)
     private readonly eventRepository: Repository<Event>,
+    @InjectRepository(Template)
+    private readonly templateRepository: Repository<Template>,
     private readonly preferencesService: PreferencesService,
   ) {
     const apiKey = this.config.get<string>('OPENAI_API_KEY');
@@ -109,6 +112,7 @@ export class GenerateService {
     installationId?: number,
     eventDeliveryId?: string,
     options?: { lang?: string; tone?: string; output?: string[] },
+    templateName?: string,
   ): Promise<Post> {
     const post = new Post();
     post.summary = generatedContent.summary;
@@ -120,6 +124,7 @@ export class GenerateService {
     };
     post.status = 'draft';
     post.tone = options?.tone;
+    post.template = templateName;
 
     if (installationId) {
       const inst = await this.installationRepository.findOne({
@@ -153,6 +158,24 @@ export class GenerateService {
     eventDeliveryId?: string,
   ): Promise<GenerateResultDto> {
     this.checkQuota(userId);
+
+    let template: Template | null = null;
+    if (dto.templateId) {
+      template = await this.templateRepository.findOne({
+        where: { id: dto.templateId },
+        relations: ['installation'],
+      });
+      if (!template) {
+        throw new BadRequestException('Template not found');
+      }
+      if (
+        template.installation &&
+        installationId &&
+        template.installation.id !== installationId
+      ) {
+        throw new ForbiddenException('Template not allowed for installation');
+      }
+    }
 
     // Préférences utilisateur (fallback sur valeurs globales)
     let preferences:
@@ -191,7 +214,10 @@ export class GenerateService {
       },
     };
 
-    const prompt = this.buildPrompt(promptDto);
+    let prompt = this.buildPrompt(promptDto);
+    if (template?.promptModifier) {
+      prompt += `\n${template.promptModifier}`;
+    }
     console.debug('DEBUG ▶ prompt', prompt);
 
     try {
@@ -225,6 +251,7 @@ export class GenerateService {
         installationId,
         eventDeliveryId,
         promptDto.options,
+        template?.name,
       );
 
       return parsed;
