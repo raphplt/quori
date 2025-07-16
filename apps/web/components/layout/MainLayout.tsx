@@ -15,9 +15,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, className }) => {
   const { isOpen } = useSidebar();
 
   if (!session?.user) {
-    return (
-      <div className={cn("container mx-auto px-4", className)}>{children}</div>
-    );
+    return <div className={cn(className)}>{children}</div>;
   }
 
   return (

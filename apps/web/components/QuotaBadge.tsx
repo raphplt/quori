@@ -12,8 +12,8 @@ export default function QuotaBadge() {
 
   if (error) {
     return (
-      <Badge variant="destructive" title={error}>
-        {error}
+      <Badge variant="destructive">
+        {error.message || "Une erreur est survenue"}
       </Badge>
     );
   }

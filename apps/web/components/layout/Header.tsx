@@ -17,7 +17,6 @@ import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Sidebar from "./Sidebar";
 import InboxPopover from "../InboxPopover";
-import QuotaBadge from "../QuotaBadge";
 
 import {
   Search,
@@ -37,7 +36,6 @@ const Header: React.FC = () => {
   const { data: session, status } = useSession();
   const user = session?.user;
   const isLoading = status === "loading";
-
 
   const PublicNavLinks = () => (
     <>
@@ -95,7 +93,7 @@ const Header: React.FC = () => {
             <div className="flex items-center gap-2 p-2">
               <div className="flex flex-col space-y-1 leading-none">
                 <p className="font-medium">{user.name}</p>
-                <p className="w-[200px] truncate text-sm text-muted-foreground">
+                <p className="w-[200px] truncatpe text-sm text-muted-foreground">
                   {user.email}
                 </p>
               </div>
@@ -215,7 +213,6 @@ const Header: React.FC = () => {
               <GitBranch className="h-5 w-5" />
             </Button>
             <InboxPopover />
-            <QuotaBadge />
           </nav>
         )}
 

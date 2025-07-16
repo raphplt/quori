@@ -73,7 +73,6 @@ function DashboardContent() {
     },
   };
 
-  // Utiliser les vrais posts pour les files d'attente et les posts planifiés
   const queuedPosts = postsByStatus
     ? [...postsByStatus.drafts, ...postsByStatus.ready]
     : [];

@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { Template } from './entities/template.entity';
 
 @Injectable()
@@ -20,22 +20,23 @@ export class TemplatesService implements OnModuleInit {
       {
         name: 'Formel',
         description: 'Ton professionnel, structuré',
-        promptModifier: 'Utilise un ton professionnel et structuré.' ,
+        promptModifier: 'Utilise un ton professionnel et structuré.',
       },
       {
         name: 'Décontracté',
         description: 'Ton conversationnel, familier',
-        promptModifier: 'Adopte un style convivial et familier.' ,
+        promptModifier: 'Adopte un style convivial et familier.',
       },
       {
         name: 'Humoristique',
-        description: 'Ton léger, touche d\'humour',
-        promptModifier: "Ajoute une touche d'humour et de légèreté." ,
+        description: "Ton léger, touche d'humour",
+        promptModifier: "Ajoute une touche d'humour et de légèreté.",
       },
       {
         name: 'Technique',
         description: 'Ton détaillé, axé code',
-        promptModifier: 'Sois précis et mets l\'accent sur les aspects techniques.' ,
+        promptModifier:
+          "Sois précis et mets l'accent sur les aspects techniques.",
       },
     ];
     await this.repo.insert(templates);
@@ -44,7 +45,7 @@ export class TemplatesService implements OnModuleInit {
   findAvailable(installationId?: number) {
     return this.repo.find({
       where: [
-        { installation: null },
+        { installation: IsNull() },
         ...(installationId ? [{ installation: { id: installationId } }] : []),
       ],
       order: { id: 'ASC' },
