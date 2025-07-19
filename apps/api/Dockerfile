@@ -4,9 +4,9 @@ WORKDIR /repo
 
 # Copier uniquement ce qui sert à résoudre les deps
 COPY package*.json ./
-# (si tu as un dossier packages/ ou apps/ avec des package.json)
-COPY apps/apps.json? ./apps/  2>/dev/null || true
-COPY packages ./packages
+# Copier les dossiers packages et apps s'ils existent
+COPY packages ./packages 2>/dev/null || true
+COPY apps ./apps 2>/dev/null || true
 COPY apps/api/package*.json ./apps/api/
 
 RUN npm install --omit=dev --workspaces --include-workspace-root
