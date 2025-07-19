@@ -9,6 +9,7 @@ import { QuotaModule } from './quota/quota.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PreferencesModule } from './preferences/preferences.module';
 import { TemplatesModule } from './templates/templates.module';
+import * as Joi from 'joi';
 
 @Module({
   imports: [
@@ -21,30 +22,15 @@ import { TemplatesModule } from './templates/templates.module';
       ],
       cache: true,
       expandVariables: true,
-      validationSchema: {
-        type: 'object',
-        required: ['DATABASE_URL'],
-        properties: {
-          NODE_ENV: {
-            type: 'string',
-            enum: ['development', 'production', 'test'],
-            default: 'development',
-          },
-          PORT: {
-            type: 'number',
-            default: 3001,
-          },
-          DATABASE_URL: {
-            type: 'string',
-          },
-          SESSION_SECRET: {
-            type: 'string',
-          },
-          FRONTEND_URL: {
-            type: 'string',
-          },
-        },
-      },
+      validationSchema: Joi.object({
+        NODE_ENV: Joi.string()
+          .valid('development', 'production', 'test')
+          .default('development'),
+        PORT: Joi.number().default(3001),
+        DATABASE_URL: Joi.string().required(),
+        SESSION_SECRET: Joi.string().optional(),
+        FRONTEND_URL: Joi.string().optional(),
+      }),
     }),
     TypeOrmModule.forRootAsync({
       useFactory: (config: ConfigService) => {

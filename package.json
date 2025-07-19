@@ -41,5 +41,9 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "@types/joi": "^17.2.2",
+    "joi": "^17.13.3"
+  }
 }
