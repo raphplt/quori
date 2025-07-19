@@ -7,7 +7,7 @@ ENV NODE_ENV=development
 COPY package*.json ./
 COPY apps/api/package*.json ./apps/api/
 
-# 2. Installer dépendances (workspaces). 
+# 2. Installer dépendances (workspaces).
 # Si tu as un seul workspace API, ça installera tout ce qui est requis.
 # On garde les dev deps pour pouvoir build.
 RUN npm install --workspaces --include-workspace-root
@@ -34,4 +34,4 @@ COPY --from=build /repo/node_modules ./node_modules
 COPY --from=build /repo/apps/api/package.json ./package.json
 
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
