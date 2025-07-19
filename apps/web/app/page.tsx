@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-// Import des composants de la landing page
 import { HeroSection } from "@/components/landing/HeroSection";
 import { ProblemSolutionSection } from "@/components/landing/ProblemSolutionSection";
 import { TechnologySection } from "@/components/landing/TechnologySection";
@@ -12,8 +11,6 @@ import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
 import { PricingSection } from "@/components/landing/PricingSection";
 import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
-import { CTASection } from "@/components/landing/CTASection";
-import { Footer } from "@/components/landing/Footer";
 
 const QuoriLandingPage = () => {
   const { data: session, status } = useSession();
@@ -59,7 +56,6 @@ const QuoriLandingPage = () => {
       <HowItWorksSection />
       <PricingSection />
       <TestimonialsSection />
-      {/* <CTASection /> */}
     </div>
   );
 };

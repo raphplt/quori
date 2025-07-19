@@ -1,5 +1,3 @@
-import { IsEnum, IsNotEmpty } from 'class-validator';
-
 export class PostDto {
   id!: number;
   summary!: string;
@@ -32,7 +30,5 @@ export class PostsPageDto {
 }
 
 export class UpdatePostStatusDto {
-  @IsNotEmpty()
-  @IsEnum(['draft', 'ready', 'scheduled', 'published', 'failed'])
   status!: 'draft' | 'ready' | 'scheduled' | 'published' | 'failed';
 }

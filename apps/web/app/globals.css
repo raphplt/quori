@@ -239,7 +239,6 @@
 
   body {
     @apply bg-background text-foreground;
-    scroll-behavior: smooth;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -633,4 +632,8 @@ button:hover {
 
 button:active {
   @apply scale-95;
+}
+
+html {
+  scroll-behavior: smooth;
 }
