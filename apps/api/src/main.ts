@@ -7,7 +7,6 @@ import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import helmet from 'helmet';
-import compression from 'compression';
 
 interface RawBodyRequest extends Request {
   rawBody?: string;
@@ -39,7 +38,6 @@ async function bootstrap() {
         },
       }),
     );
-    app.use(compression());
   }
 
   // Configuration du body parser
