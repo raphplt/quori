@@ -42,7 +42,6 @@ import * as Joi from 'joi';
           autoLoadEntities: true,
           synchronize: !isProduction,
           logging: config.get('NODE_ENV') === 'development',
-          ssl: isProduction ? { rejectUnauthorized: false } : false,
           extra: {
             connectionLimit: 10,
             acquireTimeout: 60000,
