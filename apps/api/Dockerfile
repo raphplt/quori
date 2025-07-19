@@ -1,30 +1,37 @@
-# Étape 1 : build dans la racine
+# ========== Étape 1 : Build ==========
 FROM node:20-alpine AS build
 WORKDIR /repo
+ENV NODE_ENV=development
 
-# Copier uniquement ce qui sert à résoudre les deps
+# 1. Copier manifests racine + API (pour tirer parti du cache)
 COPY package*.json ./
 COPY apps/api/package*.json ./apps/api/
 
-RUN npm install --omit=dev --workspaces --include-workspace-root
+# 2. Installer dépendances (workspaces).
+# Si tu as un seul workspace API, ça installera tout ce qui est requis.
+# On garde les dev deps pour pouvoir build.
+RUN npm install --workspaces --include-workspace-root
 
-# Copier le reste du code
+# 3. Copier le reste du code
 COPY . .
 
-# Construire seulement l'API
+# 4. Build API
 WORKDIR /repo/apps/api
 RUN npm run build
-RUN npm prune --omit=dev
 
-# Étape 2 : image finale légère
-FROM node:20-alpine
+# 5. Prune pour ne garder que prod (en retirant dev deps)
+WORKDIR /repo
+RUN npm prune --omit=dev || true
+
+# ========== Étape 2 : Runtime ==========
+FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
-# Copier node_modules du build (monorepo)
+
+# 6. Copier artefacts build + node_modules
 COPY --from=build /repo/apps/api/dist ./dist
-COPY --from=build /repo/package*.json ./
-COPY --from=build /repo/apps/api/package*.json ./apps/api/
 COPY --from=build /repo/node_modules ./node_modules
+COPY --from=build /repo/apps/api/package.json ./package.json
 
 EXPOSE 3000
 CMD ["node", "dist/main.js"]
