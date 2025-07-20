@@ -16,12 +16,26 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'default-jwt-secret',
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '7d'),
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const jwtSecret = configService.get<string>('JWT_SECRET');
+        const isProduction = configService.get('NODE_ENV') === 'production';
+
+        if (!jwtSecret) {
+          if (isProduction) {
+            throw new Error('JWT_SECRET is required in production environment');
+          }
+          console.warn(
+            '⚠️  JWT_SECRET not configured, using temporary secret for development',
+          );
+        }
+
+        return {
+          secret: jwtSecret || 'temporary-dev-secret-change-in-production',
+          signOptions: {
+            expiresIn: configService.get<string>('JWT_EXPIRES_IN', '7d'),
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

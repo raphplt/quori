@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -32,6 +33,16 @@ import * as Joi from 'joi';
         FRONTEND_URL: Joi.string().optional(),
       }),
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 120,
+      },
+      {
+        ttl: 3600000,
+        limit: 1200,
+      },
+    ]),
     TypeOrmModule.forRootAsync({
       useFactory: (config: ConfigService) => {
         const isProduction = config.get('NODE_ENV') === 'production';

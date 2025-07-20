@@ -94,16 +94,33 @@ export class GenerateService {
   }
 
   private cleanJsonResponse(content: string): string {
-    // Strip markdown code fences
-    const codeBlockPattern = /```(?:json)?\s*([\s\S]*?)\s*```/g;
-    const match = codeBlockPattern.exec(content);
-    if (match) {
-      return match[1].trim();
+    // Nettoyer la réponse pour extraire le JSON valide
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No valid JSON found in response');
     }
-    // Fallback: extract JSON object
-    const jsonPattern = /\{[\s\S]*\}/;
-    const jsonMatch = content.match(jsonPattern);
-    return jsonMatch ? jsonMatch[0] : content.trim();
+    return jsonMatch[0];
+  }
+
+  private validateGenerateResult(data: unknown): GenerateResultDto {
+    if (!data || typeof data !== 'object') {
+      throw new Error('Response is not a valid object');
+    }
+
+    const result = data as Record<string, unknown>;
+
+    if (typeof result.summary !== 'string' || !result.summary.trim()) {
+      throw new Error('Invalid or missing summary field');
+    }
+
+    if (typeof result.post !== 'string' || !result.post.trim()) {
+      throw new Error('Invalid or missing post field');
+    }
+
+    return {
+      summary: result.summary,
+      post: result.post,
+    };
   }
 
   private async savePostToDatabase(
@@ -183,22 +200,23 @@ export class GenerateService {
       | null = null;
     try {
       preferences = await this.preferencesService.findByUserId(userId);
-    } catch (e) {
+    } catch {
       preferences = null; // NotFound = pas de préférences, fallback sur défauts
     }
 
     // Appliquer les préférences ou fallback
-    const lang =
+    const lang: string =
       preferences?.preferredLanguage || dto.options?.lang || 'français';
-    const tone =
+    const tone: string =
       preferences?.favoriteTone ||
       dto.options?.tone ||
       'accessible, professionnel, léger humour';
-    const outputs = preferences?.defaultOutputs ||
+    const outputs: string[] = preferences?.defaultOutputs ||
       dto.options?.output || ['summary', 'post'];
-    const hashtags = preferences?.hashtagPreferences || [];
-    const customContext = preferences?.customContext || '';
-    const modelSettings = preferences?.modelSettings || {};
+    const hashtags: string[] = preferences?.hashtagPreferences || [];
+    const customContext: string = preferences?.customContext || '';
+    const modelSettings: Record<string, unknown> =
+      preferences?.modelSettings || {};
 
     // Fusionner dans le DTO/options pour buildPrompt
     const promptDto = {
@@ -222,10 +240,10 @@ export class GenerateService {
 
     try {
       const res = await this.openai.chat.completions.create({
-        model: modelSettings.model || 'gpt-4o-mini',
+        model: (modelSettings.model as string) || 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
-        temperature: modelSettings.temperature ?? 0.7,
-        top_p: modelSettings.top_p,
+        temperature: (modelSettings.temperature as number) ?? 0.7,
+        top_p: (modelSettings.top_p as number) || undefined,
       });
 
       const content = res.choices[0]?.message?.content;
@@ -237,13 +255,7 @@ export class GenerateService {
       const cleaned = this.cleanJsonResponse(content);
       console.debug('DEBUG ▶ cleaned response', cleaned);
 
-      const parsed = JSON.parse(cleaned) as GenerateResultDto;
-      if (
-        typeof parsed.summary !== 'string' ||
-        typeof parsed.post !== 'string'
-      ) {
-        throw new Error('Invalid structure: missing summary or post');
-      }
+      const parsed = this.validateGenerateResult(JSON.parse(cleaned));
 
       await this.savePostToDatabase(
         parsed,

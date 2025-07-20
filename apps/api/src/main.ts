@@ -7,6 +7,7 @@ import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import helmet from 'helmet';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 interface RawBodyRequest extends Request {
   rawBody?: string;
@@ -34,8 +35,21 @@ async function bootstrap() {
             styleSrc: ["'self'", "'unsafe-inline'"],
             scriptSrc: ["'self'"],
             imgSrc: ["'self'", 'data:', 'https:'],
+            connectSrc: ["'self'"],
+            fontSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'none'"],
           },
         },
+        hsts: {
+          maxAge: 31536000,
+          includeSubDomains: true,
+          preload: true,
+        },
+        xFrameOptions: { action: 'deny' },
+        xContentTypeOptions: true,
+        referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
       }),
     );
   }
@@ -93,6 +107,10 @@ async function bootstrap() {
       },
     }),
   );
+
+  // Filtre d'exception global
+  app.useGlobalFilters(new HttpExceptionFilter(configService));
+
   // Configuration des sessions avec sécurité renforcée
   const sessionSecret = configService.get<string>('SESSION_SECRET');
   if (!sessionSecret && isProduction) {
