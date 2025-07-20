@@ -68,8 +68,6 @@ export function useGeneratePost() {
     { request: GeneratePostRequest; event: GitHubEvent }
   >({
     mutationFn: async ({ request, event }) => {
-      console.log("Sending generate request:", request);
-
       const params = new URLSearchParams();
 
       if (event.delivery_id) {

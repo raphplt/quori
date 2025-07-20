@@ -17,7 +17,6 @@ import {
   Users,
   TrendingUp,
   ChevronDown,
-  Star,
   Code,
   Globe,
   Target,

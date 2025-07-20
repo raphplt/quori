@@ -135,8 +135,6 @@ function Profile() {
   ];
 
   const handleSave = () => {
-    // Ici vous sauvegarderiez les informations de profil via votre API
-    console.log("Sauvegarde du profil:", { bio, location, website });
     setIsEditing(false);
   };
 
