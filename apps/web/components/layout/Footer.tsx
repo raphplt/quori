@@ -6,16 +6,19 @@ import { Github, Twitter, Linkedin, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const { data: session } = useSession();
 
-  if (session) return;
+  const currentPath = usePathname();
+
+  if (session || currentPath === "/auth/login") return;
 
   return (
     <footer className="bg-background border-t">
-      <div className="container mx-auto px-4 py-12 md:py-16">
+      <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center space-x-2 mb-4">

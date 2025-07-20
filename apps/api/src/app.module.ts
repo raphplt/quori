@@ -31,6 +31,32 @@ import * as Joi from 'joi';
         DATABASE_URL: Joi.string().required(),
         SESSION_SECRET: Joi.string().optional(),
         FRONTEND_URL: Joi.string().optional(),
+        JWT_SECRET: Joi.string().when('NODE_ENV', {
+          is: 'production',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        GITHUB_CLIENT_ID: Joi.string().when('NODE_ENV', {
+          is: 'production',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        GITHUB_CLIENT_SECRET: Joi.string().when('NODE_ENV', {
+          is: 'production',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        GITHUB_WEBHOOK_SECRET: Joi.string().when('NODE_ENV', {
+          is: 'production',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        OPENAI_API_KEY: Joi.string().when('NODE_ENV', {
+          is: 'production',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        REDIS_URL: Joi.string().optional(),
       }),
     }),
     ThrottlerModule.forRoot([

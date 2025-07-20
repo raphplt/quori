@@ -32,7 +32,7 @@ import {
   PanelLeft,
 } from "lucide-react";
 
-const Header: React.FC = () => {
+const Header = () => {
   const { data: session, status } = useSession();
   const user = session?.user;
   const isLoading = status === "loading";

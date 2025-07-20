@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import helmet from 'helmet';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import * as compression from 'compression';
 
 interface RawBodyRequest extends Request {
   rawBody?: string;
@@ -24,6 +25,23 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const isProduction = configService.get('NODE_ENV') === 'production';
+
+  // Compression pour améliorer les performances
+  app.use(compression());
+
+  // Middleware de sécurité supplémentaire
+  app.use((req, res, next) => {
+    // Supprimer les headers sensibles
+    res.removeHeader('X-Powered-By');
+    res.removeHeader('Server');
+
+    // Ajouter des headers de sécurité supplémentaires
+    res.setHeader('X-DNS-Prefetch-Control', 'off');
+    res.setHeader('X-Download-Options', 'noopen');
+    res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+
+    next();
+  });
 
   // Sécurité en production
   if (isProduction) {
@@ -57,7 +75,7 @@ async function bootstrap() {
   // Configuration du body parser
   app.use(
     json({
-      limit: '10mb',
+      limit: isProduction ? '5mb' : '10mb', // Limite plus permissive pour la compatibilité
       verify: (req: RawBodyRequest, _res, buf: Buffer) => {
         req.rawBody = buf.toString();
       },
@@ -96,7 +114,6 @@ async function bootstrap() {
     exposedHeaders: ['Content-Type', 'Cache-Control', 'Connection'],
   });
 
-  // Configuration de la validation globale
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -133,6 +150,8 @@ async function bootstrap() {
         }),
       },
       name: 'quori-session',
+      rolling: true,
+      unset: 'destroy',
     }),
   );
 
@@ -167,7 +186,14 @@ async function bootstrap() {
       );
     }
 
-    logger.log(`🔒 CORS enabled for origins: ${allowedOrigins.join(', ')}`);
+    // Masquer les origines CORS en production pour éviter l'énumération
+    if (isProduction) {
+      logger.log(
+        `🔒 CORS enabled for ${allowedOrigins.length} allowed origins`,
+      );
+    } else {
+      logger.log(`🔒 CORS enabled for origins: ${allowedOrigins.join(', ')}`);
+    }
   });
 }
 
