@@ -93,9 +93,8 @@ async function bootstrap() {
       },
     }),
   );
-
   // Configuration des sessions avec sécurité renforcée
-  const sessionSecret = configService.get('SESSION_SECRET');
+  const sessionSecret = configService.get<string>('SESSION_SECRET');
   if (!sessionSecret && isProduction) {
     logger.error('SESSION_SECRET is required in production environment');
     process.exit(1);
@@ -109,7 +108,7 @@ async function bootstrap() {
       cookie: {
         secure: isProduction,
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 24 * 60 * 60 * 1000,
         sameSite: isProduction ? 'strict' : 'lax',
         ...(isProduction && {
           domain: '.quori.dev',
@@ -136,7 +135,7 @@ async function bootstrap() {
     SwaggerModule.setup('api/docs', app, documentFactory);
   }
 
-  const port = configService.get('PORT') || 3001;
+  const port = configService.get<number>('PORT') || 3001;
 
   await app.listen(port).then(() => {
     logger.log(`🚀 API is running on: http://localhost:${port}`);
