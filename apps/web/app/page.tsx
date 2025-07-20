@@ -11,6 +11,7 @@ import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
 import { PricingSection } from "@/components/landing/PricingSection";
 import { TestimonialsSection } from "@/components/landing/TestimonialsSection";
+import Head from "next/head";
 
 const QuoriLandingPage = () => {
   const { data: session, status } = useSession();
@@ -48,15 +49,24 @@ const QuoriLandingPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <HeroSection isVisible={isVisible} />
-      <ProblemSolutionSection />
-      <TechnologySection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <PricingSection />
-      <TestimonialsSection />
-    </div>
+    <>
+      <Head>
+        <title>Quori – Convertissez vos commits en posts viraux</title>
+        <meta
+          name="description"
+          content="Vos commits GitHub deviennent des posts LinkedIn viraux, en 1 clic. Découvrez la preuve visuelle et rejoignez +10 000 devs qui accélèrent leur personal brand avec Quori."
+        />
+      </Head>
+      <div className="min-h-screen bg-background text-foreground">
+        <HeroSection isVisible={isVisible} />
+        <ProblemSolutionSection />
+        <TechnologySection />
+        <FeaturesSection />
+        <HowItWorksSection />
+        <PricingSection />
+        <TestimonialsSection />
+      </div>
+    </>
   );
 };
 
