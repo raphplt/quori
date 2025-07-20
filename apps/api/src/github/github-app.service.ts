@@ -6,6 +6,8 @@ import { Queue } from 'bullmq';
 import { Observable, Subject, from } from 'rxjs';
 import { startWith, switchMap } from 'rxjs/operators';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThanOrEqual } from 'typeorm';
@@ -74,9 +76,36 @@ export class GithubAppService {
     await this.queue.add('event', payload, { jobId: id });
   }
 
+  private getPrivateKey(): string {
+    // Essayer d'abord la variable d'environnement directe (pour le développement local)
+    const privateKey = this.config.get<string>('GITHUB_APP_PRIVATE_KEY');
+    if (privateKey) {
+      return privateKey;
+    }
+
+    // Sinon, essayer de lire depuis le fichier (pour la production)
+    const privateKeyPath = this.config.get<string>(
+      'GITHUB_APP_PRIVATE_KEY_PATH',
+    );
+    if (privateKeyPath) {
+      try {
+        const fullPath = path.resolve(privateKeyPath);
+        return fs.readFileSync(fullPath, 'utf8');
+      } catch (error) {
+        throw new Error(
+          `Failed to read private key from path ${privateKeyPath}: ${error.message}`,
+        );
+      }
+    }
+
+    throw new Error(
+      'Neither GITHUB_APP_PRIVATE_KEY nor GITHUB_APP_PRIVATE_KEY_PATH is configured',
+    );
+  }
+
   private generateJwt(): string {
     const appId = this.config.get<string>('GITHUB_APP_ID')!;
-    const privateKey = this.config.get<string>('GITHUB_APP_PRIVATE_KEY')!;
+    const privateKey = this.getPrivateKey();
     const now = Math.floor(Date.now() / 1000);
     return sign({ iss: appId, iat: now, exp: now + 600 }, privateKey, {
       algorithm: 'RS256',
