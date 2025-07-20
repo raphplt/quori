@@ -26,6 +26,9 @@ import { JwtService } from '@nestjs/jwt';
 import { GenerateService } from './services/generate.service';
 import { GenerateDto, GenerateResultDto } from './dto/generate.dto';
 import { UpdatePostStatusDto } from './dto/post.dto';
+import { Event } from './entities/event.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 interface AuthenticatedRequest {
   user: User;
@@ -38,6 +41,8 @@ export class GithubController {
     private readonly appService: GithubAppService,
     private readonly jwtService: JwtService,
     private readonly generateService: GenerateService,
+    @InjectRepository(Event)
+    private readonly eventRepository: Repository<Event>,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -472,4 +477,37 @@ export class GithubController {
       );
     }
   }
+
+  // Ne pas supprimer
+  // @Post('events/test')
+  // async createTestEvent(
+  //   @Request() req: AuthenticatedRequest,
+  //   @Body() body: CreateTestEventDto,
+  // ): Promise<Event> {
+  //   // Créer l'événement de test
+  //   const event = new Event();
+  //   event.delivery_id = body.delivery_id;
+  //   event.event = body.event;
+  //   event.event_type = body.event_type;
+  //   event.payload = body.payload;
+  //   event.repo_full_name = body.repo_full_name;
+  //   event.author_login = body.author_login;
+  //   event.author_avatar_url = body.author_avatar_url;
+  //   event.metadata = body.metadata;
+  //   event.status = body.status || 'pending';
+  //   event.error_message = body.error_message;
+  //   event.received_at = new Date();
+
+  //   // Si un installation_id est fourni, l'associer
+  //   if (body.installation_id) {
+  //     const installation = await this.appService.getInstallationById(
+  //       body.installation_id,
+  //     );
+  //     if (installation) {
+  //       event.installation = installation;
+  //     }
+  //   }
+
+  //   return this.eventRepository.save(event);
+  // }
 }

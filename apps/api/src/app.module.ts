@@ -51,6 +51,17 @@ import * as Joi from 'joi';
           then: Joi.required(),
           otherwise: Joi.optional(),
         }),
+        GITHUB_APP_ID: Joi.string().when('NODE_ENV', {
+          is: 'production',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        GITHUB_APP_PRIVATE_KEY: Joi.string().when('NODE_ENV', {
+          is: 'production',
+          then: Joi.required(),
+          otherwise: Joi.optional(),
+        }),
+        GITHUB_APP_PRIVATE_KEY_PATH: Joi.string().optional(),
         OPENAI_API_KEY: Joi.string().when('NODE_ENV', {
           is: 'production',
           then: Joi.required(),
