@@ -9,8 +9,8 @@ import {
   GitBranch,
   Zap,
   Calendar,
-  Play,
 } from "lucide-react";
+import Image from "next/image";
 
 const features = [
   {
@@ -18,6 +18,7 @@ const features = [
     title: "Instant Git parsing",
     description:
       "Push → Résumé + post automatiquement généré depuis vos commits",
+    image: "/images/features/instant-git-parsing.png",
     snippet:
       "🚀 Just shipped a new feature: real-time data synchronization with WebSocket support. This commit adds 3x faster updates and reduces server load by 40%. #WebDev #Performance #RealTime",
     status: "live",
@@ -27,6 +28,7 @@ const features = [
     title: "IA sur‑mesure",
     description:
       "Ton pro, léger humour, prêt à publier directement sur LinkedIn",
+    image: "/images/features/custom-ai.png",
     snippet:
       "💡 Pro tip: Always validate your data at the boundaries! This refactor caught 15+ edge cases we missed before. Clean code = fewer bugs = happier users. #CleanCode #BestPractices",
     status: "beta",
@@ -35,6 +37,7 @@ const features = [
     icon: <Calendar className="h-6 w-6" />,
     title: "Planification & Analytics",
     description: "Programmez vos posts et suivez l'impact de votre contenu",
+    image: "/images/features/analytics.png",
     snippet:
       "📊 Analytics update: Our new dashboard feature is live! 2.5k+ views in the first week, 300% increase in user engagement. Data-driven decisions FTW! #Analytics #Productivity",
     status: "coming",
@@ -147,7 +150,12 @@ export const FeaturesSection: React.FC = () => {
                       <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-primary/10 to-chart-2/10 border border-primary/20">
                         <div className="aspect-video flex items-center justify-center">
                           <div className="text-center">
-                            <Play className="h-12 w-12 text-primary/50 mx-auto mb-4" />
+                            <Image
+                              src={features[currentSlide].image}
+                              alt={features[currentSlide].title}
+                              width={100}
+                              height={100}
+                            />
                             <p className="text-muted-foreground font-medium">
                               Démo {features[currentSlide].title}
                             </p>
