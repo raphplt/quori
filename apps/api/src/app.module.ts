@@ -10,6 +10,7 @@ import { QuotaModule } from './quota/quota.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PreferencesModule } from './preferences/preferences.module';
 import { TemplatesModule } from './templates/templates.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -113,6 +114,7 @@ import * as Joi from 'joi';
     QuotaModule,
     PreferencesModule,
     TemplatesModule,
+    OnboardingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

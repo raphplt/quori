@@ -14,6 +14,8 @@ import { DataProvider } from "@/contexts/DataContext";
 import { QuotaProvider } from "@/contexts/QuotaContext";
 import { GenerateProvider } from "@/contexts/GenerateContext";
 import { Analytics } from "@vercel/analytics/next";
+import { OnboardingProvider } from "@/contexts/OnboardingContext";
+import { OnboardingModal } from "@/components/OnboardingModal";
 
 declare global {
   interface Window {
@@ -74,18 +76,21 @@ export default function RootLayoutClient({
             <EventsProvider>
               <DataProvider>
                 <QuotaProvider>
-                  <GenerateProvider>
-                    <SidebarProvider>
-                      <Header />
-                      <MainLayout>
-                        <CookieConsent onConsent={setConsent} />
-                        <Analytics />
-                        {children}
-                      </MainLayout>
-                      <Footer />
-                      <Toaster position="top-right" />
-                    </SidebarProvider>
-                  </GenerateProvider>
+                  <OnboardingProvider>
+                    <OnboardingModal />
+                    <GenerateProvider>
+                      <SidebarProvider>
+                        <Header />
+                        <MainLayout>
+                          <CookieConsent onConsent={setConsent} />
+                          <Analytics />
+                          {children}
+                        </MainLayout>
+                        <Footer />
+                        <Toaster position="top-right" />
+                      </SidebarProvider>
+                    </GenerateProvider>
+                  </OnboardingProvider>
                 </QuotaProvider>
               </DataProvider>
             </EventsProvider>

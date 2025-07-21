@@ -1,5 +1,3 @@
-#!/usr/bin/env ts-node
-
 import { DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';

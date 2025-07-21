@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn, OneToOne, JoinColumn } from 'typeorm';
+import { OnboardingStatusEntity } from '../onboarding/onboarding-status.entity';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -28,6 +29,17 @@ export class UserEntity {
 
   @Column('timestamptz', { nullable: true })
   refresh_token_expires?: Date;
+
+  @Column('uuid', { nullable: true })
+  onboarding_status_id?: string;
+
+  @OneToOne(
+    () => OnboardingStatusEntity,
+    (onboardingStatus) => onboardingStatus.user,
+    { cascade: true, eager: true },
+  )
+  @JoinColumn({ name: 'onboarding_status_id' })
+  onboardingStatus?: OnboardingStatusEntity;
 
   @Column('timestamptz', { default: () => 'now()' })
   created_at!: Date;

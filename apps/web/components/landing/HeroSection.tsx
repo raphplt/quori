@@ -187,7 +187,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ isVisible }) => {
                   transition={{ delay: 1.2, duration: 0.6 }}
                 >
                   <ProofDemo
-                    src="/demo/quori-demo.mp4" // À remplacer par ton vrai asset
+                    src="/videos/Quori-demo.mp4" // À remplacer par ton vrai asset
                     poster="/demo/quori-demo-poster.png"
                     alt="Démo Quori : génération d'un post LinkedIn à partir d'un commit GitHub"
                   />
@@ -367,7 +367,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ isVisible }) => {
               onClick={e => e.stopPropagation()}
             >
               <video
-                src="/demo/quori-demo.mp4"
+                src="/videos/Quori-demo.mp4"
                 poster="/demo/quori-demo-poster.png"
                 autoPlay
                 loop
