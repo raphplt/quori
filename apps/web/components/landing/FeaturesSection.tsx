@@ -149,20 +149,13 @@ export const FeaturesSection: React.FC = () => {
                       {/* GIF/Video placeholder */}
                       <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-primary/10 to-chart-2/10 border border-primary/20">
                         <div className="aspect-video flex items-center justify-center">
-                          <div className="text-center">
-                            <Image
-                              src={features[currentSlide].image}
-                              alt={features[currentSlide].title}
-                              width={100}
-                              height={100}
-                            />
-                            <p className="text-muted-foreground font-medium">
-                              Démo {features[currentSlide].title}
-                            </p>
-                            <p className="text-sm text-muted-foreground/70">
-                              GIF/Video à ajouter
-                            </p>
-                          </div>
+                          <Image
+                            src={features[currentSlide].image}
+                            alt={features[currentSlide].title}
+                            width={500}
+                            height={500}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                       </div>
                     </div>
