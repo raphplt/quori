@@ -96,3 +96,22 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Migrations
+
+Les migrations TypeORM utilisent le fichier `data-source.ts` à la racine du
+workspace `api`.
+
+### Générer une migration
+
+```bash
+npm --workspace=api run generate-migration -- <NomMigration>
+```
+
+Le fichier sera créé dans `apps/api/migrations`.
+
+### Exécuter les migrations
+
+```bash
+npm --workspace=api run migrate
+```
