@@ -22,8 +22,6 @@ const QuoriLandingPage = () => {
 
   const [isVisible, setIsVisible] = useState(false);
 
-  //Fix bug
-
   useEffect(() => {
     if (isAuthenticated && user) {
       router.push("/dashboard");
