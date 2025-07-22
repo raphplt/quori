@@ -21,6 +21,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Copy, CheckCircle, Sparkles, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { authenticatedFetch } from "@/lib/api-client";
+import { Card, CardContent, CardFooter } from "./ui/card";
 
 const TOTAL_STEPS = 4;
 
@@ -41,6 +44,8 @@ export const OnboardingModal: React.FC = () => {
     finishOnboarding,
   } = useOnboarding();
 
+  const { status } = useSession();
+
   // Step 1: GitHub App install logic
   const {
     data: githubApp,
@@ -52,7 +57,9 @@ export const OnboardingModal: React.FC = () => {
   // Step 2: Scan logic
   const scanMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/github/app/scan", { method: "POST" });
+      const res = await authenticatedFetch("/github/events/scan", {
+        method: "POST",
+      });
       if (!res.ok) throw new Error("Erreur lors du scan des dépôts");
       return res.json();
     },
@@ -103,8 +110,11 @@ export const OnboardingModal: React.FC = () => {
     } catch {}
   };
 
-  // Show modal if onboarding not finished and user is authenticated
-  const open = !loading && onboardingStatus && !onboardingStatus.finished;
+  // Show modal if onboarding not finished or never started and user is authenticated
+  const open =
+    status === "authenticated" &&
+    !loading &&
+    (!onboardingStatus || !onboardingStatus.finished);
 
   // Step content logic
   const renderStep = (step: number) => {
@@ -257,38 +267,50 @@ export const OnboardingModal: React.FC = () => {
               </Button>
             </div>
           ) : (
-            <div className="w-full max-h-64 overflow-y-auto border rounded mb-4 bg-muted/30">
+            <div className="w-full max-h-64 overflow-y-auto rounded mb-4 bg-muted/30">
               {commitEvents.length === 0 ? (
                 <div className="p-4 text-muted-foreground text-center">
                   Aucun commit trouvé.
                 </div>
               ) : (
-                commitEvents.map(event => (
-                  <button
-                    key={event.delivery_id}
-                    className={`w-full text-left px-4 py-3 border-b last:border-b-0 flex items-center gap-3 transition-colors ${selectedCommitId === event.delivery_id ? "bg-primary/10 border-primary" : "hover:bg-primary/5"}`}
-                    onClick={() => setSelectedCommitId(event.delivery_id)}
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium text-sm truncate">
-                        {event.metadata?.title || "Commit"}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {event.repo_full_name}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {event.author_login} •{" "}
-                        {new Date(event.received_at).toLocaleString("fr-FR", {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        })}
-                      </div>
-                    </div>
-                    {selectedCommitId === event.delivery_id && (
-                      <span className="ml-2 text-primary font-bold">✓</span>
-                    )}
-                  </button>
-                ))
+                commitEvents.map(event => {
+                  const selected = selectedCommitId === event.delivery_id;
+                  return (
+                    <Card
+                      key={event.delivery_id}
+                      tabIndex={0}
+                      role="button"
+                      aria-pressed={selected}
+                      onClick={() => setSelectedCommitId(event.delivery_id)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter" || e.key === " ")
+                          setSelectedCommitId(event.delivery_id);
+                      }}
+                      className={`mb-2 cursor-pointer transition-colors border ${selected ? " bg-primary/10" : "hover:bg-primary/5"}`}
+                    >
+                      <CardContent className="py-3 flex flex-col gap-1">
+                        <div className="font-medium text-sm truncate">
+                          {event.metadata?.title || "Commit"}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {event.repo_full_name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {event.author_login} •{" "}
+                          {new Date(event.received_at).toLocaleString("fr-FR", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                        </div>
+                      </CardContent>
+                      {selected && (
+                        <CardFooter className="justify-end pt-0 pb-2">
+                          <span className="text-primary font-bold">✓</span>
+                        </CardFooter>
+                      )}
+                    </Card>
+                  );
+                })
               )}
             </div>
           )}
@@ -430,17 +452,17 @@ export const OnboardingModal: React.FC = () => {
       <DialogContent className="max-w-lg w-full">
         <DialogHeader>
           <DialogTitle>Onboarding Quori</DialogTitle>
-          <DialogDescription>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium">
-                Étape {currentStep} sur {TOTAL_STEPS}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {stepTitles[currentStep - 1]}
-              </span>
-            </div>
-            <Progress value={(currentStep / TOTAL_STEPS) * 100} />
+          <DialogDescription asChild={false}>
+            <span className="text-sm font-medium">
+              Étape {currentStep} sur {TOTAL_STEPS}
+            </span>
+            <span className="text-sm text-muted-foreground ml-2">
+              {stepTitles[currentStep - 1]}
+            </span>
           </DialogDescription>
+          <div className="mt-2">
+            <Progress value={(currentStep / TOTAL_STEPS) * 100} />
+          </div>
         </DialogHeader>
         <div className="mt-6">
           {error && <div className="text-red-500 mb-2">{error.message}</div>}

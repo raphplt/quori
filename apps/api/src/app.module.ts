@@ -11,6 +11,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PreferencesModule } from './preferences/preferences.module';
 import { TemplatesModule } from './templates/templates.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
+import { ScheduledPostsModule } from './scheduled_posts/scheduled_posts.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -115,6 +116,7 @@ import * as Joi from 'joi';
     PreferencesModule,
     TemplatesModule,
     OnboardingModule,
+    ScheduledPostsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

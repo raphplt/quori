@@ -6,6 +6,7 @@ import {
   useQueryClient,
   QueryKey,
 } from "@tanstack/react-query";
+import { authenticatedFetch } from "@/lib/api-client";
 
 interface OnboardingStatus {
   id: string;
@@ -45,7 +46,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
     queryKey,
     queryFn: async () => {
       if (!shouldFetch) return null;
-      const res = await fetch(`/api/onboarding-status/${userId}`);
+      const res = await authenticatedFetch(`/onboarding-status/${userId}`);
       if (!res.ok) throw new Error("Erreur récupération onboarding");
       const json = await res.json();
       if (
@@ -67,11 +68,14 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
     mutationFn: async () => {
       if (!userId) throw new Error("No user");
       const nextStep = (onboardingStatus?.step || 0) + 1;
-      const res = await fetch(`/api/onboarding-status/${userId}/step`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ step: nextStep }),
-      });
+      const res = await authenticatedFetch(
+        `/onboarding-status/${userId}/step`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ step: nextStep }),
+        }
+      );
       if (!res.ok) throw new Error("Erreur avancée onboarding");
       return res.json();
     },
@@ -81,9 +85,12 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
   const finishMutation = useMutation<OnboardingStatus, Error, void>({
     mutationFn: async () => {
       if (!userId) throw new Error("No user");
-      const res = await fetch(`/api/onboarding-status/${userId}/finish`, {
-        method: "POST",
-      });
+      const res = await authenticatedFetch(
+        `/onboarding-status/${userId}/finish`,
+        {
+          method: "POST",
+        }
+      );
       if (!res.ok) throw new Error("Erreur finalisation onboarding");
       return res.json();
     },

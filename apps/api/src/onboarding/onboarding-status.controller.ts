@@ -1,7 +1,10 @@
 import { Controller, Get, Patch, Post, Param, Body } from '@nestjs/common';
 import { OnboardingStatusService } from './onboarding-status.service';
+import { IsInt, Min } from 'class-validator';
 
 class UpdateStepDto {
+  @IsInt()
+  @Min(1)
   step: number;
 }
 
@@ -11,7 +14,12 @@ export class OnboardingStatusController {
 
   @Get(':userId')
   async getStatus(@Param('userId') userId: string) {
-    return this.onboardingService.getByUserId(userId);
+    let status = await this.onboardingService.getByUserId(userId);
+    if (!status) {
+      // Crée une entrée onboarding par défaut si elle n'existe pas
+      status = await this.onboardingService.updateStep(userId, 1);
+    }
+    return status;
   }
 
   @Patch(':userId/step')

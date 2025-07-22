@@ -478,6 +478,82 @@ export class GithubController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post('events/scan')
+  async scanUserEvents(@Request() req: AuthenticatedRequest) {
+    const user = req.user;
+    if (!user?.githubAccessToken) {
+      throw new UnauthorizedException('No GitHub access token found for user');
+    }
+    // Fetch all user repos
+    const reposPage = await this.githubService.getUserRepositories(
+      user.githubAccessToken,
+      1,
+      100,
+    );
+    const repos = reposPage.repositories;
+    // Fetch all installations for the user
+    const installations = await this.appService.getUserInstallations(
+      user.githubId,
+    );
+    let totalImported = 0;
+    let totalFetched = 0;
+    const errors: string[] = [];
+    for (const repo of repos) {
+      try {
+        // Find installation id for this repo
+        const installation = installations.find((inst) =>
+          inst.repos.includes(repo.full_name),
+        );
+        const installationId = installation?.id || 0;
+        // Fetch recent events for each repo (GitHub API: /repos/:owner/:repo/events)
+        const [owner, repoName] = repo.full_name.split('/');
+        const eventsRes = await fetch(
+          `https://api.github.com/repos/${owner}/${repoName}/events`,
+          {
+            headers: {
+              Authorization: `Bearer ${user.githubAccessToken}`,
+              Accept: 'application/vnd.github.v3+json',
+              'User-Agent': 'Quori-App',
+            },
+          },
+        );
+        if (!eventsRes.ok) continue;
+        const events = await eventsRes.json();
+        totalFetched += Array.isArray(events) ? events.length : 0;
+        for (const event of events) {
+          try {
+            // Use delivery_id if available, else fallback to id or create a unique one
+            const deliveryId =
+              event.id || `${repo.full_name}-${event.type}-${event.created_at}`;
+            await this.appService.recordEvent(
+              deliveryId,
+              installationId,
+              event.type,
+              event,
+            );
+            totalImported++;
+          } catch (e) {
+            errors.push(
+              `Event import error for ${repo.full_name}: ${e instanceof Error ? e.message : e}`,
+            );
+          }
+        }
+      } catch (e) {
+        errors.push(
+          `Repo scan error for ${repo.full_name}: ${e instanceof Error ? e.message : e}`,
+        );
+      }
+    }
+    return {
+      message: 'Scan terminé',
+      totalRepos: repos.length,
+      totalFetched,
+      totalImported,
+      errors,
+    };
+  }
+
   // Ne pas supprimer
   // @Post('events/test')
   // async createTestEvent(
