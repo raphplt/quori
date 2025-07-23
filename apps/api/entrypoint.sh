@@ -23,4 +23,4 @@ if [ -z "$FOUND" ]; then
 fi
 
 echo "Starting API..."
-exec node dist/src/main.js   # ton main est à la racine
+exec node dist/main.js
