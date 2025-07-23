@@ -2,7 +2,7 @@
 set -e
 
 echo "Running DB migrations..."
-node dist/src/scripts/run-migrations.js
+node dist/scripts/run-migrations.js
 
 echo "Starting API..."
-exec node dist/src/main.js
+exec node dist/main.js
