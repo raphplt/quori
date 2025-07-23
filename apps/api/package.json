@@ -24,7 +24,8 @@
         "test:e2e": "jest --config ./test/jest-e2e.json",
         "worker:events": "ts-node src/github/github-events.worker.ts",
         "typeorm": "typeorm-ts-node-commonjs",
-        "generate-migration": "ts-node scripts/generate-migration.ts",
+        "migration:generate": "typeorm-ts-node-commonjs -d src/data-source.ts migration:generate src/migrations",
+        "migration:run:ts": "typeorm-ts-node-commonjs -d src/data-source.ts migration:run",
         "migrate:run": "node dist/scripts/run-migrations.js"
     },
     "dependencies": {
