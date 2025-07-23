@@ -1,4 +1,3 @@
-#!/usr/bin/env ts-node
 import { spawnSync } from 'child_process';
 import path from 'path';
 
@@ -11,7 +10,13 @@ if (!name) {
 const dataSource = path.join(__dirname, '../data-source.ts');
 const result = spawnSync(
   'npx',
-  ['typeorm-ts-node-commonjs', '-d', dataSource, 'migration:generate', path.join('migrations', name)],
+  [
+    'typeorm-ts-node-commonjs',
+    '-d',
+    dataSource,
+    'migration:generate',
+    path.join('migrations', name),
+  ],
   { stdio: 'inherit' },
 );
 process.exit(result.status === null ? 1 : result.status);
