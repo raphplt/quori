@@ -142,7 +142,6 @@ export class GithubAppService {
 
       console.log('🔄 Syncing installations from GitHub...');
 
-      // Récupérer toutes les installations de l'app GitHub
       const { data: installations } = await octokit.request(
         'GET /app/installations',
       );
@@ -193,14 +192,8 @@ export class GithubAppService {
 
       const repoNames = repos.repositories.map((repo) => repo.full_name);
 
-      // Déterminer le nom de compte selon le type (User ou Organization)
       const accountLogin = this.getAccountLogin(installation.account);
 
-      console.log(
-        `📦 Installation ${installation.id} (${accountLogin}) has ${repoNames.length} repos`,
-      );
-
-      // Upsert l'installation en BDD
       const savedInstallation = await this.installations.save({
         id: installation.id,
         account_login: accountLogin,
@@ -237,18 +230,9 @@ export class GithubAppService {
     githubId: string,
   ): Promise<Installation[]> {
     try {
-      console.log(`🔄 Syncing installations for user ${githubId}...`);
-
-      // D'abord, synchroniser toutes les installations via l'API GitHub App
       const allInstallations = await this.syncInstallationsFromGitHub();
-
-      // Ensuite, filtrer celles qui appartiennent à l'utilisateur
       const userInstallations = allInstallations.filter(
         (installation) => installation.account_id.toString() === githubId,
-      );
-
-      console.log(
-        `✅ Found ${userInstallations.length} installations for user ${githubId} out of ${allInstallations.length} total`,
       );
 
       return userInstallations;
@@ -276,20 +260,16 @@ export class GithubAppService {
   }
 
   async removeInstallation(id: number): Promise<void> {
-    // Utiliser une transaction pour s'assurer que toutes les suppressions sont atomiques
     await this.installations.manager.transaction(
       async (transactionalEntityManager) => {
-        // D'abord, supprimer tous les posts liés à cette installation
         await transactionalEntityManager
           .getRepository(Post)
           .delete({ installation: { id } });
 
-        // Ensuite, supprimer tous les événements liés à cette installation
         await transactionalEntityManager
           .getRepository(GithubEvent)
           .delete({ installation: { id } });
 
-        // Enfin, supprimer l'installation elle-même
         await transactionalEntityManager
           .getRepository(Installation)
           .delete({ id });
