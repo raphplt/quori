@@ -77,13 +77,11 @@ export class GithubAppService {
   }
 
   private getPrivateKey(): string {
-    // Essayer d'abord la variable d'environnement directe (pour le développement local)
     const privateKey = this.config.get<string>('GITHUB_APP_PRIVATE_KEY');
     if (privateKey) {
       return privateKey;
     }
 
-    // Sinon, essayer de lire depuis le fichier (pour la production)
     const privateKeyPath = this.config.get<string>(
       'GITHUB_APP_PRIVATE_KEY_PATH',
     );
