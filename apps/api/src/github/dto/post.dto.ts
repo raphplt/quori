@@ -1,3 +1,5 @@
+import { IsString, IsIn } from 'class-validator';
+
 export class PostDto {
   id!: number;
   summary!: string;
@@ -30,5 +32,7 @@ export class PostsPageDto {
 }
 
 export class UpdatePostStatusDto {
+  @IsString()
+  @IsIn(['draft', 'ready', 'scheduled', 'published', 'failed'])
   status!: 'draft' | 'ready' | 'scheduled' | 'published' | 'failed';
 }

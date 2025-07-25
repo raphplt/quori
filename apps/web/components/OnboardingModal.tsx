@@ -451,7 +451,7 @@ export const OnboardingModal: React.FC = () => {
     <Dialog open={!!open}>
       <DialogContent className="max-w-lg w-full">
         <DialogHeader>
-          <DialogTitle>Onboarding Quori</DialogTitle>
+          <DialogTitle>Bienvenue sur Quori</DialogTitle>
           <DialogDescription asChild={false}>
             <span className="text-sm font-medium">
               Étape {currentStep} sur {TOTAL_STEPS}

@@ -523,7 +523,6 @@ export class GithubController {
         totalFetched += Array.isArray(events) ? events.length : 0;
         for (const event of events) {
           try {
-            // Use delivery_id if available, else fallback to id or create a unique one
             const deliveryId =
               event.id || `${repo.full_name}-${event.type}-${event.created_at}`;
             await this.appService.recordEvent(

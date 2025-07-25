@@ -13,7 +13,6 @@ export const ProofDemo: React.FC<ProofDemoProps> = ({ src, poster, alt }) => {
 
   return (
     <>
-      {/* Aperçu cliquable */}
       <div
         className="relative w-full max-w-md mx-auto rounded-2xl overflow-hidden shadow-xl group cursor-pointer"
         onClick={() => setOpen(true)}
@@ -33,12 +32,6 @@ export const ProofDemo: React.FC<ProofDemoProps> = ({ src, poster, alt }) => {
           className="w-full h-auto object-cover bg-black/10"
           aria-label={alt}
         />
-        {/* Overlay play */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition">
-          <div className="bg-white/80 rounded-full p-3 shadow-lg">
-            <Play className="h-8 w-8 text-primary" />
-          </div>
-        </div>
       </div>
 
       {/* Lightbox */}
@@ -77,7 +70,19 @@ export const ProofDemo: React.FC<ProofDemoProps> = ({ src, poster, alt }) => {
                 onClick={() => setOpen(false)}
                 aria-label="Fermer la démo"
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             </motion.div>
           </motion.div>
