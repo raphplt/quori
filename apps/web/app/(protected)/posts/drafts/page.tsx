@@ -33,6 +33,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   FileText,
   Calendar,
   GitBranch,
@@ -46,6 +54,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useCreateScheduledPost } from "@/hooks/useScheduledPosts";
 
 interface Post {
   id: number;
@@ -90,6 +99,9 @@ export default function DraftsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [expandedPost, setExpandedPost] = useState<number | null>(null);
+  const [schedulePostId, setSchedulePostId] = useState<number | null>(null);
+  const [scheduleAt, setScheduleAt] = useState<string>("");
+  const createScheduled = useCreateScheduledPost();
 
   const {
     data: postsData,
@@ -127,6 +139,21 @@ export default function DraftsPage() {
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
     }
+  };
+
+  const openScheduleDialog = (postId: number) => {
+    setSchedulePostId(postId);
+    setScheduleAt(new Date().toISOString().slice(0, 16));
+  };
+
+  const submitSchedule = async () => {
+    if (!schedulePostId) return;
+    await createScheduled.mutateAsync({
+      postId: schedulePostId,
+      scheduledAt: new Date(scheduleAt).toISOString(),
+    });
+    setSchedulePostId(null);
+    refetch();
   };
 
   if (isLoading) {
@@ -187,7 +214,8 @@ export default function DraftsPage() {
       ) : (
         <div className="space-y-4">
           {postsData?.posts.map(post => (
-            <Card key={post.id} className="transition-shadow hover:shadow-md">
+            <Dialog key={post.id}>
+              <Card className="transition-shadow hover:shadow-md">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -301,13 +329,12 @@ export default function DraftsPage() {
 
                     {post.status === "ready" && (
                       <>
-                        <Button
-                          size="sm"
-                          onClick={() => updatePostStatus(post.id, "scheduled")}
-                        >
-                          <Clock className="h-4 w-4 mr-2" />
-                          Programmer
-                        </Button>
+                        <DialogTrigger asChild>
+                          <Button size="sm" onClick={() => openScheduleDialog(post.id)}>
+                            <Clock className="h-4 w-4 mr-2" />
+                            Programmer
+                          </Button>
+                        </DialogTrigger>
                         <Button
                           size="sm"
                           variant="outline"
@@ -356,6 +383,21 @@ export default function DraftsPage() {
                 </div>
               </CardContent>
             </Card>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Programmer la publication</DialogTitle>
+              </DialogHeader>
+              <input
+                type="datetime-local"
+                value={scheduleAt}
+                onChange={e => setScheduleAt(e.target.value)}
+                className="w-full border px-2 py-1 rounded"
+              />
+              <DialogFooter className="mt-2">
+                <Button onClick={submitSchedule}>Planifier</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           ))}
         </div>
       )}

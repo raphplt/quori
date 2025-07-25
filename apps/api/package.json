@@ -22,9 +22,10 @@
         "test:cov": "jest --coverage",
         "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
         "test:e2e": "jest --config ./test/jest-e2e.json",
-        "worker:events": "ts-node src/github/github-events.worker.ts",
+    "worker:events": "ts-node src/github/github-events.worker.ts",
         "typeorm": "typeorm-ts-node-commonjs",
-        "generate-migration": "ts-node scripts/generate-migration.ts"
+        "generate-migration": "ts-node scripts/generate-migration.ts",
+        "migrate": "ts-node scripts/run-migrations.ts"
     },
     "dependencies": {
         "@nestjs/common": "^11.0.1",
@@ -47,9 +48,10 @@
         "compression": "^1.8.1",
         "express-session": "^1.18.1",
         "helmet": "^8.1.0",
-        "ioredis": "^5.6.1",
-        "joi": "^17.13.3",
-        "jsonwebtoken": "^9.0.2",
+    "ioredis": "^5.6.1",
+    "joi": "^17.13.3",
+    "cron": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
         "openai": "^4.32.2",
         "passport": "^0.7.0",
         "passport-github2": "^0.1.12",
