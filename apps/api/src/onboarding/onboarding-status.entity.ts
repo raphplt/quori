@@ -19,5 +19,5 @@ export class OnboardingStatusEntity {
   completedAt?: Date;
 
   @OneToOne(() => UserEntity, (user) => user.onboardingStatus)
-  user!: UserEntity;
+  user?: UserEntity;
 }
