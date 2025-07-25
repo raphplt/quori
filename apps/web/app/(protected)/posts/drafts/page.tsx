@@ -33,6 +33,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   FileText,
   Calendar,
   GitBranch,
@@ -46,6 +54,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useCreateScheduledPost } from "@/hooks/useScheduledPosts";
 import { Post } from "@/types/post";
 
 interface PostsResponse {
@@ -67,6 +76,9 @@ export default function DraftsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [expandedPost, setExpandedPost] = useState<number | null>(null);
+  const [schedulePostId, setSchedulePostId] = useState<number | null>(null);
+  const [scheduleAt, setScheduleAt] = useState<string>("");
+  const createScheduled = useCreateScheduledPost();
 
   const {
     data: postsData,
@@ -104,6 +116,21 @@ export default function DraftsPage() {
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
     }
+  };
+
+  const openScheduleDialog = (postId: number) => {
+    setSchedulePostId(postId);
+    setScheduleAt(new Date().toISOString().slice(0, 16));
+  };
+
+  const submitSchedule = async () => {
+    if (!schedulePostId) return;
+    await createScheduled.mutateAsync({
+      postId: schedulePostId,
+      scheduledAt: new Date(scheduleAt).toISOString(),
+    });
+    setSchedulePostId(null);
+    refetch();
   };
 
   if (isLoading) {
@@ -164,175 +191,195 @@ export default function DraftsPage() {
       ) : (
         <div className="space-y-4">
           {postsData?.posts.map(post => (
-            <Card key={post.id} className="transition-shadow hover:shadow-md">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg">{post.summary}</CardTitle>
-                    <CardDescription className="flex items-center gap-4 text-sm">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDistanceToNow(new Date(post.createdAt), {
-                          addSuffix: true,
-                          locale: fr,
-                        })}
-                      </span>
-                      {post.event && (
+            <Dialog key={post.id}>
+              <Card className="transition-shadow hover:shadow-md">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-lg">{post.summary}</CardTitle>
+                      <CardDescription className="flex items-center gap-4 text-sm">
                         <span className="flex items-center gap-1">
-                          <GitBranch className="h-3 w-3" />
-                          {post.event.repo_full_name}
+                          <Calendar className="h-3 w-3" />
+                          {formatDistanceToNow(new Date(post.createdAt), {
+                            addSuffix: true,
+                            locale: fr,
+                          })}
                         </span>
-                      )}
-                      {post.tone && (
-                        <span className="text-muted-foreground">
-                          Ton: {post.tone}
-                        </span>
-                      )}
-                    </CardDescription>
+                        {post.event && (
+                          <span className="flex items-center gap-1">
+                            <GitBranch className="h-3 w-3" />
+                            {post.event.repo_full_name}
+                          </span>
+                        )}
+                        {post.tone && (
+                          <span className="text-muted-foreground">
+                            Ton: {post.tone}
+                          </span>
+                        )}
+                      </CardDescription>
+                    </div>
+                    <Badge className={statusLabels[post.status].color}>
+                      {statusLabels[post.status].label}
+                    </Badge>
                   </div>
-                  <Badge className={statusLabels[post.status].color}>
-                    {statusLabels[post.status].label}
-                  </Badge>
-                </div>
-              </CardHeader>
+                </CardHeader>
 
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Contenu du post</h4>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setExpandedPost(
+                              expandedPost === post.id ? null : post.id
+                            )
+                          }
+                        >
+                          <Eye className="h-4 w-4" />
+                          {expandedPost === post.id ? "Réduire" : "Voir plus"}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyToClipboard(post.postContent)}
+                        >
+                          <Copy className="h-4 w-4" />
+                          Copier
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Textarea
+                      value={post.postContent}
+                      readOnly
+                      className={`resize-none bg-muted/50 ${
+                        expandedPost === post.id ? "min-h-[200px]" : "h-20"
+                      }`}
+                    />
+                  </div>
+
+                  {post.status === "published" && (
+                    <div className="grid grid-cols-3 gap-4 p-4 bg-green-50 rounded-lg">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">
+                          {post.impressions}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Impressions
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">
+                          {post.likes}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          J&apos;aime
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">
+                          {post.comments}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Commentaires
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <Separator />
+
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Contenu du post</h4>
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setExpandedPost(
-                            expandedPost === post.id ? null : post.id
-                          )
-                        }
-                      >
-                        <Eye className="h-4 w-4" />
-                        {expandedPost === post.id ? "Réduire" : "Voir plus"}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(post.postContent)}
-                      >
-                        <Copy className="h-4 w-4" />
-                        Copier
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Textarea
-                    value={post.postContent}
-                    readOnly
-                    className={`resize-none bg-muted/50 ${
-                      expandedPost === post.id ? "min-h-[200px]" : "h-20"
-                    }`}
-                  />
-                </div>
-
-                {post.status === "published" && (
-                  <div className="grid grid-cols-3 gap-4 p-4 bg-green-50 rounded-lg">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
-                        {post.impressions}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Impressions
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
-                        {post.likes}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        J&apos;aime
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
-                        {post.comments}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Commentaires
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {post.status === "draft" && (
-                      <Button
-                        size="sm"
-                        onClick={() => updatePostStatus(post.id, "ready")}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Valider
-                      </Button>
-                    )}
-
-                    {post.status === "ready" && (
-                      <>
+                      {post.status === "draft" && (
                         <Button
                           size="sm"
-                          onClick={() => updatePostStatus(post.id, "scheduled")}
+                          onClick={() => updatePostStatus(post.id, "ready")}
                         >
-                          <Clock className="h-4 w-4 mr-2" />
-                          Programmer
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Valider
                         </Button>
+                      )}
+
+                      {post.status === "ready" && (
+                        <>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              onClick={() => openScheduleDialog(post.id)}
+                            >
+                              <Clock className="h-4 w-4 mr-2" />
+                              Programmer
+                            </Button>
+                          </DialogTrigger>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              updatePostStatus(post.id, "published")
+                            }
+                          >
+                            <Send className="h-4 w-4 mr-2" />
+                            Publier maintenant
+                          </Button>
+                        </>
+                      )}
+
+                      {post.status === "published" && post.publishedAt && (
+                        <Button size="sm" variant="outline">
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Voir le post
+                        </Button>
+                      )}
+                    </div>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
                         <Button
+                          variant="ghost"
                           size="sm"
-                          variant="outline"
-                          onClick={() => updatePostStatus(post.id, "published")}
+                          className="text-red-600"
                         >
-                          <Send className="h-4 w-4 mr-2" />
-                          Publier maintenant
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      </>
-                    )}
-
-                    {post.status === "published" && post.publishedAt && (
-                      <Button size="sm" variant="outline">
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Voir le post
-                      </Button>
-                    )}
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Supprimer le post</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Êtes-vous sûr de vouloir supprimer ce post ? Cette
+                            action est irréversible.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction className="bg-red-600 hover:bg-red-700">
+                            Supprimer
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Supprimer le post</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Êtes-vous sûr de vouloir supprimer ce post ? Cette
-                          action est irréversible.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction className="bg-red-600 hover:bg-red-700">
-                          Supprimer
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Programmer la publication</DialogTitle>
+                </DialogHeader>
+                <input
+                  type="datetime-local"
+                  value={scheduleAt}
+                  onChange={e => setScheduleAt(e.target.value)}
+                  className="w-full border px-2 py-1 rounded"
+                />
+                <DialogFooter className="mt-2">
+                  <Button onClick={submitSchedule}>Planifier</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           ))}
         </div>
       )}

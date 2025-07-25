@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
 import {
+  useUpdateScheduledPost,
+  useDeleteScheduledPost,
+} from "@/hooks/useScheduledPosts";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -27,7 +31,7 @@ import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 
 interface Post {
-  id: number;
+  id: string;
   summary: string;
   postContent: string;
   status: "draft" | "ready" | "scheduled" | "published" | "failed";
@@ -51,10 +55,8 @@ interface Post {
 }
 
 interface PostsResponse {
-  posts: Post[];
+  items: Post[];
   total: number;
-  page: number;
-  limit: number;
 }
 
 export default function ScheduledPage() {
@@ -66,27 +68,34 @@ export default function ScheduledPage() {
     isLoading,
     refetch,
   } = useQuery<PostsResponse>({
-    queryKey: ["posts", page, "scheduled"],
+    queryKey: ["scheduled-posts", page],
     queryFn: () => {
       const params = new URLSearchParams({
-        page: page.toString(),
         limit: "10",
-        status: "scheduled",
+        offset: ((page - 1) * 10).toString(),
       });
-      return authenticatedFetcher<PostsResponse>(`/github/posts?${params}`);
+      return authenticatedFetcher<PostsResponse>(`/scheduled-posts?${params}`);
     },
   });
 
-  const updatePostStatus = async (postId: number, newStatus: string) => {
+  const updatePostStatus = async (id: string, newStatus: string) => {
     try {
-      await authenticatedFetcher(`/github/posts/${postId}/status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      await authenticatedFetcher(`/scheduled-posts/${id}`, {
+        method: "PATCH",
         body: JSON.stringify({ status: newStatus }),
       });
       refetch();
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
+    }
+  };
+
+  const deleteSchedule = async (id: string) => {
+    try {
+      await authenticatedFetcher(`/scheduled-posts/${id}`, { method: "DELETE" });
+      refetch();
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
     }
   };
 
@@ -139,7 +148,7 @@ export default function ScheduledPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {postsData?.posts.map(post => (
+          {postsData?.items.map(post => (
             <Card key={post.id} className="transition-shadow hover:shadow-md">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -223,7 +232,7 @@ export default function ScheduledPage() {
                     variant="ghost"
                     size="sm"
                     className="text-red-600"
-                    onClick={() => updatePostStatus(post.id, "draft")}
+                    onClick={() => deleteSchedule(post.id)}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Annuler
