@@ -78,6 +78,7 @@ export class LinkedinAuthController {
         data.access_token,
         data.expires_in || 0,
       );
+      console.log('Token stored in Redis for user', userId);
 
       // Récupérer l'id LinkedIn de l'utilisateur
       const profileResp = await fetch('https://api.linkedin.com/v2/userinfo', {
@@ -93,6 +94,7 @@ export class LinkedinAuthController {
         await this.usersService.updateLinkedInId(userId, linkedInId);
         await this.usersService.updateLinkedInToken(userId, data.access_token);
         console.log('User updated successfully');
+        console.log('LinkedIn data saved in database for user', userId);
       }
       const front =
         this.config.get<string>('FRONTEND_URL') || 'http://localhost:3000';
