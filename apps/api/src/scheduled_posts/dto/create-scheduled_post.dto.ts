@@ -1,7 +1,7 @@
-import { IsISO8601, IsNumberString } from 'class-validator';
+import { IsISO8601, IsNumber } from 'class-validator';
 
 export class CreateScheduledPostDto {
-  @IsNumberString()
+  @IsNumber()
   postId!: number;
 
   @IsISO8601()

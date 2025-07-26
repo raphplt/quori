@@ -1,12 +1,10 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual } from 'typeorm';
-import { ScheduledPost, ScheduledPostStatus } from './entities/scheduled_post.entity';
+import {
+  ScheduledPost,
+  ScheduledPostStatus,
+} from './entities/scheduled_post.entity';
 import { CreateScheduledPostDto } from './dto/create-scheduled_post.dto';
 import { UpdateScheduledPostDto } from './dto/update-scheduled_post.dto';
 
@@ -19,7 +17,10 @@ export class ScheduledPostsService {
     private readonly repo: Repository<ScheduledPost>,
   ) {}
 
-  async create(userId: string, dto: CreateScheduledPostDto): Promise<ScheduledPost> {
+  async create(
+    userId: string,
+    dto: CreateScheduledPostDto,
+  ): Promise<ScheduledPost> {
     const entity = this.repo.create({
       user_id: userId,
       post_id: Number(dto.postId),
@@ -78,7 +79,10 @@ export class ScheduledPostsService {
   async markPendingDue(): Promise<void> {
     const now = new Date();
     const due = await this.repo.find({
-      where: { scheduled_at: LessThanOrEqual(now), status: ScheduledPostStatus.SCHEDULED },
+      where: {
+        scheduled_at: LessThanOrEqual(now),
+        status: ScheduledPostStatus.SCHEDULED,
+      },
     });
     for (const post of due) {
       this.logger.log(`Post ${post.id} pending`);

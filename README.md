@@ -8,7 +8,7 @@ en posts LinkedIn prêts à publier.
 | Path        | Stack                        | Rôle                       |
 | ----------- | ---------------------------- | -------------------------- |
 | apps/web    | Next 15, Tailwind, shadcn/ui | Interface utilisateur      |
-| apps/api    | NestJS 10, Prisma, Redis     | API REST + Webhooks GitHub |
+| apps/api    | NestJS 10, TypeORM, Redis    | API REST + Webhooks GitHub |
 | apps/docs   | Next static export           | Documentation publique     |
 | packages/\* | Core logic, UI, configs      | Code partagé               |
 
@@ -16,9 +16,7 @@ en posts LinkedIn prêts à publier.
 
 ```bash
 npm install        # à la racine
-npm run dev:web    # lance le front
-npm run dev:api    # lance l'API NestJS
-npm --workspace=api run tunnel # expose l'API via localtunnel
+npm run dev        # lance l'application
 ```
 
 ### Tester les webhooks GitHub
@@ -41,32 +39,11 @@ paramètres de votre GitHub App puis installez l'app depuis le dashboard.
 ### Backend (apps/api)
 
 - **NestJS 10** avec TypeScript strict
-- **Prisma** avec PostgreSQL
+- **TypeORM** avec PostgreSQL
 - **Redis** pour le cache et les queues
 - **Passport** pour l'authentification
 - **Swagger** pour la documentation API
 - **BullMQ** pour les tâches asynchrones
-
-### Base de données
-
-```sql
--- Schéma Prisma (à développer)
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  githubId  String?  @unique
-  posts     Post[]
-  createdAt DateTime @default(now())
-}
-
-model Post {
-  id        String   @id @default(cuid())
-  content   String
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-}
-```
 
 ## Scripts disponibles
 

@@ -64,20 +64,52 @@ export default function ScheduledPage() {
   const [page, setPage] = useState(1);
   const [expandedPost, setExpandedPost] = useState<string | null>(null);
 
+  // Fonction utilitaire pour convertir snake_case en camelCase
+  function mapPostFromApi(post: any): Post {
+    return {
+      id: post.id,
+      summary: post.summary || "",
+      postContent: post.post_content || "",
+      status: post.status || "scheduled",
+      scheduledAt: post.scheduled_at,
+      publishedAt: post.published_at,
+      impressions: post.impressions || 0,
+      likes: post.likes || 0,
+      comments: post.comments || 0,
+      template: post.template,
+      tone: post.tone,
+      createdAt: post.created_at,
+      updatedAt: post.updated_at,
+      statusLinkedin: post.status_linkedin || "pending",
+      installation: post.installation,
+      event: post.event,
+    };
+  }
+
   const {
-    data: postsData,
+    data: postsDataRaw,
     isLoading,
     refetch,
   } = useQuery<PostsResponse>({
     queryKey: ["scheduled-posts", page],
-    queryFn: () => {
+    queryFn: async () => {
       const params = new URLSearchParams({
         limit: "10",
         offset: ((page - 1) * 10).toString(),
       });
-      return authenticatedFetcher<PostsResponse>(`/scheduled-posts?${params}`);
+      const data = await authenticatedFetcher<any>(
+        `/scheduled-posts?${params}`
+      );
+      // Mappe les items reçus en camelCase
+      return {
+        items: (data.items || []).map(mapPostFromApi),
+        total: data.total,
+      };
     },
   });
+
+  // Renomme postsDataRaw en postsData pour la suite du composant
+  const postsData = postsDataRaw;
 
   const updatePostStatus = async (id: string, newStatus: string) => {
     try {
@@ -111,6 +143,8 @@ export default function ScheduledPage() {
       minute: "2-digit",
     });
   };
+
+  console.log("postsData", postsData);
 
   if (isLoading) {
     return (

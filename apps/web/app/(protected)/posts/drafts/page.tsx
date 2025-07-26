@@ -78,6 +78,7 @@ export default function DraftsPage() {
   const [expandedPost, setExpandedPost] = useState<number | null>(null);
   const [schedulePostId, setSchedulePostId] = useState<number | null>(null);
   const [scheduleAt, setScheduleAt] = useState<string>("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const createScheduled = useCreateScheduledPost();
 
   const {
@@ -121,16 +122,36 @@ export default function DraftsPage() {
   const openScheduleDialog = (postId: number) => {
     setSchedulePostId(postId);
     setScheduleAt(new Date().toISOString().slice(0, 16));
+    setIsDialogOpen(true);
   };
 
   const submitSchedule = async () => {
-    if (!schedulePostId) return;
-    await createScheduled.mutateAsync({
-      postId: schedulePostId,
-      scheduledAt: new Date(scheduleAt).toISOString(),
-    });
-    setSchedulePostId(null);
-    refetch();
+    if (!schedulePostId || createScheduled.isPending) return;
+
+    try {
+      await createScheduled.mutateAsync({
+        postId: Number(schedulePostId),
+        scheduledAt: new Date(scheduleAt).toISOString(),
+      });
+
+      // Fermer la modale et réinitialiser l'état
+      setIsDialogOpen(false);
+      setSchedulePostId(null);
+      setScheduleAt("");
+
+      // Rafraîchir les données pour mettre à jour la liste
+      refetch();
+    } catch (error) {
+      console.error("Erreur lors de la planification:", error);
+    }
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      setSchedulePostId(null);
+      setScheduleAt("");
+    }
   };
 
   if (isLoading) {
@@ -306,15 +327,16 @@ export default function DraftsPage() {
 
                       {post.status === "ready" && (
                         <>
-                          <DialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              onClick={() => openScheduleDialog(post.id)}
-                            >
-                              <Clock className="h-4 w-4 mr-2" />
-                              Programmer
-                            </Button>
-                          </DialogTrigger>
+                          <Button
+                            size="sm"
+                            onClick={() => openScheduleDialog(post.id)}
+                            disabled={createScheduled.isPending}
+                          >
+                            <Clock className="h-4 w-4 mr-2" />
+                            {createScheduled.isPending
+                              ? "Planification..."
+                              : "Programmer"}
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"
@@ -365,20 +387,29 @@ export default function DraftsPage() {
                   </div>
                 </CardContent>
               </Card>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Programmer la publication</DialogTitle>
-                </DialogHeader>
-                <input
-                  type="datetime-local"
-                  value={scheduleAt}
-                  onChange={e => setScheduleAt(e.target.value)}
-                  className="w-full border px-2 py-1 rounded"
-                />
-                <DialogFooter className="mt-2">
-                  <Button onClick={submitSchedule}>Planifier</Button>
-                </DialogFooter>
-              </DialogContent>
+              <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Programmer la publication</DialogTitle>
+                  </DialogHeader>
+                  <input
+                    type="datetime-local"
+                    value={scheduleAt}
+                    onChange={e => setScheduleAt(e.target.value)}
+                    className="w-full border px-2 py-1 rounded"
+                  />
+                  <DialogFooter className="mt-2">
+                    <Button
+                      onClick={submitSchedule}
+                      disabled={createScheduled.isPending}
+                    >
+                      {createScheduled.isPending
+                        ? "Planification..."
+                        : "Planifier"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </Dialog>
           ))}
         </div>
