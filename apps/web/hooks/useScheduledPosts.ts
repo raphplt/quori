@@ -17,9 +17,7 @@ export function useCreateScheduledPost() {
         body: JSON.stringify(data),
       }),
     onSuccess: () => {
-      // Invalider les queries des posts programmés
       qc.invalidateQueries({ queryKey: ["scheduled-posts"] });
-      // Invalider aussi les queries des posts pour mettre à jour la liste des drafts
       qc.invalidateQueries({ queryKey: ["posts"] });
     },
   });
