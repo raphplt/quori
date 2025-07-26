@@ -134,6 +134,16 @@ La limite est fixée à **5 requêtes par utilisateur et par jour**. Au-delà, l
 
 Pour ajouter un nouveau template global, insérez un enregistrement dans la table `templates` (nom, description, promptModifier). Les templates rattachés à une installation doivent renseigner la colonne `installation_id`.
 
+## Configuration LinkedIn
+
+Définissez les variables d'environnement suivantes dans `apps/api/.env` pour activer la connexion LinkedIn :
+
+```
+LINKEDIN_CLIENT_ID=<votre id>
+LINKEDIN_CLIENT_SECRET=<votre secret>
+LINKEDIN_REDIRECT_URI=http://localhost:3001/api/auth/linkedin/callback
+```
+
 ## Workflow de développement
 
 1. **Webhook GitHub** reçoit push/PR → parse les changements

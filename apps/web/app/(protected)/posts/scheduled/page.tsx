@@ -44,6 +44,7 @@ interface Post {
   tone?: string;
   createdAt: string;
   updatedAt: string;
+  statusLinkedin: 'pending' | 'published' | 'failed';
   installation?: {
     id: number;
     account_login: string;
@@ -134,6 +135,9 @@ export default function ScheduledPage() {
         <p className="text-muted-foreground">
           Gérez vos posts programmés pour publication automatique
         </p>
+        <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-2">
+          Recharger
+        </Button>
       </div>
 
       {postsData?.total === 0 ? (
@@ -178,8 +182,13 @@ export default function ScheduledPage() {
                       )}
                     </CardDescription>
                   </div>
-                  <Badge className="bg-yellow-100 text-yellow-800">
+                  <Badge className="bg-yellow-100 text-yellow-800 mr-2">
                     Programmé
+                  </Badge>
+                  <Badge variant="outline">
+                    {post.statusLinkedin === 'pending' && 'En attente'}
+                    {post.statusLinkedin === 'published' && 'Publié'}
+                    {post.statusLinkedin === 'failed' && 'Erreur'}
                   </Badge>
                 </div>
               </CardHeader>
