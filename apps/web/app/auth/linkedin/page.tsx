@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LinkedInCallbackPage() {
+function LinkedInCallbackContent() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -19,4 +19,12 @@ export default function LinkedInCallbackPage() {
   }, [params, router]);
 
   return <p>Connexion LinkedIn...</p>;
+}
+
+export default function LinkedInCallbackPage() {
+  return (
+    <Suspense fallback={<p>Chargement...</p>}>
+      <LinkedInCallbackContent />
+    </Suspense>
+  );
 }

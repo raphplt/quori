@@ -62,7 +62,7 @@ interface PostsResponse {
 
 export default function ScheduledPage() {
   const [page, setPage] = useState(1);
-  const [expandedPost, setExpandedPost] = useState<number | null>(null);
+  const [expandedPost, setExpandedPost] = useState<string | null>(null);
 
   const {
     data: postsData,
@@ -93,7 +93,9 @@ export default function ScheduledPage() {
 
   const deleteSchedule = async (id: string) => {
     try {
-      await authenticatedFetcher(`/scheduled-posts/${id}`, { method: "DELETE" });
+      await authenticatedFetcher(`/scheduled-posts/${id}`, {
+        method: "DELETE",
+      });
       refetch();
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
@@ -135,7 +137,12 @@ export default function ScheduledPage() {
         <p className="text-muted-foreground">
           Gérez vos posts programmés pour publication automatique
         </p>
-        <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          className="mt-2"
+        >
           Recharger
         </Button>
       </div>
@@ -186,9 +193,9 @@ export default function ScheduledPage() {
                     Programmé
                   </Badge>
                   <Badge variant="outline">
-                    {post.statusLinkedin === 'pending' && 'En attente'}
-                    {post.statusLinkedin === 'published' && 'Publié'}
-                    {post.statusLinkedin === 'failed' && 'Erreur'}
+                    {post.statusLinkedin === "pending" && "En attente"}
+                    {post.statusLinkedin === "published" && "Publié"}
+                    {post.statusLinkedin === "failed" && "Erreur"}
                   </Badge>
                 </div>
               </CardHeader>
