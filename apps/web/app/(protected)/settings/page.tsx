@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -35,6 +36,7 @@ import {
 import Link from "next/link";
 import { GitHubAppSettings } from "@/components/GitHubAppSettings";
 import { UserPreferencesForm } from "@/components/profile/UserPreferencesForm";
+import { useLinkedInStatus } from "@/hooks/useLinkedInStatus";
 
 type ExtendedUser = {
   id: string;
@@ -43,6 +45,8 @@ type ExtendedUser = {
   email: string;
   avatarUrl: string;
   name: string;
+  linkedInId?: string;
+  linkedinAccessToken?: string;
   createdAt: string;
   updatedAt: string;
   image?: string;
@@ -57,8 +61,7 @@ const Settings = () => {
 };
 
 function SettingsContent() {
-  const { data: session } = useSession();
-  const user = session?.user as ExtendedUser;
+  const { isConnected, user } = useLinkedInStatus();
 
   // State pour les paramètres
   const [notifications, setNotifications] = useState({
@@ -93,7 +96,7 @@ function SettingsContent() {
     {
       id: "linkedin",
       name: "LinkedIn",
-      connected: false,
+      connected: isConnected,
       email: null,
       avatar: null,
     },
@@ -147,7 +150,7 @@ function SettingsContent() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Navigation */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 ">
             <Card>
               <CardContent className="p-4">
                 <nav className="space-y-1">
@@ -495,7 +498,9 @@ function SettingsContent() {
                         <LinkedInConnectButton connected={account.connected} />
                       ) : (
                         <Button
-                          variant={account.connected ? "destructive" : "default"}
+                          variant={
+                            account.connected ? "destructive" : "default"
+                          }
                           size="sm"
                         >
                           {account.connected ? "Déconnecter" : "Connecter"}

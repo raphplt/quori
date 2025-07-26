@@ -26,7 +26,6 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Settings } from "lucide-react";
-import TemplateSelector from "@/components/TemplateSelector";
 import { useGenerateContext } from "@/contexts/GenerateContext";
 
 const postFormSchema = z.object({
@@ -70,9 +69,7 @@ export default function NewPostPage() {
   } | null>(null);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [scheduled, setScheduled] = useState(false);
 
-  // Récupération de l'event sélectionné
   const [selectedEventId, setSelectedEventId] = useState<string | null>(
     eventId
   );
@@ -81,13 +78,11 @@ export default function NewPostPage() {
     return allEvents.find(e => e.delivery_id === selectedEventId) || null;
   }, [selectedEventId, allEvents]);
 
-  // Préremplir le formulaire si event
   useMemo(() => {
     if (event) {
       setForm(f => ({
         ...f,
         summary: event.metadata?.title || event.metadata?.desc || "",
-        // Le contenu du post est vide par défaut, il sera généré par l'IA
         postContent: "",
       }));
     }
@@ -283,11 +278,11 @@ export default function NewPostPage() {
               )}
             </CardContent>
           </Card>
-          <TemplateSelector />
+          {/* <TemplateSelector /> */}
           {/* Préférences utilisateur (modale) */}
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" className="w-full mb-2">
+              <Button variant="secondary" className="w-full mb-2">
                 <Settings className="mr-2 h-4 w-4" />
                 Préférences IA
               </Button>

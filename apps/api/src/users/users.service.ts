@@ -105,6 +105,7 @@ export class UsersService {
     if (updateData.email !== undefined) entity.email = updateData.email;
     if (updateData.avatarUrl !== undefined) entity.avatar_url = updateData.avatarUrl;
     if (updateData.name !== undefined) entity.name = updateData.name;
+    if (updateData.linkedInId !== undefined) entity.linkedIn_id = updateData.linkedInId;
     if (updateData.githubAccessToken !== undefined) {
       entity.github_access_token = this.encrypt(updateData.githubAccessToken);
     }
@@ -112,6 +113,26 @@ export class UsersService {
 
     const saved = await this.repo.save(entity);
     return this.toUser(saved);
+  }
+
+  async updateLinkedInId(id: string, linkedInId: string | null): Promise<void> {
+    await this.repo.update(
+      { id: id },
+      {
+        linkedIn_id: linkedInId || undefined,
+        updated_at: new Date(),
+      },
+    );
+  }
+
+  async updateLinkedInToken(id: string, accessToken: string): Promise<void> {
+    await this.repo.update(
+      { id: id },
+      {
+        linkedin_access_token: this.encrypt(accessToken),
+        updated_at: new Date(),
+      },
+    );
   }
 
   private toUser(entity: UserEntity): User {
@@ -122,6 +143,10 @@ export class UsersService {
       email: entity.email,
       avatarUrl: entity.avatar_url,
       name: entity.name,
+      linkedInId: entity.linkedIn_id,
+      linkedinAccessToken: entity.linkedin_access_token
+        ? this.decrypt(entity.linkedin_access_token)
+        : undefined,
       githubAccessToken: entity.github_access_token
         ? this.decrypt(entity.github_access_token)
         : undefined,

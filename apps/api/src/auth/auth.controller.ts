@@ -66,4 +66,12 @@ export class AuthController {
   getCurrentUser(@GetUser() user: User) {
     return user;
   }
+
+  @Get('refresh-user')
+  @UseGuards(JwtAuthGuard)
+  async refreshUser(@GetUser() user: User) {
+    // Recharger les données utilisateur depuis la base
+    const refreshedUser = await this.authService.refreshUserData(user.id);
+    return refreshedUser;
+  }
 }

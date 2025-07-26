@@ -5,7 +5,9 @@ export interface User {
   email: string;
   avatarUrl: string;
   name: string;
-  githubAccessToken?: string; // Token pour accéder à l'API GitHub
+  linkedInId?: string;
+  linkedinAccessToken?: string;
+  githubAccessToken?: string;
   refreshToken?: string;
   refreshTokenExpires?: Date;
   createdAt: Date;

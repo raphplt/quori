@@ -1,25 +1,23 @@
 "use client";
 
-import {
-  useGitHubAppStatus,
-  useForceSyncGitHubApp,
-} from "@/hooks/useGitHubApp";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Linkedin, ExternalLink, Settings, RefreshCw } from "lucide-react";
-import Link from "next/link";
+import { Linkedin } from "lucide-react";
+import { useLinkedInStatus } from "@/hooks/useLinkedInStatus";
 
-// A modifier pour gérer la connexion LinkedIn
 export function LinkedInAppAlert() {
-  const { data, isLoading } = useGitHubAppStatus();
-  const forceSyncMutation = useForceSyncGitHubApp();
+  const { isConnected, user } = useLinkedInStatus();
 
-  if (isLoading || data?.installed) {
+  // Si l'utilisateur est connecté à LinkedIn, ne pas afficher l'alerte
+  if (isConnected) {
     return null;
   }
 
-  const handleForceSync = () => {
-    forceSyncMutation.mutate();
+  const handleConnect = () => {
+    const userId = user?.id;
+    if (userId) {
+      window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/linkedin?userId=${userId}`;
+    }
   };
 
   return (
@@ -34,37 +32,10 @@ export function LinkedInAppAlert() {
           </p>
         </div>
         <div className="flex items-center space-x-2 ml-4">
-          <Button
-            onClick={handleForceSync}
-            variant="outline"
-            size="sm"
-            disabled={forceSyncMutation.isPending}
-          >
-            <RefreshCw
-              className={`mr-2 h-4 w-4 ${forceSyncMutation.isPending ? "animate-spin" : ""}`}
-            />
-            {forceSyncMutation.isPending
-              ? "Synchronisation..."
-              : "Synchroniser"}
+          <Button onClick={handleConnect} size="sm">
+            <Linkedin className="mr-2 h-4 w-4" />
+            Connecter LinkedIn
           </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href="/settings">
-              <Settings className="mr-2 h-4 w-4" />
-              Configurer
-            </Link>
-          </Button>
-          {data?.installUrl && (
-            <Button asChild size="sm">
-              <a
-                href={data.installUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Installer
-              </a>
-            </Button>
-          )}
         </div>
       </AlertDescription>
     </Alert>

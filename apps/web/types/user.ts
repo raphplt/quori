@@ -5,6 +5,8 @@ export interface User {
   email: string;
   avatarUrl: string;
   name: string;
+  linkedInId?: string;
+  linkedinAccessToken?: string;
   createdAt: string;
   updatedAt: string;
 }

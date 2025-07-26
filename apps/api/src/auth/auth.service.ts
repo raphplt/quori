@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/user.interface';
 import { randomBytes } from 'crypto';
+import { UnauthorizedException } from '@nestjs/common';
 
 export interface JwtPayload {
   sub: string;
@@ -90,25 +91,37 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(refreshToken: string): Promise<{
-    access_token: string;
-    refresh_token: string;
-    user: User;
-  }> {
+  async refreshTokens(refreshToken: string) {
     const user = await this.usersService.findByRefreshToken(refreshToken);
     if (!user) {
-      throw new Error('Invalid refresh token');
+      throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const newAccess = this.generateJwtToken(user);
-    const newRefresh = this.generateRefreshToken();
-    await this.usersService.updateRefreshToken(user.id, newRefresh);
+    const payload = { username: user.username, sub: user.id };
+    const access_token = this.jwtService.sign(payload);
+    const newRefreshToken = randomBytes(20).toString('hex');
+    const refreshTokenExpires = new Date();
+    refreshTokenExpires.setDate(refreshTokenExpires.getDate() + 30);
+
+    await this.usersService.updateRefreshToken(
+      user.id,
+      newRefreshToken,
+      refreshTokenExpires,
+    );
 
     return {
-      access_token: newAccess,
-      refresh_token: newRefresh,
+      access_token,
+      refresh_token: newRefreshToken,
       user,
     };
+  }
+
+  async refreshUserData(userId: string): Promise<User> {
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    return user;
   }
 
   async logout(userId: string): Promise<void> {

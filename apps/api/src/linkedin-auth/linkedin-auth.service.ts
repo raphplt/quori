@@ -7,7 +7,8 @@ export class LinkedinAuthService {
   private redis: Redis;
 
   constructor(private readonly config: ConfigService) {
-    const url = this.config.get<string>('REDIS_URL') || 'redis://localhost:6379';
+    const url =
+      this.config.get<string>('REDIS_URL') || 'redis://localhost:6379';
     this.redis = new Redis(url);
   }
 
@@ -17,5 +18,9 @@ export class LinkedinAuthService {
 
   async getToken(userId: string): Promise<string | null> {
     return this.redis.get(`linkedin:token:${userId}`);
+  }
+
+  async removeToken(userId: string): Promise<void> {
+    await this.redis.del(`linkedin:token:${userId}`);
   }
 }

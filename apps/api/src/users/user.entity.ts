@@ -12,6 +12,9 @@ export class UserEntity {
   @Column('text', { nullable: true })
   linkedIn_id?: string;
 
+  @Column('text', { nullable: true })
+  linkedin_access_token?: string;
+
   @Column('text')
   username!: string;
 
