@@ -40,7 +40,7 @@ const Header = () => {
   const PublicNavLinks = () => (
     <>
       <Link
-        href="/"
+        href="#hero"
         className="text-sm font-medium hover:text-primary transition-colors"
       >
         Accueil
@@ -58,10 +58,10 @@ const Header = () => {
         Tarifs
       </Link>
       <Link
-        href="#contact"
+        href="#testimonials"
         className="text-sm font-medium hover:text-primary transition-colors"
       >
-        Contact
+        Témoignages
       </Link>
     </>
   );

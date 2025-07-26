@@ -44,7 +44,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ isVisible }) => {
   }, []);
 
   return (
-    <section className="relative py-8 md:py-5 flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-primary/5 to-chart-2/10 min-h-screen">
+    <section
+      id="hero"
+      className="relative py-8 md:py-5 flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-primary/5 to-chart-2/10 min-h-screen"
+    >
       {/* Fond animé avec particules */}
       <div className="absolute inset-0">
         {/* Gradient animé de fond */}

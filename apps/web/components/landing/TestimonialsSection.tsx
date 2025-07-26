@@ -11,14 +11,15 @@ const testimonials = [
   {
     quote:
       "Quori a transformé ma présence LinkedIn. Mes commits deviennent du contenu engageant sans effort !",
-    name: "Marie Dubois",
+    name: "Marion Dardel",
     role: "Senior Developer @TechCorp",
     avatar:
-      "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-    github: "mariedubois",
+      "https://images.unsplash.com/photo-1669844444850-5acd7e8c71c5?q=150&w=150&h=150&auto=format&fit=crop&crop=face",
+    github: "mariondardel",
     likes: 156,
     comments: 24,
     shares: 12,
+    timestamp: "2h",
     verified: true,
   },
   {
@@ -32,6 +33,7 @@ const testimonials = [
     likes: 89,
     comments: 15,
     shares: 8,
+    timestamp: "13h",
     verified: false,
   },
   {
@@ -46,12 +48,13 @@ const testimonials = [
     comments: 31,
     shares: 18,
     verified: true,
+    timestamp: "20h",
   },
 ];
 
 export const TestimonialsSection: React.FC = () => {
   return (
-    <section className="py-16 bg-background">
+    <section id="testimonials" className="py-16 bg-background">
       <div className="w-full px-4">
         <div className="text-center mb-12">
           <motion.div
@@ -140,7 +143,7 @@ export const TestimonialsSection: React.FC = () => {
                     <Share2 className="h-4 w-4" />
                     <span>{testimonial.shares}</span>
                   </div>
-                  <div className="text-xs">Il y a 2h</div>
+                  <div className="text-xs">Il y a {testimonial.timestamp}</div>
                 </div>
 
                 {/* Quori badge */}

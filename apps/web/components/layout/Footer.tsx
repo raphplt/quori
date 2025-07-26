@@ -18,7 +18,7 @@ const Footer = () => {
 
   return (
     <footer className="bg-background border-t">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 mt-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center space-x-2 mb-4">
@@ -39,7 +39,7 @@ const Footer = () => {
             <div className="flex items-center space-x-4">
               <Button variant="ghost" size="icon" asChild>
                 <a
-                  href="https://github.com"
+                  href="https://github.com/raphplt/quori"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -47,9 +47,15 @@ const Footer = () => {
                   <span className="sr-only">GitHub</span>
                 </a>
               </Button>
-              <Button variant="ghost" size="icon" asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                disabled
+                title="Twitter is not available yet"
+              >
                 <a
-                  href="https://twitter.com"
+                  // href="https://x.com/quori_dev"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -59,7 +65,7 @@ const Footer = () => {
               </Button>
               <Button variant="ghost" size="icon" asChild>
                 <a
-                  href="https://linkedin.com"
+                  href="https://www.linkedin.com/company/quori-app"
                   target="_blank"
                   rel="noopener noreferrer"
                 >

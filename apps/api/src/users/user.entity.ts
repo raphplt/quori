@@ -9,6 +9,9 @@ export class UserEntity {
   @Column('text')
   github_id!: string;
 
+  @Column('text', { nullable: true })
+  linkedIn_id?: string;
+
   @Column('text')
   username!: string;
 
