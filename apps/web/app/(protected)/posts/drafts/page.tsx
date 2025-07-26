@@ -102,7 +102,7 @@ export default function DraftsPage() {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      // TODO: Ajouter un toast de succès
+      toast.success("Post copié avec succès");
     } catch (error) {
       console.error("Erreur lors de la copie:", error);
     }
@@ -136,12 +136,10 @@ export default function DraftsPage() {
         scheduledAt: new Date(scheduleAt).toISOString(),
       });
 
-      // Fermer la modale et réinitialiser l'état
       setIsDialogOpen(false);
       setSchedulePostId(null);
       setScheduleAt("");
 
-      // Rafraîchir les données pour mettre à jour la liste
       refetch();
     } catch (error) {
       console.error("Erreur lors de la planification:", error);
@@ -237,7 +235,9 @@ export default function DraftsPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
-                      <CardTitle className="text-lg">{post.summary}</CardTitle>
+                      <CardTitle className="text-md text-default-900 line-clamp-1">
+                        {post.summary}
+                      </CardTitle>
                       <CardDescription className="flex items-center gap-4 text-sm">
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />

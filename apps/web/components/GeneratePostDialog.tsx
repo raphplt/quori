@@ -212,7 +212,7 @@ export function GeneratePostDialog({
               <Button
                 onClick={handleGenerate}
                 disabled={generatePost.isPending}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                className="bg-gradient-to-r from-primary to-chart-2 hover:from-primary-hover hover:to-chart-2-hover"
               >
                 {generatePost.isPending ? (
                   <>
@@ -292,7 +292,7 @@ export function GeneratePostDialog({
                 <Card className="border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-2 text-default-500">
                         <CheckCircle className="h-5 w-5 text-green-500" />
                         Résumé
                       </span>
@@ -325,7 +325,7 @@ export function GeneratePostDialog({
                 <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-2 text-default-500">
                         <Sparkles className="h-5 w-5 text-blue-500" />
                         Post pour réseaux sociaux
                       </span>

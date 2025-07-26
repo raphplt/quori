@@ -145,16 +145,10 @@ const ActivityPreview = () => {
         </div>
 
         <div className="mt-6 pt-4 border-t border-gradient">
-          <Button
-            variant="outline"
-            className="w-full btn-modern glass-effect group-hover:glow-primary"
-            asChild
-          >
+          <Button variant="outline" className="w-full" asChild>
             <Link href="/activity" className="group/button">
-              <span className="group-hover/button:text-gradient transition-all duration-300">
-                Voir l&apos;activité
-              </span>
-              <ArrowUpRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover/button:translate-x-1 group-hover/button:-translate-y-1" />
+              Voir l&apos;activité
+              <ArrowUpRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </div>

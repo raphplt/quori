@@ -29,6 +29,7 @@ import { UpdatePostStatusDto } from './dto/post.dto';
 import { Event } from './entities/event.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CreateTestEventDto } from './dto/create-test-event.dto';
 
 interface AuthenticatedRequest {
   user: User;
@@ -556,36 +557,36 @@ export class GithubController {
     return await this.generateService.deletePost(postId);
   }
 
-  // Ne pas supprimer
-  // @Post('events/test')
-  // async createTestEvent(
-  //   @Request() req: AuthenticatedRequest,
-  //   @Body() body: CreateTestEventDto,
-  // ): Promise<Event> {
-  //   // Créer l'événement de test
-  //   const event = new Event();
-  //   event.delivery_id = body.delivery_id;
-  //   event.event = body.event;
-  //   event.event_type = body.event_type;
-  //   event.payload = body.payload;
-  //   event.repo_full_name = body.repo_full_name;
-  //   event.author_login = body.author_login;
-  //   event.author_avatar_url = body.author_avatar_url;
-  //   event.metadata = body.metadata;
-  //   event.status = body.status || 'pending';
-  //   event.error_message = body.error_message;
-  //   event.received_at = new Date();
+  @UseGuards(JwtAuthGuard)
+  @Post('events/test')
+  async createTestEvent(
+    @Request() req: AuthenticatedRequest,
+    @Body() body: CreateTestEventDto,
+  ): Promise<Event> {
+    // Créer l'événement de test
+    const event = new Event();
+    event.delivery_id = body.delivery_id;
+    event.event = body.event;
+    event.event_type = body.event_type;
+    event.payload = body.payload;
+    event.repo_full_name = body.repo_full_name;
+    event.author_login = body.author_login;
+    event.author_avatar_url = body.author_avatar_url;
+    event.metadata = body.metadata;
+    event.status = body.status || 'pending';
+    event.error_message = body.error_message;
+    event.received_at = new Date();
 
-  //   // Si un installation_id est fourni, l'associer
-  //   if (body.installation_id) {
-  //     const installation = await this.appService.getInstallationById(
-  //       body.installation_id,
-  //     );
-  //     if (installation) {
-  //       event.installation = installation;
-  //     }
-  //   }
+    // Si un installation_id est fourni, l'associer
+    if (body.installation_id) {
+      const installation = await this.appService.getInstallationById(
+        body.installation_id,
+      );
+      if (installation) {
+        event.installation = installation;
+      }
+    }
 
-  //   return this.eventRepository.save(event);
-  // }
+    return this.eventRepository.save(event);
+  }
 }

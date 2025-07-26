@@ -8,6 +8,7 @@ import { PaginationControls } from "@/app/(protected)/repositories/_components/P
 import { GeneratePostDialog } from "./GeneratePostDialog";
 import { GitHubEvent } from "@/types/githubEvent";
 import EventCard from "./activity/EventCard";
+import AddActivity from "./dev/AddActivity";
 
 export default function ActivityFeed() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -61,6 +62,8 @@ export default function ActivityFeed() {
             </p>
           )}
         </div>
+
+        <AddActivity />
         <Button
           variant="outline"
           size="sm"
