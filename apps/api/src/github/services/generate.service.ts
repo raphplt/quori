@@ -319,4 +319,15 @@ export class GenerateService {
     }
     return this.postRepository.save(post);
   }
+
+  async deletePost(id: number): Promise<{ message: string }> {
+    const post = await this.postRepository.findOne({
+      where: { id },
+    });
+    if (!post) {
+      throw new BadRequestException('Post not found');
+    }
+    await this.postRepository.delete(id);
+    return { message: 'Post deleted successfully' };
+  }
 }

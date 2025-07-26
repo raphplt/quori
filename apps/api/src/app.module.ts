@@ -92,7 +92,7 @@ import * as Joi from 'joi';
           url: config.get<string>('DATABASE_URL'),
           autoLoadEntities: true,
           synchronize: false,
-          logging: config.get('NODE_ENV') === 'development',
+          // logging: config.get('NODE_ENV') === 'development',
           extra: {
             connectionLimit: 10,
             acquireTimeout: 60000,

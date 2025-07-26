@@ -485,14 +485,12 @@ export class GithubController {
     if (!user?.githubAccessToken) {
       throw new UnauthorizedException('No GitHub access token found for user');
     }
-    // Fetch all user repos
     const reposPage = await this.githubService.getUserRepositories(
       user.githubAccessToken,
       1,
       100,
     );
     const repos = reposPage.repositories;
-    // Fetch all installations for the user
     const installations = await this.appService.getUserInstallations(
       user.githubId,
     );
@@ -501,12 +499,10 @@ export class GithubController {
     const errors: string[] = [];
     for (const repo of repos) {
       try {
-        // Find installation id for this repo
         const installation = installations.find((inst) =>
           inst.repos.includes(repo.full_name),
         );
         const installationId = installation?.id || 0;
-        // Fetch recent events for each repo (GitHub API: /repos/:owner/:repo/events)
         const [owner, repoName] = repo.full_name.split('/');
         const eventsRes = await fetch(
           `https://api.github.com/repos/${owner}/${repoName}/events`,
@@ -551,6 +547,13 @@ export class GithubController {
       totalImported,
       errors,
     };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('posts/:id')
+  async deletePost(@Param('id') id: string) {
+    const postId = parseInt(id, 10);
+    return await this.generateService.deletePost(postId);
   }
 
   // Ne pas supprimer

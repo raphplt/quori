@@ -6,12 +6,7 @@ import { Linkedin } from "lucide-react";
 import { useLinkedInStatus } from "@/hooks/useLinkedInStatus";
 
 export function LinkedInAppAlert() {
-  const { isConnected, user } = useLinkedInStatus();
-
-  // Si l'utilisateur est connecté à LinkedIn, ne pas afficher l'alerte
-  if (isConnected) {
-    return null;
-  }
+  const { user } = useLinkedInStatus();
 
   const handleConnect = () => {
     const userId = user?.id;
@@ -19,6 +14,10 @@ export function LinkedInAppAlert() {
       window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/linkedin?userId=${userId}`;
     }
   };
+
+  if (user?.linkedInId) {
+    return null;
+  }
 
   return (
     <Alert className="border-orange-200 bg-orange-50">

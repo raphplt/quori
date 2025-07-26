@@ -23,7 +23,7 @@ export class LinkedinAuthController {
   redirect(@Res() res: Response, @Query('userId') userId: string) {
     const clientId = this.config.get<string>('LINKEDIN_CLIENT_ID') || '';
     const redirectUri = this.config.get<string>('LINKEDIN_REDIRECT_URI') || '';
-    const scope = 'w_member_social profile';
+    const scope = 'w_member_social openid profile';
     const state = userId;
     const url =
       'https://www.linkedin.com/oauth/v2/authorization?response_type=code' +
@@ -86,16 +86,19 @@ export class LinkedinAuthController {
       });
       const profile = await profileResp.json();
       console.log('LinkedIn profile response:', profile);
-      const linkedInId = profile.sub || profile.id;
+
+      // Essayer différents champs pour l'id LinkedIn
+      const linkedInId = profile.sub || profile.id || profile.userId;
       console.log('LinkedIn ID extracted:', linkedInId);
+
+      // Même si on n'a pas l'id LinkedIn, on sauvegarde le token
+      console.log('Updating user with LinkedIn data...');
       if (linkedInId) {
-        // Mettre à jour le user en base avec l'id LinkedIn et le token
-        console.log('Updating user with LinkedIn data...');
         await this.usersService.updateLinkedInId(userId, linkedInId);
-        await this.usersService.updateLinkedInToken(userId, data.access_token);
-        console.log('User updated successfully');
-        console.log('LinkedIn data saved in database for user', userId);
       }
+      await this.usersService.updateLinkedInToken(userId, data.access_token);
+      console.log('User updated successfully');
+
       const front =
         this.config.get<string>('FRONTEND_URL') || 'http://localhost:3000';
       res.redirect(`${front}/settings?linkedin=success`);

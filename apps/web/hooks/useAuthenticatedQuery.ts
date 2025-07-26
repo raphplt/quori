@@ -13,7 +13,21 @@ export async function authenticatedFetcher<T>(
     const text = await res.text();
     throw new Error(`Error ${res.status}: ${text}`);
   }
-  return (await res.json()) as T;
+
+  // Vérifier si la réponse a du contenu
+  const text = await res.text();
+  if (!text.trim()) {
+    // Si la réponse est vide, retourner un objet vide ou null selon le type attendu
+    return {} as T;
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch (error) {
+    // Si le parsing JSON échoue, retourner le texte brut ou un objet vide
+    console.warn("Failed to parse JSON response:", text);
+    return {} as T;
+  }
 }
 
 /**

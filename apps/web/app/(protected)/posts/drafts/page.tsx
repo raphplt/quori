@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
+import { authenticatedFetch } from "@/lib/api-client";
 import {
   Card,
   CardContent,
@@ -56,6 +57,7 @@ import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useCreateScheduledPost } from "@/hooks/useScheduledPosts";
 import { Post } from "@/types/post";
+import toast from "react-hot-toast";
 
 interface PostsResponse {
   posts: Post[];
@@ -151,6 +153,24 @@ export default function DraftsPage() {
     if (!open) {
       setSchedulePostId(null);
       setScheduleAt("");
+    }
+  };
+
+  const handleDeletePost = async (postId: number) => {
+    try {
+      const response = await authenticatedFetch(`/github/posts/${postId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast.success("Post supprimé avec succès");
+      refetch();
+    } catch (error) {
+      toast.error("Erreur lors de la suppression");
+      console.error("Erreur lors de la suppression:", error);
     }
   };
 
@@ -378,7 +398,10 @@ export default function DraftsPage() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Annuler</AlertDialogCancel>
-                          <AlertDialogAction className="bg-red-600 hover:bg-red-700">
+                          <AlertDialogAction
+                            className="bg-red-600 hover:bg-red-700"
+                            onClick={() => handleDeletePost(post.id)}
+                          >
                             Supprimer
                           </AlertDialogAction>
                         </AlertDialogFooter>

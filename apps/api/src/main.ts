@@ -72,17 +72,17 @@ async function bootstrap() {
     );
   }
 
-  // Configuration du body parser
+  // Body parser
   app.use(
     json({
-      limit: isProduction ? '5mb' : '10mb', // Limite plus permissive pour la compatibilité
+      limit: isProduction ? '5mb' : '10mb',
       verify: (req: RawBodyRequest, _res, buf: Buffer) => {
         req.rawBody = buf.toString();
       },
     }),
   );
 
-  // Configuration des origines CORS selon l'environnement
+  // CORS
   const allowedOrigins = isProduction
     ? [
         'https://quori.dev',
@@ -97,7 +97,6 @@ async function bootstrap() {
         configService.get('FRONTEND_URL'),
       ].filter(Boolean);
 
-  // Configure CORS
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
@@ -125,10 +124,8 @@ async function bootstrap() {
     }),
   );
 
-  // Filtre d'exception global
   app.useGlobalFilters(new HttpExceptionFilter(configService));
 
-  // Configuration des sessions avec sécurité renforcée
   const sessionSecret = configService.get<string>('SESSION_SECRET');
   if (!sessionSecret && isProduction) {
     logger.error('SESSION_SECRET is required in production environment');
@@ -157,7 +154,6 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  // Configuration Swagger (uniquement en développement)
   if (!isProduction) {
     const config = new DocumentBuilder()
       .setTitle('Quori API')
@@ -186,7 +182,6 @@ async function bootstrap() {
       );
     }
 
-    // Masquer les origines CORS en production pour éviter l'énumération
     if (isProduction) {
       logger.log(
         `🔒 CORS enabled for ${allowedOrigins.length} allowed origins`,
