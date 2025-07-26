@@ -12,6 +12,8 @@ import { PreferencesModule } from './preferences/preferences.module';
 import { TemplatesModule } from './templates/templates.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { ScheduledPostsModule } from './scheduled_posts/scheduled_posts.module';
+import { LinkedinAuthModule } from './linkedin-auth/linkedin-auth.module';
+import { LinkedinModule } from './linkedin/linkedin.module';
 import * as Joi from 'joi';
 
 @Module({
@@ -65,6 +67,9 @@ import * as Joi from 'joi';
           then: Joi.required(),
           otherwise: Joi.optional(),
         }),
+        LINKEDIN_CLIENT_ID: Joi.string().optional(),
+        LINKEDIN_CLIENT_SECRET: Joi.string().optional(),
+        LINKEDIN_REDIRECT_URI: Joi.string().optional(),
         REDIS_URL: Joi.string().optional(),
       }),
     }),
@@ -117,6 +122,8 @@ import * as Joi from 'joi';
     TemplatesModule,
     OnboardingModule,
     ScheduledPostsModule,
+    LinkedinAuthModule,
+    LinkedinModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LinkedInConnectButton } from "@/components/LinkedInConnectButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -490,12 +491,16 @@ function SettingsContent() {
                           )}
                         </div>
                       </div>
-                      <Button
-                        variant={account.connected ? "destructive" : "default"}
-                        size="sm"
-                      >
-                        {account.connected ? "Déconnecter" : "Connecter"}
-                      </Button>
+                      {account.id === "linkedin" ? (
+                        <LinkedInConnectButton connected={account.connected} />
+                      ) : (
+                        <Button
+                          variant={account.connected ? "destructive" : "default"}
+                          size="sm"
+                        >
+                          {account.connected ? "Déconnecter" : "Connecter"}
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>

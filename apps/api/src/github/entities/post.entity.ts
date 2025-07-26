@@ -50,6 +50,9 @@ export class Post {
   @Column('varchar', { length: 16, default: 'draft' })
   status!: PostStatus;
 
+  @Column('varchar', { length: 16, name: 'status_linkedin', default: 'pending' })
+  statusLinkedin!: 'pending' | 'published' | 'failed';
+
   @Column('timestamptz', { nullable: true })
   scheduledAt?: Date;
 

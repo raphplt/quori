@@ -6,9 +6,9 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: [
-      'src/github/parse-git-event.spec.ts',
-      'src/quota/quota.service.spec.ts',
-      'src/github/generate.service.template.spec.ts',
+      'src/github/parse-git-event.spec.vitest.ts',
+      'src/quota/quota.service.spec.vitest.ts',
+      'src/github/generate.service.template.spec.vitest.ts',
     ],
   },
 });
