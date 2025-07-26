@@ -59,6 +59,8 @@ interface SyncResponse {
     email: string;
     avatarUrl: string;
     name: string;
+    linkedInId?: string;
+    linkedinAccessToken?: string;
     createdAt: string;
     updatedAt: string;
   };
@@ -141,6 +143,8 @@ export const authOptions: NextAuthConfig = {
           username: u.username,
           githubId: u.githubId,
           avatarUrl: u.avatarUrl,
+          linkedInId: u.linkedInId,
+          linkedinAccessToken: u.linkedinAccessToken,
           createdAt: u.createdAt,
           updatedAt: u.updatedAt,
         };
@@ -157,7 +161,7 @@ export const authOptions: NextAuthConfig = {
       session?: Session | null;
       isNewUser?: boolean;
     }): Promise<JWT> {
-      const { token, account, profile } = params;
+      const { token, account, profile, trigger } = params;
       if (account && profile && typeof profile.login === "string") {
         const data = await syncWithBackend(
           profile as unknown as GitHubProfileRaw,
@@ -172,6 +176,21 @@ export const authOptions: NextAuthConfig = {
             token.apiTokenExpires = decoded.exp * 1000;
           }
           token.backendUser = data.user;
+        }
+      } else if (trigger === "update" && token.apiToken) {
+        try {
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh-user`,
+            {
+              headers: { Authorization: `Bearer ${token.apiToken}` },
+            }
+          );
+          if (res.ok) {
+            const user = (await res.json()) as SyncResponse["user"];
+            token.backendUser = user;
+          }
+        } catch (err) {
+          console.error("Failed to refresh user data", err);
         }
       } else if (
         token.refreshToken &&

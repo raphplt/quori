@@ -5,19 +5,23 @@ import { useEffect, useState } from "react";
 export function useLinkedInStatus() {
   const { data: session, update: updateSession } = useSession();
   const searchParams = useSearchParams();
+  const linkedinStatus = searchParams.get("linkedin");
   const user = session?.user;
   const [hasRefreshed, setHasRefreshed] = useState(false);
 
   useEffect(() => {
-    const linkedinStatus = searchParams.get("linkedin");
     if (linkedinStatus === "success" && !hasRefreshed) {
       setHasRefreshed(true);
-      // Délai pour éviter la boucle
-      setTimeout(() => {
-        updateSession();
-      }, 100);
+      updateSession().then(() => {
+        const params = new URLSearchParams(window.location.search);
+        params.delete("linkedin");
+        const newUrl =
+          window.location.pathname +
+          (params.toString() ? `?${params.toString()}` : "");
+        window.history.replaceState({}, "", newUrl);
+      });
     }
-  }, [searchParams, updateSession, hasRefreshed]);
+  }, [linkedinStatus, updateSession, hasRefreshed]);
 
   return {
     isConnected: !!user?.linkedInId,
