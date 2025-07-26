@@ -1,10 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import { useSession } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -37,20 +35,8 @@ import Link from "next/link";
 import { GitHubAppSettings } from "@/components/GitHubAppSettings";
 import { UserPreferencesForm } from "@/components/profile/UserPreferencesForm";
 import { useLinkedInStatus } from "@/hooks/useLinkedInStatus";
-
-type ExtendedUser = {
-  id: string;
-  githubId: string;
-  username: string;
-  email: string;
-  avatarUrl: string;
-  name: string;
-  linkedInId?: string;
-  linkedinAccessToken?: string;
-  createdAt: string;
-  updatedAt: string;
-  image?: string;
-};
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { SettingsNavigation } from "@/components/SettingsNavigation";
 
 const Settings = () => {
   return (
@@ -63,7 +49,6 @@ const Settings = () => {
 function SettingsContent() {
   const { isConnected, user } = useLinkedInStatus();
 
-  // State pour les paramètres
   const [notifications, setNotifications] = useState({
     emailOnNewPost: true,
     emailOnCommit: false,
@@ -132,10 +117,10 @@ function SettingsContent() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-default">
               Paramètres et Sécurité
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-default-600 mt-1">
               Configurez vos préférences, notifications, sécurité et
               intégrations.
             </p>
@@ -149,49 +134,9 @@ function SettingsContent() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Navigation */}
-          <div className="lg:col-span-1 ">
-            <Card>
-              <CardContent className="p-4">
-                <nav className="space-y-1">
-                  <a
-                    href="#notifications"
-                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground"
-                  >
-                    <Bell className="mr-3 h-4 w-4" />
-                    Notifications
-                  </a>
-                  <a
-                    href="#security"
-                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50"
-                  >
-                    <Shield className="mr-3 h-4 w-4" />
-                    Sécurité
-                  </a>
-                  <a
-                    href="#preferences"
-                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50"
-                  >
-                    <Palette className="mr-3 h-4 w-4" />
-                    Préférences
-                  </a>
-                  <a
-                    href="#integrations"
-                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50"
-                  >
-                    <Globe className="mr-3 h-4 w-4" />
-                    Intégrations
-                  </a>
-                  <a
-                    href="#data"
-                    className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50"
-                  >
-                    <Database className="mr-3 h-4 w-4" />
-                    Données
-                  </a>
-                </nav>
-              </CardContent>
-            </Card>
+          {/* Navigation flottante */}
+          <div className="lg:col-span-1">
+            <SettingsNavigation />
           </div>
 
           {/* Content */}
@@ -436,6 +381,35 @@ function SettingsContent() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Section Apparence */}
+            <Card id="appearance">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Palette className="mr-2 h-5 w-5" />
+                  Apparence
+                </CardTitle>
+                <CardDescription>
+                  Personnalisez l&apos;apparence de votre interface.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Thème</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Choisissez entre le mode clair, sombre ou suivez les
+                        préférences de votre système
+                      </p>
+                    </div>
+                    <ThemeToggle variant="dropdown" className="ml-4" />
+                  </div>
+                </div>
+
+                <Separator />
+              </CardContent>
+            </Card>
 
             {/* GitHub App Integration */}
             <div id="integrations">

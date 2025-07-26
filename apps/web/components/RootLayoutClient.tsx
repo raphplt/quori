@@ -16,6 +16,7 @@ import { GenerateProvider } from "@/contexts/GenerateContext";
 import { Analytics } from "@vercel/analytics/next";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { OnboardingModal } from "@/components/OnboardingModal";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 declare global {
   interface Window {
@@ -70,33 +71,35 @@ export default function RootLayoutClient({
 
   return (
     <>
-      <ReactQueryProvider>
-        <NextAuthProvider>
-          <NotificationsProvider>
-            <EventsProvider>
-              <DataProvider>
-                <QuotaProvider>
-                  <OnboardingProvider>
-                    <OnboardingModal />
-                    <GenerateProvider>
-                      <SidebarProvider>
-                        <Header />
-                        <MainLayout>
-                          <CookieConsent onConsent={setConsent} />
-                          <Analytics />
-                          {children}
-                        </MainLayout>
-                        <Footer />
-                        <Toaster position="top-right" />
-                      </SidebarProvider>
-                    </GenerateProvider>
-                  </OnboardingProvider>
-                </QuotaProvider>
-              </DataProvider>
-            </EventsProvider>
-          </NotificationsProvider>
-        </NextAuthProvider>
-      </ReactQueryProvider>
+      <ThemeProvider>
+        <ReactQueryProvider>
+          <NextAuthProvider>
+            <NotificationsProvider>
+              <EventsProvider>
+                <DataProvider>
+                  <QuotaProvider>
+                    <OnboardingProvider>
+                      <OnboardingModal />
+                      <GenerateProvider>
+                        <SidebarProvider>
+                          <Header />
+                          <MainLayout>
+                            <CookieConsent onConsent={setConsent} />
+                            <Analytics />
+                            {children}
+                          </MainLayout>
+                          <Footer />
+                          <Toaster position="top-right" />
+                        </SidebarProvider>
+                      </GenerateProvider>
+                    </OnboardingProvider>
+                  </QuotaProvider>
+                </DataProvider>
+              </EventsProvider>
+            </NotificationsProvider>
+          </NextAuthProvider>
+        </ReactQueryProvider>
+      </ThemeProvider>
     </>
   );
 }

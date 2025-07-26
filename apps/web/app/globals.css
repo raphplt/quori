@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Configuration du mode sombre avec Tailwind v4 */
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -11,6 +12,18 @@
   --card-foreground: oklch(0.2500 0.0800 285.0000);
   --popover: oklch(1.0000 0 0);
   --popover-foreground: oklch(0.2500 0.0800 285.0000);
+
+  /* Système de nuances de blanc/noir adaptatif */
+  --default-50: oklch(0.9900 0.0020 285.0000);
+  --default-100: oklch(0.9700 0.0040 285.0000);
+  --default-200: oklch(0.9400 0.0060 285.0000);
+  --default-300: oklch(0.9000 0.0080 285.0000);
+  --default-400: oklch(0.8500 0.0100 285.0000);
+  --default-500: oklch(0.7500 0.0120 285.0000);
+  --default-600: oklch(0.6500 0.0140 285.0000);
+  --default-700: oklch(0.5500 0.0160 285.0000);
+  --default-800: oklch(0.3500 0.0180 285.0000);
+  --default-900: oklch(0.2000 0.0200 285.0000);
 
   /* Gradient bleu-violet moderne inspiré de la landing */
   --primary: oklch(0.5800 0.2200 270.0000);
@@ -101,6 +114,18 @@
   --card-foreground: oklch(0.9500 0.0200 285.0000);
   --popover: oklch(0.1800 0.0400 285.0000);
   --popover-foreground: oklch(0.9500 0.0200 285.0000);
+
+  /* Système de nuances de blanc/noir adaptatif pour le mode sombre */
+  --default-50: oklch(0.1500 0.0200 285.0000);
+  --default-100: oklch(0.2000 0.0250 285.0000);
+  --default-200: oklch(0.2500 0.0300 285.0000);
+  --default-300: oklch(0.3000 0.0350 285.0000);
+  --default-400: oklch(0.4000 0.0400 285.0000);
+  --default-500: oklch(0.5000 0.0450 285.0000);
+  --default-600: oklch(0.6000 0.0500 285.0000);
+  --default-700: oklch(0.7000 0.0550 285.0000);
+  --default-800: oklch(0.8000 0.0600 285.0000);
+  --default-900: oklch(0.9000 0.0650 285.0000);
 
   /* Primary plus vibrant en mode sombre */
   --primary: oklch(0.7500 0.2000 270.0000);
@@ -212,6 +237,18 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Couleurs de nuances par défaut */
+  --color-default-50: var(--default-50);
+  --color-default-100: var(--default-100);
+  --color-default-200: var(--default-200);
+  --color-default-300: var(--default-300);
+  --color-default-400: var(--default-400);
+  --color-default-500: var(--default-500);
+  --color-default-600: var(--default-600);
+  --color-default-700: var(--default-700);
+  --color-default-800: var(--default-800);
+  --color-default-900: var(--default-900);
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);

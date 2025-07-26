@@ -30,7 +30,9 @@ import {
   LogOut,
   Github,
   PanelLeft,
+  Moon,
 } from "lucide-react";
+import { ThemeToggle } from "../ThemeToggle";
 
 const Header = () => {
   const { data: session, status } = useSession();
@@ -99,6 +101,17 @@ const Header = () => {
               </div>
             </div>
             <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="flex items-center justify-between"
+              onSelect={e => e.preventDefault()}
+            >
+              <div className="flex items-center">
+                <Moon className="mr-2 h-4 w-4" />
+                <span>Thème</span>
+              </div>
+              <ThemeToggle variant="dropdown" className="ml-2" />
+            </DropdownMenuItem>
+
             <DropdownMenuItem asChild>
               <Link href="/profile" className="flex items-center">
                 <User className="mr-2 h-4 w-4" />
