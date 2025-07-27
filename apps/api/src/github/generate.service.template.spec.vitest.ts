@@ -37,13 +37,16 @@ describe('GenerateService template integration', () => {
       { save: vi.fn() } as any,
       { findOne: vi.fn() } as any,
       { findOne: vi.fn(), update: vi.fn() } as any,
-      { findOne: vi.fn().mockResolvedValue({
+      {
+        findOne: vi.fn().mockResolvedValue({
           id: 1,
           name: 'Formel',
           promptModifier: 'ADD THIS',
           installation: null,
-        } as Template) } as any,
+        } as Template),
+      } as any,
       { findByUserId: vi.fn().mockResolvedValue(null) } as any,
+      { publish: vi.fn() } as any,
     );
   });
 

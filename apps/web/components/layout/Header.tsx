@@ -95,7 +95,7 @@ const Header = () => {
             <div className="flex items-center gap-2 p-2">
               <div className="flex flex-col space-y-1 leading-none">
                 <p className="font-medium">{user.name}</p>
-                <p className="w-[200px] truncatpe text-sm text-muted-foreground">
+                <p className="w-[200px] truncate text-sm text-muted-foreground">
                   {user.email}
                 </p>
               </div>
@@ -138,13 +138,17 @@ const Header = () => {
     }
 
     return (
-      <Button
-        onClick={() => signIn("github")}
-        className="flex items-center gap-2"
-      >
-        <Github className="h-4 w-4" />
-        Se connecter
-      </Button>
+      <>
+        <ThemeToggle variant="dropdown" className="ml-2" />
+
+        <Button
+          onClick={() => signIn("github")}
+          className="flex items-center gap-2"
+        >
+          <Github className="h-4 w-4" />
+          Se connecter
+        </Button>
+      </>
     );
   };
 

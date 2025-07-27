@@ -30,6 +30,7 @@ import {
   useGeneratePost,
   createGenerateRequestFromEvent,
 } from "@/hooks/useGeneratePost";
+import { Progress } from "./ui/progress";
 
 interface GeneratePostDialogProps {
   open: boolean;
@@ -44,6 +45,8 @@ export function GeneratePostDialog({
 }: GeneratePostDialogProps) {
   const [copiedSummary, setCopiedSummary] = useState(false);
   const [copiedPost, setCopiedPost] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<{
     type: "success" | "error";
     message: string;
@@ -58,13 +61,35 @@ export function GeneratePostDialog({
 
   const handleGenerate = () => {
     const request = createGenerateRequestFromEvent(event);
+
+    // Démarrer la progression
+    setIsGenerating(true);
+    setProgress(0);
+
+    // Simuler une progression naturelle sur 4.5 secondes
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90; // S'arrêter à 90% jusqu'à ce que la vraie requête soit terminée
+        }
+        return prev + Math.random() * 15 + 5; // Progression aléatoire entre 5-20%
+      });
+    }, 300); // Mise à jour toutes les 300ms
+
     generatePost.mutate(
       { request, event },
       {
         onSuccess: () => {
+          clearInterval(progressInterval);
+          setProgress(100);
+          setIsGenerating(false);
           showFeedback("success", "Post généré avec succès et sauvegardé !");
         },
         onError: error => {
+          clearInterval(progressInterval);
+          setProgress(0);
+          setIsGenerating(false);
           showFeedback(
             "error",
             "Erreur lors de la génération : " + error.message
@@ -119,8 +144,8 @@ export function GeneratePostDialog({
           <div
             className={`p-4 rounded-lg border ${
               feedbackMessage.type === "success"
-                ? "bg-green-50 border-green-200 text-green-800"
-                : "bg-red-50 border-red-200 text-red-800"
+                ? "bg-green-50 border-green-200 text-green-800 dark:bg-green-950 dark:border-green-800 dark:text-green-200"
+                : "bg-red-50 border-red-200 text-red-800 dark:bg-red-950 dark:border-red-800 dark:text-red-200"
             }`}
           >
             <div className="flex items-center gap-2">
@@ -211,10 +236,10 @@ export function GeneratePostDialog({
               <h3 className="text-lg font-semibold">Contenu généré</h3>
               <Button
                 onClick={handleGenerate}
-                disabled={generatePost.isPending}
+                disabled={generatePost.isPending || isGenerating}
                 className="bg-gradient-to-r from-primary to-chart-2 hover:from-primary-hover hover:to-chart-2-hover"
               >
-                {generatePost.isPending ? (
+                {generatePost.isPending || isGenerating ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Génération...
@@ -228,7 +253,7 @@ export function GeneratePostDialog({
               </Button>
             </div>
 
-            {generatePost.isPending && (
+            {(generatePost.isPending || isGenerating) && (
               <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
                 <CardContent className="p-6">
                   <div className="flex flex-col items-center justify-center space-y-4">
@@ -245,12 +270,13 @@ export function GeneratePostDialog({
                       </p>
                     </div>
                     <div className="w-full max-w-xs">
-                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full animate-pulse transition-all duration-1000 ease-in-out"
-                          style={{ width: "75%" }}
-                        ></div>
-                      </div>
+                      <Progress
+                        value={progress}
+                        className="transition-all duration-300 ease-out"
+                      />
+                      <p className="text-xs text-muted-foreground mt-2 text-center">
+                        {Math.round(progress)}% terminé
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -292,8 +318,8 @@ export function GeneratePostDialog({
                 <Card className="border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span className="flex items-center gap-2 text-default-500">
-                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      <span className="flex items-center gap-2 text-muted-foreground ">
+                        <CheckCircle className="h-5 w-5 text-green-500 dark:text-green-400" />
                         Résumé
                       </span>
                       <Button
@@ -302,7 +328,7 @@ export function GeneratePostDialog({
                         onClick={() =>
                           copyToClipboard(generatePost.data.summary, "summary")
                         }
-                        className="hover:bg-green-100 transition-colors"
+                        className="hover:bg-green-100 transition-colors dark:hover:bg-green-900 dark:hover:text-green-400"
                       >
                         {copiedSummary ? (
                           <CheckCircle className="h-4 w-4 text-green-500" />
@@ -316,16 +342,16 @@ export function GeneratePostDialog({
                     <Textarea
                       value={generatePost.data.summary}
                       readOnly
-                      className="min-h-[100px] resize-none bg-white/50 border-green-200 focus:border-green-300"
+                      className="min-h-[100px] resize-none bg-white/50 border-green-200 focus:border-green-300 dark:bg-gray-900 dark:border-green-800 dark:focus:border-green-700"
                     />
                   </CardContent>
                 </Card>
 
                 {/* Post Content */}
-                <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 dark:border-blue-800 dark:bg-blue-950">
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                      <span className="flex items-center gap-2 text-default-500">
+                      <span className="flex items-center gap-2 text-muted-foreground">
                         <Sparkles className="h-5 w-5 text-blue-500" />
                         Post pour réseaux sociaux
                       </span>
@@ -335,7 +361,7 @@ export function GeneratePostDialog({
                         onClick={() =>
                           copyToClipboard(generatePost.data.post, "post")
                         }
-                        className="hover:bg-blue-100 transition-colors"
+                        className="hover:bg-blue-100 transition-colors dark:hover:bg-blue-900 dark:hover:text-blue-400"
                       >
                         {copiedPost ? (
                           <CheckCircle className="h-4 w-4 text-green-500" />
@@ -349,20 +375,20 @@ export function GeneratePostDialog({
                     <Textarea
                       value={generatePost.data.post}
                       readOnly
-                      className="min-h-[150px] resize-none bg-white/50 border-blue-200 focus:border-blue-300"
+                      className="min-h-[150px] resize-none bg-white/50 border-blue-200 focus:border-blue-300 dark:bg-gray-900 dark:border-blue-800 dark:focus:border-blue-700"
                     />
                   </CardContent>
                 </Card>
 
                 {/* Action pour voir tous les posts */}
-                <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50">
-                  <CardContent className="p-4">
+                <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50 dark:border-purple-800 dark:bg-purple-950 dark:text-purple-400">
+                  <CardContent className="p-4 dark:text-purple-400">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium text-purple-900">
+                        <h4 className="font-medium text-purple-900 dark:text-purple-400">
                           Post sauvegardé !
                         </h4>
-                        <p className="text-sm text-purple-700">
+                        <p className="text-sm text-purple-700 dark:text-purple-400">
                           Votre post a été automatiquement sauvegardé et vous
                           pouvez le gérer depuis vos brouillons.
                         </p>

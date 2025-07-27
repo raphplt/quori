@@ -14,13 +14,13 @@ const AddActivity = () => {
       method: "POST",
       body: JSON.stringify({
         delivery_id: "123",
-        event: "test",
+        event: "push",
         event_type: "push",
         payload: {
-          test: "test",
+          test: "feat: Update api with new endpoints : login and register",
         },
-        repo_full_name: "test",
-        author_login: "test",
+        repo_full_name: "quori/quori-api",
+        author_login: "raph",
       }),
     });
   };

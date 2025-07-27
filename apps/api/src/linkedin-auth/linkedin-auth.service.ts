@@ -17,7 +17,7 @@ export class LinkedinAuthService {
   }
 
   async getToken(userId: string): Promise<string | null> {
-    return this.redis.get(`linkedin:token:${userId}`);
+    return await this.redis.get(`linkedin:token:${userId}`);
   }
 
   async removeToken(userId: string): Promise<void> {

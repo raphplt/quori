@@ -1,11 +1,21 @@
 export interface LinkedInApi {
-  createPost(token: string, text: string): Promise<{ id: string }>;
+  createPost(
+    token: string,
+    text: string,
+    linkedInId: string,
+    urnFormat?: string,
+  ): Promise<{ id: string }>;
 }
 
 export class HttpLinkedInApi implements LinkedInApi {
-  async createPost(token: string, text: string): Promise<{ id: string }> {
+  async createPost(
+    token: string,
+    text: string,
+    linkedInId: string,
+    urnFormat: string = 'urn:li:member:',
+  ): Promise<{ id: string }> {
     const body = {
-      author: 'urn:li:person:me',
+      author: `${urnFormat}${linkedInId}`,
       lifecycleState: 'PUBLISHED',
       specificContent: {
         'com.linkedin.ugc.ShareContent': {
@@ -15,6 +25,7 @@ export class HttpLinkedInApi implements LinkedInApi {
       },
       visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' },
     };
+
     const res = await fetch('https://api.linkedin.com/v2/ugcPosts', {
       method: 'POST',
       headers: {
@@ -24,7 +35,12 @@ export class HttpLinkedInApi implements LinkedInApi {
       },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errorText}`);
+    }
+
     const data = await res.json();
     return { id: data.id as string };
   }

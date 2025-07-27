@@ -1,4 +1,10 @@
-import { Controller, Post as HttpPost, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post as HttpPost,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { LinkedinPublisherService } from './linkedin-publisher.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';

@@ -3,8 +3,10 @@ export interface Post {
   summary: string;
   postContent: string;
   status: "draft" | "ready" | "scheduled" | "published" | "failed";
+  statusLinkedin?: "pending" | "published" | "failed";
   scheduledAt?: string;
   publishedAt?: string;
+  externalId?: string;
   impressions: number;
   likes: number;
   comments: number;

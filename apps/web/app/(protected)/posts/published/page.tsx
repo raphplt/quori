@@ -39,6 +39,7 @@ interface Post {
   tone?: string;
   createdAt: string;
   updatedAt: string;
+  externalId?: string;
   installation?: {
     id: number;
     account_login: string;
@@ -100,6 +101,14 @@ export default function PublishedPage() {
     );
   }
 
+  const onOpenLinkedIn = (externalId: string | undefined) => {
+    if (!externalId) return;
+    const shareId = externalId.replace("urn:li:share:", "");
+    const linkedInUrl = `https://www.linkedin.com/feed/update/urn:li:share:${shareId}/`;
+    console.log("linkedInUrl", linkedInUrl);
+    window.open(linkedInUrl, "_blank");
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
@@ -126,7 +135,9 @@ export default function PublishedPage() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg">{post.summary}</CardTitle>
+                    <CardTitle className="text-lg line-clamp-1">
+                      {post.summary}
+                    </CardTitle>
                     <CardDescription className="flex items-center gap-4 text-sm">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
@@ -213,10 +224,22 @@ export default function PublishedPage() {
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Voir le post
-                    </Button>
+                    {post.externalId &&
+                    post.externalId.startsWith("urn:li:share:") ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onOpenLinkedIn(post.externalId)}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Voir sur LinkedIn
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="outline" disabled>
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Non publié
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline">
                       <BarChart3 className="h-4 w-4 mr-2" />
                       Analytics détaillées

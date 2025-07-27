@@ -45,14 +45,12 @@ const Repositories = () => {
     direction: sortDirection,
   };
 
-  // Récupérer les repositories avec pagination backend
   const { data, isLoading, error } = useGitHubRepositories(
     currentPage,
     itemsPerPage,
     filters
   );
 
-  // Récupérer les langages disponibles
   const { data: languagesData } = useAvailableLanguages();
   const availableLanguages = languagesData?.availableLanguages || [];
 
@@ -60,7 +58,6 @@ const Repositories = () => {
   const totalCount = data?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [

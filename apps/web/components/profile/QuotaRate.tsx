@@ -24,7 +24,8 @@ const QuotaRate = () => {
         ) : quota ? (
           <div className="flex flex-col">
             <p className=" text-gray-700 mb-2 font-semibold text-right">
-              {(quota.used / quota.remaining) * 100} %
+              {((quota.used / (quota.used + quota.remaining)) * 100).toFixed(0)}
+              %
             </p>
             <Progress
               value={(quota.used / (quota.used + quota.remaining)) * 100}

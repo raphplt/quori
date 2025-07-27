@@ -3,15 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import {
-  Target,
-  Clock,
-  Lightbulb,
-  Eye,
-  TrendingUp,
-  Zap,
-  BarChart3,
-} from "lucide-react";
+import { Target, Clock, Lightbulb, Eye, TrendingUp, Zap } from "lucide-react";
 import Image from "next/image";
 
 export const ProblemSolutionSection: React.FC = () => {
@@ -35,7 +27,7 @@ export const ProblemSolutionSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 bg-white relative overflow-hidden">
+    <section className="py-20 bg-gradient-to-br from-background via-primary/5 to-chart-2-2/10 relative overflow-hidden">
       {/* Éléments décoratifs de fond */}
       <div className="absolute inset-0 pointer-events-none">
         <motion.div

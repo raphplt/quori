@@ -26,9 +26,9 @@ export function EventsProvider({ children }: EventsProviderProps) {
   const previousEventsRef = useRef<GitHubEvent[]>([]);
   const { notifyNewEvent } = useEventNotifications();
 
-  // Utilisation du SSE pour obtenir le count en temps réel
   const { eventsLength } = useEventsCountSSE();
 
+  //TODO : améliorer pour utiliser le SSE ou websocket
   const {
     data: events,
     isLoading,
@@ -44,7 +44,6 @@ export function EventsProvider({ children }: EventsProviderProps) {
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  // Effet pour détecter les nouveaux événements
   useEffect(() => {
     if (!events || !Array.isArray(events)) return;
 

@@ -12,33 +12,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar as CalendarIcon, Clock, Eye, Edit } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
+import { Post } from "@/types/post";
 
 const CalendarPage = () => {
   const [view, setView] = useState<"month" | "week">("month");
+  const { data: scheduledPostsData } = useQuery({
+    queryKey: ["scheduledPosts"],
+    queryFn: () =>
+      authenticatedFetcher<{
+        posts: Post[];
+        total: number;
+        page: number;
+        limit: number;
+      }>("/github/posts?status=scheduled"),
+  });
 
-  const scheduledPosts = [
-    {
-      id: 1,
-      title: "Amélioration de l'API GitHub",
-      scheduledFor: "2025-01-10T09:00:00Z",
-      status: "scheduled",
-      repository: "quori",
-    },
-    {
-      id: 2,
-      title: "Nouveau système de notifications",
-      scheduledFor: "2025-01-12T14:30:00Z",
-      status: "scheduled",
-      repository: "api-service",
-    },
-    {
-      id: 3,
-      title: "Refactoring du dashboard",
-      scheduledFor: "2025-01-15T11:00:00Z",
-      status: "scheduled",
-      repository: "web-app",
-    },
-  ];
+  const scheduledPosts = scheduledPostsData?.posts || [];
+
+  console.log("scheduledPosts", scheduledPosts);
 
   return (
     <ProtectedRoute>
@@ -97,8 +90,8 @@ const CalendarPage = () => {
                 </div>
                 <div className="grid grid-cols-7 gap-2">
                   {Array.from({ length: 31 }, (_, i) => i + 1).map(day => {
-                    const hasPost = scheduledPosts.some(
-                      post => new Date(post.scheduledFor).getDate() === day
+                    const hasPost = scheduledPosts?.some(
+                      post => new Date(post.scheduledAt!).getDate() === day
                     );
                     return (
                       <div
@@ -134,16 +127,16 @@ const CalendarPage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {scheduledPosts.map(post => (
+                {scheduledPosts?.map(post => (
                   <div key={post.id} className="border rounded-lg p-3">
                     <div className="flex items-center justify-between mb-2">
                       <Badge variant="default" className="text-xs">
-                        {new Date(post.scheduledFor).toLocaleDateString(
+                        {new Date(post.scheduledAt!).toLocaleDateString(
                           "fr-FR"
                         )}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        {new Date(post.scheduledFor).toLocaleTimeString(
+                        {new Date(post.scheduledAt!).toLocaleTimeString(
                           "fr-FR",
                           {
                             hour: "2-digit",
@@ -152,10 +145,10 @@ const CalendarPage = () => {
                         )}
                       </span>
                     </div>
-                    <h4 className="font-medium text-sm mb-1">{post.title}</h4>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      {post.repository}
-                    </p>
+                    <h4 className="font-medium text-sm mb-1 line-clamp-1">
+                      {post.summary}
+                    </h4>
+
                     <div className="flex items-center space-x-1">
                       <Button
                         size="sm"

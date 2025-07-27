@@ -13,6 +13,7 @@ import { Installation } from '../entities/installation.entity';
 import { Event } from '../entities/event.entity';
 import { Template } from '../../templates/entities/template.entity';
 import { PreferencesService } from '../../preferences/preferences.service';
+import { LinkedinPublisherService } from '../../linkedin/linkedin-publisher.service';
 
 interface QuotaInfo {
   date: string;
@@ -36,6 +37,7 @@ export class GenerateService {
     @InjectRepository(Template)
     private readonly templateRepository: Repository<Template>,
     private readonly preferencesService: PreferencesService,
+    private readonly linkedinPublisher: LinkedinPublisherService,
   ) {
     const apiKey = this.config.get<string>('OPENAI_API_KEY');
     if (!apiKey) {
@@ -201,7 +203,7 @@ export class GenerateService {
     try {
       preferences = await this.preferencesService.findByUserId(userId);
     } catch {
-      preferences = null; // NotFound = pas de préférences, fallback sur défauts
+      preferences = null;
     }
 
     // Appliquer les préférences ou fallback
@@ -320,6 +322,40 @@ export class GenerateService {
     return this.postRepository.save(post);
   }
 
+  async publishToLinkedIn(postId: number, userId: string): Promise<Post> {
+    const post = await this.postRepository.findOne({
+      where: { id: postId },
+    });
+    if (!post) {
+      throw new BadRequestException('Post not found');
+    }
+
+    // Mettre à jour le statut à "published"
+    post.status = 'published';
+    post.publishedAt = new Date();
+
+    // Publier sur LinkedIn
+    try {
+      const updatedPost = await this.linkedinPublisher.publish(userId, postId);
+
+      // S'assurer que le post a toutes les mises à jour
+      const finalPost = await this.postRepository.findOne({
+        where: { id: postId },
+        relations: ['installation', 'event'],
+      });
+
+      return finalPost || updatedPost;
+    } catch (error) {
+      // Si la publication LinkedIn échoue, marquer comme failed
+      post.status = 'failed';
+      await this.postRepository.save(post);
+
+      throw new BadRequestException(
+        `Failed to publish on LinkedIn: ${error.message}`,
+      );
+    }
+  }
+
   async deletePost(id: number): Promise<{ message: string }> {
     const post = await this.postRepository.findOne({
       where: { id },
@@ -327,6 +363,17 @@ export class GenerateService {
     if (!post) {
       throw new BadRequestException('Post not found');
     }
+
+    const scheduledPostsRepository =
+      this.postRepository.manager.getRepository('scheduled_posts');
+    const scheduledPosts = await scheduledPostsRepository.find({
+      where: { post_id: id },
+    });
+
+    if (scheduledPosts.length > 0) {
+      await scheduledPostsRepository.delete({ post_id: id });
+    }
+
     await this.postRepository.delete(id);
     return { message: 'Post deleted successfully' };
   }

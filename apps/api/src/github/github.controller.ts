@@ -398,10 +398,31 @@ export class GithubController {
   async updatePostStatus(
     @Param('id') id: string,
     @Body() body: UpdatePostStatusDto,
+    @Request() req: AuthenticatedRequest,
   ) {
     const postId = parseInt(id, 10);
+    const user = req.user;
+
+    // Si le statut passe à "published", publier sur LinkedIn
+    if (body.status === 'published') {
+      return await this.generateService.publishToLinkedIn(postId, user.id);
+    }
 
     return await this.generateService.updatePostStatus(postId, body.status);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('posts/:id/publish-linkedin')
+  async publishToLinkedIn(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    const postId = parseInt(id, 10);
+    const user = req.user;
+
+    await this.generateService.updatePostStatus(postId, 'published');
+
+    return await this.generateService.publishToLinkedIn(postId, user.id);
   }
 
   @UseGuards(JwtAuthGuard)

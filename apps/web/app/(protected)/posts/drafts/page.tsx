@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
 import { authenticatedFetch } from "@/lib/api-client";
 import {
@@ -38,7 +38,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -81,7 +80,11 @@ export default function DraftsPage() {
   const [schedulePostId, setSchedulePostId] = useState<number | null>(null);
   const [scheduleAt, setScheduleAt] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [publishingPosts, setPublishingPosts] = useState<Set<number>>(
+    new Set()
+  );
   const createScheduled = useCreateScheduledPost();
+  const queryClient = useQueryClient();
 
   const {
     data: postsData,
@@ -110,14 +113,38 @@ export default function DraftsPage() {
 
   const updatePostStatus = async (postId: number, newStatus: string) => {
     try {
-      await authenticatedFetcher(`/github/posts/${postId}/status`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      refetch();
+      if (newStatus === "published") {
+        setPublishingPosts(prev => new Set(prev).add(postId));
+
+        await authenticatedFetcher(`/github/posts/${postId}/publish-linkedin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        toast.success("Post publié sur LinkedIn avec succès !");
+      } else {
+        await authenticatedFetcher(`/github/posts/${postId}/status`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        });
+      }
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await queryClient.invalidateQueries({ queryKey: ["posts"] });
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
+      if (newStatus === "published") {
+        toast.error("Erreur lors de la publication sur LinkedIn");
+      } else {
+        toast.error("Erreur lors de la mise à jour du statut");
+      }
+    } finally {
+      if (newStatus === "published") {
+        setPublishingPosts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(postId);
+          return newSet;
+        });
+      }
     }
   };
 
@@ -140,7 +167,8 @@ export default function DraftsPage() {
       setSchedulePostId(null);
       setScheduleAt("");
 
-      refetch();
+      // Invalider toutes les requêtes de posts
+      await queryClient.invalidateQueries({ queryKey: ["posts"] });
     } catch (error) {
       console.error("Erreur lors de la planification:", error);
     }
@@ -165,11 +193,20 @@ export default function DraftsPage() {
       }
 
       toast.success("Post supprimé avec succès");
-      refetch();
+      // Invalider toutes les requêtes de posts
+      await queryClient.invalidateQueries({ queryKey: ["posts"] });
     } catch (error) {
       toast.error("Erreur lors de la suppression");
       console.error("Erreur lors de la suppression:", error);
     }
+  };
+
+  const onOpenLinkedIn = (externalId: string | undefined) => {
+    if (!externalId) return;
+    const shareId = externalId.replace("urn:li:share:", "");
+    const linkedInUrl = `https://www.linkedin.com/feed/update/urn:li:share:${shareId}/`;
+    console.log("linkedInUrl", linkedInUrl);
+    window.open(linkedInUrl, "_blank");
   };
 
   if (isLoading) {
@@ -303,29 +340,52 @@ export default function DraftsPage() {
                   </div>
 
                   {post.status === "published" && (
-                    <div className="grid grid-cols-3 gap-4 p-4 bg-green-50 rounded-lg">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">
-                          {post.impressions}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Impressions
-                        </div>
+                    <div className="space-y-3">
+                      {/* Statut LinkedIn */}
+                      <div className="flex items-center gap-2">
+                        {post.statusLinkedin === "published" && (
+                          <Badge className="bg-green-100 text-green-800">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Publié sur LinkedIn
+                          </Badge>
+                        )}
+                        {post.statusLinkedin === "failed" && (
+                          <Badge className="bg-red-100 text-red-800">
+                            Échec LinkedIn
+                          </Badge>
+                        )}
+                        {post.statusLinkedin === "pending" && (
+                          <Badge className="bg-yellow-100 text-yellow-800">
+                            En attente LinkedIn
+                          </Badge>
+                        )}
                       </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">
-                          {post.likes}
+
+                      {/* Métriques LinkedIn */}
+                      <div className="grid grid-cols-3 gap-4 p-4 bg-green-50 rounded-lg dark:bg-green-950 dark:text-green-400 dark:border-green-800">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">
+                            {post.impressions}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Impressions
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          J&apos;aime
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">
+                            {post.likes}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            J&apos;aime
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">
-                          {post.comments}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Commentaires
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">
+                            {post.comments}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Commentaires
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -363,18 +423,73 @@ export default function DraftsPage() {
                             onClick={() =>
                               updatePostStatus(post.id, "published")
                             }
+                            disabled={publishingPosts.has(post.id)}
                           >
                             <Send className="h-4 w-4 mr-2" />
-                            Publier maintenant
+                            {publishingPosts.has(post.id)
+                              ? "Publication..."
+                              : "Publier"}
                           </Button>
                         </>
                       )}
 
-                      {post.status === "published" && post.publishedAt && (
-                        <Button size="sm" variant="outline">
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Voir le post
-                        </Button>
+                      {post.status === "published" && (
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="bg-green-50 text-green-700 border-green-200"
+                          >
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Publié
+                          </Badge>
+                          {post.statusLinkedin === "published" && (
+                            <Badge
+                              variant="outline"
+                              className="bg-blue-50 text-blue-700 border-blue-200"
+                            >
+                              LinkedIn
+                            </Badge>
+                          )}
+                          {post.statusLinkedin === "failed" && (
+                            <Badge
+                              variant="outline"
+                              className="bg-red-50 text-red-700 border-red-200"
+                            >
+                              LinkedIn échec
+                            </Badge>
+                          )}
+                          {post.externalId && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => onOpenLinkedIn(post.externalId)}
+                            >
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Voir sur LinkedIn
+                            </Button>
+                          )}
+                        </div>
+                      )}
+
+                      {post.status === "failed" && (
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="bg-red-50 text-red-700 border-red-200"
+                          >
+                            Échec
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              updatePostStatus(post.id, "published")
+                            }
+                          >
+                            <Send className="h-4 w-4 mr-2" />
+                            Réessayer
+                          </Button>
+                        </div>
                       )}
                     </div>
 

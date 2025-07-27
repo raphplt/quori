@@ -18,12 +18,6 @@ import { GetUser } from './decorators/get-user.decorator';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Get('github')
-  @UseGuards(AuthGuard('github'))
-  async githubAuth() {
-    // Initiates GitHub OAuth flow
-  }
-
   @Get('github/callback')
   @UseGuards(AuthGuard('github'))
   async githubCallback(@Req() req: Request, @Res() res: Response) {
@@ -70,7 +64,6 @@ export class AuthController {
   @Get('refresh-user')
   @UseGuards(JwtAuthGuard)
   async refreshUser(@GetUser() user: User) {
-    // Recharger les données utilisateur depuis la base
     const refreshedUser = await this.authService.refreshUserData(user.id);
     return refreshedUser;
   }

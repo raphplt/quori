@@ -35,6 +35,10 @@ import {
 import { useState } from "react";
 import Link from "next/link";
 import QuotaRate from "@/components/profile/QuotaRate";
+import { useDataContext } from "@/contexts/DataContext";
+import { useEvents } from "@/contexts/EventsContext";
+import { useGitHubRepositories } from "@/hooks/useGitHub";
+import { getIcon, getEventTypeLabel } from "@/utils/events";
 
 type ExtendedUser = {
   id: string;
@@ -58,6 +62,10 @@ export default function ProfilePage() {
 
 function Profile() {
   const { data: session } = useSession();
+  // const { a} = useDataContext()
+  const { events } = useEvents();
+  const { data: repositories } = useGitHubRepositories(1, 3);
+
   const user = session?.user as ExtendedUser;
 
   const [bio, setBio] = useState(
@@ -81,62 +89,11 @@ function Profile() {
     lastActiveDate: "2025-07-11T14:30:00Z",
   };
 
-  const recentActivity = [
-    {
-      id: 1,
-      type: "post",
-      title: "Nouvelle fonctionnalité de notifications",
-      engagement: 45,
-      date: "2025-07-10",
-      platform: "LinkedIn",
-    },
-    {
-      id: 2,
-      type: "commit",
-      title: "feat: add user preferences for notifications",
-      repo: "quori",
-      date: "2025-07-10",
-      platform: "GitHub",
-    },
-    {
-      id: 3,
-      type: "post",
-      title: "Optimisation des performances API",
-      engagement: 32,
-      date: "2025-07-09",
-      platform: "LinkedIn",
-    },
-  ];
-
-  const topRepositories = [
-    {
-      name: "quori",
-      description:
-        "Générateur automatique de posts LinkedIn à partir de commits Git",
-      language: "TypeScript",
-      stars: 127,
-      posts: 23,
-    },
-    {
-      name: "api-service",
-      description:
-        "API REST pour la gestion des utilisateurs et authentification",
-      language: "Node.js",
-      stars: 45,
-      posts: 12,
-    },
-    {
-      name: "web-app",
-      description: "Interface utilisateur moderne avec React et Next.js",
-      language: "React",
-      stars: 89,
-      posts: 18,
-    },
-  ];
-
   const handleSave = () => {
     setIsEditing(false);
   };
+
+  console.log("repositories", repositories);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -144,8 +101,8 @@ function Profile() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Mon profil</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-3xl font-bold text-default-900">Mon profil</h1>
+            <p className="text-default-600 mt-1">
               Votre profil public et vos statistiques
             </p>
           </div>
@@ -273,7 +230,7 @@ function Profile() {
                           placeholder="Parlez-nous de vous..."
                         />
                       ) : (
-                        <p className="text-gray-700">{bio}</p>
+                        <p className="text-default-700">{bio}</p>
                       )}
                     </div>
 
@@ -311,34 +268,29 @@ function Profile() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {recentActivity.map(activity => (
+                  {events?.map(activity => (
                     <div
-                      key={activity.id}
+                      key={activity.event}
                       className="flex items-center space-x-4 p-3 border rounded-lg"
                     >
                       <div className="flex-shrink-0">
-                        {activity.type === "post" ? (
-                          <FileText className="h-5 w-5 text-blue-500" />
-                        ) : (
-                          <GitCommit className="h-5 w-5 text-green-500" />
-                        )}
+                        <div className="flex items-center gap-3">
+                          {getIcon(activity.event)}
+                          <span className="text-xs font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full">
+                            {getEventTypeLabel(activity.event_type)}
+                          </span>
+                        </div>
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium">{activity.title}</p>
+                        <p className="font-medium">
+                          {activity.metadata?.title}
+                        </p>
                         <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <span>{activity.platform}</span>
-                          <span>•</span>
                           <span>
-                            {new Date(activity.date).toLocaleDateString(
+                            {new Date(activity.received_at).toLocaleDateString(
                               "fr-FR"
                             )}
                           </span>
-                          {activity.engagement && (
-                            <>
-                              <span>•</span>
-                              <span>{activity.engagement} interactions</span>
-                            </>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -359,9 +311,9 @@ function Profile() {
                 </CardTitle>
                 <CardDescription>Vos projets les plus actifs</CardDescription>
               </CardHeader>
-              <CardContent>
+              {/* <CardContent>
                 <div className="space-y-4">
-                  {topRepositories.map(repo => (
+                  {repositories?.map(repo => (
                     <div
                       key={repo.name}
                       className="flex items-center justify-between p-4 border rounded-lg"
@@ -384,7 +336,7 @@ function Profile() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
+              </CardContent> */}
             </Card>
           </div>
 
@@ -498,7 +450,7 @@ function Profile() {
                 <CardDescription>Partagez votre profil Quori</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
+                <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/5 rounded-lg border">
                   <div className="text-center">
                     <Avatar className="h-12 w-12 mx-auto mb-2">
                       <AvatarImage
