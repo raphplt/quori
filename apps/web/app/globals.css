@@ -70,7 +70,7 @@
   --sidebar-border: oklch(0.8800 0.0400 285.0000);
   --sidebar-ring: oklch(0.5800 0.2200 270.0000);
 
-  /* Typographie moderne */
+    /* Typographie moderne */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-serif: "Georgia", "Times New Roman", serif;
   --font-mono: "JetBrains Mono", "Fira Code", "Consolas", monospace;
@@ -88,20 +88,17 @@
   --shadow-xl: 0px 25px 50px -12px hsl(270 20% 20% / 0.25);
   --shadow-2xl: 0px 50px 100px -20px hsl(270 20% 20% / 0.25);
 
-  /* Ombres colorées pour les éléments interactifs */
   --shadow-primary: 0px 10px 25px -5px hsl(270 60% 50% / 0.25);
   --shadow-success: 0px 10px 25px -5px hsl(140 60% 50% / 0.25);
   --shadow-warning: 0px 10px 25px -5px hsl(60 60% 50% / 0.25);
   --shadow-destructive: 0px 10px 25px -5px hsl(15 60% 50% / 0.25);
 
-  /* Variables pour les animations */
   --animation-duration-fast: 150ms;
   --animation-duration-normal: 300ms;
   --animation-duration-slow: 500ms;
   --animation-ease: cubic-bezier(0.4, 0, 0.2, 1);
   --animation-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-  /* Espacement harmonieux */
   --spacing: 0.25rem;
   --tracking-normal: 0em;
 }

@@ -86,7 +86,7 @@ function DashboardContent() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-default-900">Dashboard</h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-default-600 mt-1">
               Bienvenue, {user.name} ! Voici un aperçu de votre activité.
             </p>
           </div>

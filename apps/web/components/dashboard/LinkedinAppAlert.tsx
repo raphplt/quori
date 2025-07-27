@@ -20,12 +20,14 @@ export function LinkedInAppAlert() {
   }
 
   return (
-    <Alert className="border-orange-200 bg-orange-50">
-      <Linkedin className="h-4 w-4 text-orange-600" />
+    <Alert className="border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950">
+      <Linkedin className="h-4 w-4 text-orange-600 dark:text-orange-400" />
       <AlertDescription className="flex items-center justify-between">
         <div className="flex-1">
-          <strong className="text-orange-800">LinkedIn non connecté</strong>
-          <p className="text-orange-700 mt-1">
+          <strong className="text-orange-800 dark:text-orange-200">
+            LinkedIn non connecté
+          </strong>
+          <p className="text-orange-700 dark:text-orange-300 mt-1">
             Pour utiliser Quori et analyser vos posts, vous devez connecter
             votre compte LinkedIn.
           </p>
