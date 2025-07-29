@@ -9,7 +9,7 @@ console.log('DATABASE_URL =', process.env.DATABASE_URL);
 export const dataSource = new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
-  synchronize: true,
+  synchronize: false,
   logging: true,
   entities: [__dirname + '/**/*.entity.{js,ts}'],
   migrations: [__dirname + '/migrations/*.{js,ts}'],
