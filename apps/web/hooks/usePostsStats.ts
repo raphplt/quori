@@ -44,7 +44,7 @@ export function usePostsStats() {
         failed: failed.total,
       };
     },
-    refetchInterval: 30000, // Rafraîchir toutes les 30 secondes
+    refetchInterval: 60000, // Augmenté de 30s à 60s
   });
 }
 
@@ -86,6 +86,6 @@ export function usePostsByStatus() {
         failed: failed.posts,
       };
     },
-    refetchInterval: 30000, // Rafraîchir toutes les 30 secondes
+    refetchInterval: 60000, // Augmenté de 30s à 60s
   });
 }

@@ -1,9 +1,8 @@
 "use client";
 
 import { createContext, useContext, ReactNode } from "react";
-import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
+import { useQuotaSSE } from "@/hooks/useQuotaSSE";
 
 interface Quota {
   used: number;
@@ -21,28 +20,16 @@ const QuotaContext = createContext<QuotaContextType | undefined>(undefined);
 
 export function QuotaProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
-
-  const {
-    data: quota,
-    isLoading,
-    error,
-    refetch,
-  }: UseQueryResult<Quota, Error> = useQuery({
-    queryKey: ["quota"],
-    queryFn: () => authenticatedFetcher<Quota>("/quota"),
-    enabled: !!session,
-    refetchOnWindowFocus: true,
-    retry: 2,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
-  });
+  const { quota, isConnected, error } = useQuotaSSE();
 
   const refetchQuota = () => {
-    refetch();
+    // Avec SSE, pas besoin de refetch manuel
+    // Les données sont mises à jour automatiquement
   };
 
   const value: QuotaContextType = {
     quota,
-    isLoading,
+    isLoading: !isConnected && !error,
     error,
     refetchQuota,
   };

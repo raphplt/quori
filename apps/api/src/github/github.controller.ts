@@ -23,6 +23,7 @@ import { GitHubRepositoriesPage } from './interfaces/github-repositories-page.in
 import { User } from '../users/user.interface';
 import { GithubAppService } from './github-app.service';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { GenerateService } from './services/generate.service';
 import { GenerateDto, GenerateResultDto } from './dto/generate.dto';
 import { UpdatePostStatusDto } from './dto/post.dto';
@@ -41,10 +42,26 @@ export class GithubController {
     private readonly githubService: GithubService,
     private readonly appService: GithubAppService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
     private readonly generateService: GenerateService,
     @InjectRepository(Event)
     private readonly eventRepository: Repository<Event>,
   ) {}
+
+  private verifyToken(token: string): any {
+    if (!token) {
+      throw new UnauthorizedException('Token required');
+    }
+
+    try {
+      const jwtSecret =
+        this.configService.get<string>('JWT_SECRET') || 'default-jwt-secret';
+      return this.jwtService.verify(token, { secret: jwtSecret });
+    } catch (error) {
+      console.error('JWT verification failed:', error);
+      throw new UnauthorizedException('Invalid token');
+    }
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get('repositories')
@@ -227,15 +244,8 @@ export class GithubController {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
 
-    if (!token) {
-      throw new UnauthorizedException('Token required');
-    }
-
-    try {
-      this.jwtService.verify(token);
-    } catch {
-      throw new UnauthorizedException('Invalid token');
-    }
+    // Vérifier le token
+    this.verifyToken(token);
 
     return this.appService.getEventsCountStream().pipe(
       map((count) => ({
@@ -247,6 +257,98 @@ export class GithubController {
 
   @Options('events/length/stream')
   handleEventsLengthStreamOptions(@Res() res: Response) {
+    res.setHeader(
+      'Access-Control-Allow-Origin',
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+    );
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Cache-Control, Last-Event-ID',
+    );
+    res.status(200).send();
+  }
+
+  @Sse('posts/stats/stream')
+  streamPostsStats(
+    @Query('token') token: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Observable<{ data: string; type: string }> {
+    // Configuration CORS spécifique pour les SSE
+    res.setHeader(
+      'Access-Control-Allow-Origin',
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+    );
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Cache-Control, Last-Event-ID',
+    );
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+
+    // Vérifier le token
+    this.verifyToken(token);
+
+    return this.appService.getPostsStatsStream().pipe(
+      map((data) => ({
+        data: JSON.stringify(data),
+        type: data.type,
+      })),
+    );
+  }
+
+  @Options('posts/stats/stream')
+  handlePostsStatsStreamOptions(@Res() res: Response) {
+    res.setHeader(
+      'Access-Control-Allow-Origin',
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+    );
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Cache-Control, Last-Event-ID',
+    );
+    res.status(200).send();
+  }
+
+  @Sse('events/stream')
+  streamEventsWithUpdates(
+    @Query('token') token: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Observable<{ data: string; type: string }> {
+    // Configuration CORS spécifique pour les SSE
+    res.setHeader(
+      'Access-Control-Allow-Origin',
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+    );
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Cache-Control, Last-Event-ID',
+    );
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+
+    // Vérifier le token
+    this.verifyToken(token);
+
+    return this.appService.getEventsStreamWithUpdates().pipe(
+      map((data) => ({
+        data: JSON.stringify(data),
+        type: data.type,
+      })),
+    );
+  }
+
+  @Options('events/stream')
+  handleEventsStreamOptions(@Res() res: Response) {
     res.setHeader(
       'Access-Control-Allow-Origin',
       process.env.FRONTEND_URL || 'http://localhost:3000',
@@ -275,7 +377,6 @@ export class GithubController {
       try {
         installations = await this.appService.syncUserInstallationsFromGitHub(
           user.githubAccessToken,
-          user.githubId,
         );
 
         console.log(
@@ -440,7 +541,6 @@ export class GithubController {
       const syncedInstallations =
         await this.appService.syncUserInstallationsFromGitHub(
           user.githubAccessToken,
-          user.githubId,
         );
 
       return {

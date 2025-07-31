@@ -9,7 +9,23 @@ interface ReactQueryProviderProps {
 }
 
 export function ReactQueryProvider({ children }: ReactQueryProviderProps) {
-  const [queryClient] = useState(() => new QueryClient());
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            // Désactiver le refetch automatique sur focus par défaut
+            refetchOnWindowFocus: false,
+            // Réduire le nombre de retries par défaut
+            retry: 1,
+            // Augmenter le stale time pour éviter les refetch inutiles
+            staleTime: 5 * 60 * 1000, // 5 minutes
+            // Augmenter le cache time
+            gcTime: 10 * 60 * 1000, // 10 minutes
+          },
+        },
+      })
+  );
 
   return (
     <QueryClientProvider client={queryClient}>

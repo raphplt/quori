@@ -1,0 +1,55 @@
+### Test des endpoints SSE
+
+# Variables d'environnement
+@baseUrl = http://localhost:3001
+@token = YOUR_JWT_TOKEN_HERE
+
+### 1. Test SSE Events Stream
+GET {{baseUrl}}/github/events/stream?token={{token}}
+Accept: text/event-stream
+Cache-Control: no-cache
+
+### 2. Test SSE Posts Stats Stream
+GET {{baseUrl}}/github/posts/stats/stream?token={{token}}
+Accept: text/event-stream
+Cache-Control: no-cache
+
+### 3. Test SSE Quota Stream
+GET {{baseUrl}}/quota/stream?token={{token}}
+Accept: text/event-stream
+Cache-Control: no-cache
+
+### 4. Test SSE Events Count Stream (existant)
+GET {{baseUrl}}/github/events/length/stream?token={{token}}
+Accept: text/event-stream
+Cache-Control: no-cache
+
+### 5. Test CORS Options pour Events Stream
+OPTIONS {{baseUrl}}/github/events/stream
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: Cache-Control, Last-Event-ID
+Origin: http://localhost:3000
+
+### 6. Test CORS Options pour Posts Stats Stream
+OPTIONS {{baseUrl}}/github/posts/stats/stream
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: Cache-Control, Last-Event-ID
+Origin: http://localhost:3000
+
+### 7. Test CORS Options pour Quota Stream
+OPTIONS {{baseUrl}}/quota/stream
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: Cache-Control, Last-Event-ID
+Origin: http://localhost:3000
+
+### Instructions d'utilisation :
+
+# 1. Remplacez YOUR_JWT_TOKEN_HERE par un token JWT valide
+# 2. Démarrez l'API avec : npm run start:dev
+# 3. Testez les endpoints un par un
+# 4. Vérifiez que vous recevez des événements SSE
+
+# Format attendu des réponses SSE :
+# data: {"type":"events","events":[...]}
+# data: {"type":"stats","stats":{"drafts":5,"ready":2,...}}
+# data: {"type":"quota","quota":{"used":3,"remaining":2}}

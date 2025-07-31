@@ -418,7 +418,6 @@ export const OnboardingModal: React.FC = () => {
         </div>
       );
     }
-    // ...stubs for other steps (to be replaced next)
     switch (step) {
       case 3:
         return (

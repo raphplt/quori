@@ -1,11 +1,10 @@
 "use client";
 import { createContext, useContext, ReactNode, useRef, useEffect } from "react";
-import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
 import { GitHubEvent } from "@/types/githubEvent";
 import { useEventNotifications } from "@/hooks/useEventNotifications";
 import { useEventsCountSSE } from "@/hooks/useEventsCountSSE";
+import { useEventsSSE } from "@/hooks/useEventsSSE";
 
 interface EventsContextType {
   events: GitHubEvent[] | undefined;
@@ -27,23 +26,9 @@ export function EventsProvider({ children }: EventsProviderProps) {
   const { notifyNewEvent } = useEventNotifications();
 
   const { eventsLength } = useEventsCountSSE();
+  const { events, isConnected, error } = useEventsSSE();
 
-  //TODO : améliorer pour utiliser le SSE ou websocket
-  const {
-    data: events,
-    isLoading,
-    error,
-    refetch,
-  }: UseQueryResult<GitHubEvent[], Error> = useQuery({
-    queryKey: ["events"],
-    queryFn: () => authenticatedFetcher<GitHubEvent[]>("/github/events"),
-    refetchInterval: 10000,
-    refetchOnWindowFocus: true,
-    enabled: !!session,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-  });
-
+  // Détecter les nouveaux événements pour les notifications
   useEffect(() => {
     if (!events || !Array.isArray(events)) return;
 
@@ -66,9 +51,14 @@ export function EventsProvider({ children }: EventsProviderProps) {
     previousEventsRef.current = events;
   }, [events, notifyNewEvent]);
 
+  const refetch = () => {
+    // Avec SSE, pas besoin de refetch manuel
+    // Les données sont mises à jour automatiquement
+  };
+
   const value: EventsContextType = {
     events,
-    isLoading,
+    isLoading: !isConnected && !error,
     error,
     refetch,
     eventsLength,

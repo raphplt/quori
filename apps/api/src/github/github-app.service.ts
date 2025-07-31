@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { sign } from 'jsonwebtoken';
 import { Octokit } from '@octokit/rest';
 import { Queue } from 'bullmq';
-import { Observable, Subject, from } from 'rxjs';
-import { startWith, switchMap } from 'rxjs/operators';
+import { Observable, Subject, from, interval, merge } from 'rxjs';
+import { startWith, switchMap, map } from 'rxjs/operators';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,12 +14,11 @@ import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Installation } from './entities/installation.entity';
 import { Event as GithubEvent, EventType } from './entities/event.entity';
 import { Post } from './entities/post.entity';
-import { parseGitEvent } from './parse-git-event';
 
 interface GitHubAccount {
   id: number;
   login?: string;
-  name?: string;
+  name?: string | null;
 }
 
 interface GitHubInstallation {
@@ -28,11 +27,36 @@ interface GitHubInstallation {
   created_at: string;
 }
 
+interface PostsStats {
+  drafts: number;
+  ready: number;
+  scheduled: number;
+  published: number;
+  failed: number;
+}
+
+interface PostsByStatus {
+  drafts: Post[];
+  ready: Post[];
+  scheduled: Post[];
+  published: Post[];
+  failed: Post[];
+}
+
+interface SSEEvent {
+  type: string;
+  events?: GithubEvent[];
+  event?: GithubEvent;
+  stats?: PostsStats;
+  postsByStatus?: PostsByStatus;
+}
+
 @Injectable()
 export class GithubAppService {
   private cache = new Map<number, { token: string; expires: number }>();
   private queue: Queue<Record<string, unknown>>;
   private eventSubject = new Subject<GithubEvent>();
+  private postsStatsSubject = new Subject<SSEEvent>();
 
   constructor(
     private config: ConfigService,
@@ -90,8 +114,10 @@ export class GithubAppService {
         const fullPath = path.resolve(privateKeyPath);
         return fs.readFileSync(fullPath, 'utf8');
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
         throw new Error(
-          `Failed to read private key from path ${privateKeyPath}: ${error.message}`,
+          `Failed to read private key from path ${privateKeyPath}: ${errorMessage}`,
         );
       }
     }
@@ -102,147 +128,156 @@ export class GithubAppService {
   }
 
   private generateJwt(): string {
-    const appId = this.config.get<string>('GITHUB_APP_ID')!;
     const privateKey = this.getPrivateKey();
+    const appId = this.config.get<string>('GITHUB_APP_ID');
+    if (!appId) {
+      throw new Error('GITHUB_APP_ID not configured');
+    }
     const now = Math.floor(Date.now() / 1000);
-    return sign({ iss: appId, iat: now, exp: now + 600 }, privateKey, {
-      algorithm: 'RS256',
-    });
+    const payload = {
+      iat: now,
+      exp: now + 600,
+      iss: appId,
+    };
+    return sign(payload, privateKey, { algorithm: 'RS256' });
   }
 
   async getInstallationToken(installationId: number): Promise<string> {
-    const cached = this.cache.get(installationId);
-    if (cached && cached.expires > Date.now()) return cached.token;
+    const cacheKey = installationId;
+    const cached = this.cache.get(cacheKey);
+    if (cached && cached.expires > Date.now()) {
+      return cached.token;
+    }
+
     const jwt = this.generateJwt();
-    const octokit = new Octokit({ auth: jwt });
-    const { data } = await octokit.request(
-      'POST /app/installations/{installation_id}/access_tokens',
-      { installation_id: installationId },
-    );
-    this.cache.set(installationId, {
-      token: data.token,
-      expires: new Date(data.expires_at).getTime() - 60 * 1000,
+    const octokit = new Octokit({
+      auth: jwt,
     });
+
+    const { data } = await octokit.rest.apps.createInstallationAccessToken({
+      installation_id: installationId,
+    });
+
+    this.cache.set(cacheKey, {
+      token: data.token,
+      expires:
+        Date.now() +
+        (data.expires_at
+          ? new Date(data.expires_at).getTime() - Date.now() - 60000
+          : 3600000),
+    });
+
     return data.token;
   }
 
   async getInstallationOctokit(installationId: number): Promise<Octokit> {
     const token = await this.getInstallationToken(installationId);
-    return new Octokit({ auth: token });
+    return new Octokit({
+      auth: token,
+    });
   }
 
-  /**
-   * Synchronise les installations GitHub avec la base de données
-   * Récupère toutes les installations via l'API GitHub et les met à jour en BDD
-   */
   async syncInstallationsFromGitHub(): Promise<Installation[]> {
-    try {
-      const jwt = this.generateJwt();
-      const octokit = new Octokit({ auth: jwt });
+    const jwt = this.generateJwt();
+    const octokit = new Octokit({
+      auth: jwt,
+    });
 
-      console.log('🔄 Syncing installations from GitHub...');
+    const { data } = await octokit.rest.apps.listInstallations();
+    const installations: Installation[] = [];
 
-      const { data: installations } = await octokit.request(
-        'GET /app/installations',
-      );
-
-      console.log(`📥 Found ${installations.length} installations on GitHub`);
-
-      const syncedInstallations: Installation[] = [];
-
-      for (const installation of installations) {
-        try {
-          const syncedInstallation =
-            await this.syncSingleInstallation(installation);
-          if (syncedInstallation) {
-            syncedInstallations.push(syncedInstallation);
-          }
-        } catch (error) {
-          console.error(
-            `❌ Failed to sync installation ${installation.id}:`,
-            error,
-          );
-        }
+    for (const installation of data) {
+      const synced = await this.syncSingleInstallation({
+        id: installation.id,
+        account: installation.account
+          ? {
+              id: installation.account.id,
+              login:
+                'login' in installation.account
+                  ? installation.account.login
+                  : undefined,
+              name:
+                'name' in installation.account
+                  ? installation.account.name
+                  : undefined,
+            }
+          : null,
+        created_at: installation.created_at,
+      });
+      if (synced) {
+        installations.push(synced);
       }
-
-      console.log(
-        `✅ Successfully synced ${syncedInstallations.length} installations`,
-      );
-      return syncedInstallations;
-    } catch (error) {
-      console.error('❌ Failed to sync installations from GitHub:', error);
-      throw error;
     }
+
+    return installations;
   }
 
-  /**
-   * Synchronise une installation unique
-   */
   private async syncSingleInstallation(
     installation: GitHubInstallation,
   ): Promise<Installation | null> {
     try {
-      // Récupérer les dépôts pour cette installation
-      const installationOctokit = await this.getInstallationOctokit(
-        installation.id,
-      );
-      const { data: repos } = await installationOctokit.request(
-        'GET /installation/repositories',
-      );
-
-      const repoNames = repos.repositories.map((repo) => repo.full_name);
+      const octokit = await this.getInstallationOctokit(installation.id);
+      const { data: repos } =
+        await octokit.rest.apps.listReposAccessibleToInstallation();
 
       const accountLogin = this.getAccountLogin(installation.account);
 
-      const savedInstallation = await this.installations.save({
+      const installationEntity = this.installations.create({
         id: installation.id,
         account_login: accountLogin,
         account_id: installation.account?.id || 0,
-        repos: repoNames,
+        repos: repos.repositories.map((repo) => repo.full_name),
         created_at: new Date(installation.created_at),
       });
 
-      return savedInstallation;
+      return await this.installations.save(installationEntity);
     } catch (error) {
-      console.error(
-        `❌ Failed to sync installation ${installation.id}:`,
-        error,
-      );
+      console.error(`Failed to sync installation ${installation.id}:`, error);
       return null;
     }
   }
 
-  /**
-   * Détermine le nom de compte selon le type (User ou Organization)
-   */
   private getAccountLogin(account?: GitHubAccount | null): string {
-    if (!account) return '';
-    return account.login || account.name || '';
+    return (
+      account?.login || account?.name || `account-${account?.id || 'unknown'}`
+    );
   }
 
-  /**
-   * Synchronise les installations pour un utilisateur spécifique
-   * Utilise l'API GitHub App avec JWT pour récupérer toutes les installations
-   * puis filtre celles qui appartiennent à l'utilisateur
-   */
   async syncUserInstallationsFromGitHub(
     githubAccessToken: string,
-    githubId: string,
   ): Promise<Installation[]> {
-    try {
-      const allInstallations = await this.syncInstallationsFromGitHub();
-      const userInstallations = allInstallations.filter(
-        (installation) => installation.account_id.toString() === githubId,
-      );
+    const octokit = new Octokit({
+      auth: githubAccessToken,
+    });
 
-      return userInstallations;
-    } catch (error) {
-      console.error(
-        `❌ Failed to sync installations for user ${githubId}:`,
-        error,
-      );
-      throw error;
+    const { data } =
+      await octokit.rest.apps.listInstallationsForAuthenticatedUser();
+    const installations: Installation[] = [];
+
+    for (const installation of data.installations) {
+      const synced = await this.syncSingleInstallation({
+        id: installation.id,
+        account: installation.account
+          ? {
+              id: installation.account.id,
+              login:
+                'login' in installation.account
+                  ? installation.account.login
+                  : undefined,
+              name:
+                'name' in installation.account
+                  ? installation.account.name
+                  : undefined,
+            }
+          : null,
+        created_at: installation.created_at,
+      });
+      if (synced) {
+        installations.push(synced);
+      }
     }
+
+    return installations;
   }
 
   async upsertInstallation(data: {
@@ -251,41 +286,32 @@ export class GithubAppService {
     account_id: number;
     repositories: string[];
   }): Promise<void> {
-    await this.installations.save({
-      id: data.installation_id,
-      account_login: data.account_login,
-      account_id: data.account_id,
-      repos: data.repositories,
-    });
-  }
-
-  async removeInstallation(id: number): Promise<void> {
-    await this.installations.manager.transaction(
-      async (transactionalEntityManager) => {
-        await transactionalEntityManager
-          .getRepository(Post)
-          .delete({ installation: { id } });
-
-        await transactionalEntityManager
-          .getRepository(GithubEvent)
-          .delete({ installation: { id } });
-
-        await transactionalEntityManager
-          .getRepository(Installation)
-          .delete({ id });
+    await this.installations.upsert(
+      {
+        id: data.installation_id,
+        account_login: data.account_login,
+        account_id: data.account_id,
+        repos: data.repositories,
+        created_at: new Date(),
       },
+      ['id'],
     );
   }
 
+  async removeInstallation(id: number): Promise<void> {
+    await this.installations.delete({ id });
+    this.cache.delete(id);
+  }
+
   async updateRepos(id: number, repos: string[]): Promise<void> {
-    await this.installations.update({ id: id }, { repos });
+    await this.installations.update({ id }, { repos });
   }
 
   async getInstallationRepos(id: number): Promise<string[]> {
-    const inst = await this.installations.findOne({
-      where: { id: id },
+    const installation = await this.installations.findOne({
+      where: { id },
     });
-    return inst?.repos || [];
+    return installation?.repos || [];
   }
 
   async getAllInstallations(): Promise<Installation[]> {
@@ -293,9 +319,8 @@ export class GithubAppService {
   }
 
   async getUserInstallations(githubId: string): Promise<Installation[]> {
-    const githubIdNum = parseInt(githubId, 10);
     return this.installations.find({
-      where: { account_id: githubIdNum },
+      where: { account_id: parseInt(githubId, 10) },
     });
   }
 
@@ -307,10 +332,7 @@ export class GithubAppService {
 
   getInstallationUrl(): string {
     const appId = this.config.get<string>('GITHUB_APP_ID');
-    if (!appId) {
-      throw new Error('GITHUB_APP_ID not configured');
-    }
-    return `https://github.com/apps/${this.config.get<string>('GITHUB_APP_SLUG', 'quori-dev')}/installations/new`;
+    return `https://github.com/apps/${appId}/installations/new`;
   }
 
   getEventStream(): Observable<GithubEvent> {
@@ -323,6 +345,76 @@ export class GithubAppService {
       switchMap(() => {
         return from(this.getEventsCount());
       }),
+    );
+  }
+
+  getEventsStreamWithUpdates(): Observable<SSEEvent> {
+    // Envoyer d'abord tous les événements existants
+    const initialEvents = from(this.getRecentEvents(50)).pipe(
+      map((events: GithubEvent[]) => ({
+        type: 'events',
+        events,
+      })),
+    );
+
+    // Puis écouter les nouveaux événements
+    const newEvents = this.eventSubject.asObservable().pipe(
+      map((event: GithubEvent) => ({
+        type: 'new-event',
+        event,
+      })),
+    );
+
+    // Mettre à jour périodiquement les événements existants
+    const periodicUpdates = interval(30000).pipe(
+      switchMap(() => from(this.getRecentEvents(50))),
+      map((events: GithubEvent[]) => ({
+        type: 'events-update',
+        events,
+      })),
+    );
+
+    return merge(initialEvents, newEvents, periodicUpdates);
+  }
+
+  getPostsStatsStream(): Observable<SSEEvent> {
+    // Envoyer d'abord les stats initiales
+    const initialStats = from(this.getPostsStats()).pipe(
+      map((stats: PostsStats) => ({
+        type: 'stats',
+        stats,
+      })),
+    );
+
+    const initialPostsByStatus = from(this.getPostsByStatus()).pipe(
+      map((postsByStatus: PostsByStatus) => ({
+        type: 'posts-by-status',
+        postsByStatus,
+      })),
+    );
+
+    // Mettre à jour périodiquement
+    const periodicUpdates = interval(30000).pipe(
+      switchMap(() => from(this.getPostsStats())),
+      map((stats: PostsStats) => ({
+        type: 'stats-update',
+        stats,
+      })),
+    );
+
+    const periodicPostsUpdates = interval(30000).pipe(
+      switchMap(() => from(this.getPostsByStatus())),
+      map((postsByStatus: PostsByStatus) => ({
+        type: 'posts-update',
+        postsByStatus,
+      })),
+    );
+
+    return merge(
+      initialStats,
+      initialPostsByStatus,
+      periodicUpdates,
+      periodicPostsUpdates,
     );
   }
 
@@ -418,97 +510,41 @@ export class GithubAppService {
     event: string,
     payload: Record<string, unknown>,
   ): Promise<void> {
-    const exists = await this.events.findOne({
-      where: { delivery_id: delivery },
-    });
-    if (exists) return;
+    const eventType = this.mapEventToType(event);
+    const repoFullName = this.extractRepoFullName(payload);
 
-    let installation = await this.installations.findOne({
+    // Récupérer l'installation
+    const installation = await this.installations.findOne({
       where: { id: installationId },
     });
 
     if (!installation) {
-      // Auto-create installation from webhook payload
-      const webhookPayload = payload as {
-        sender?: { login?: string; id?: number };
-        repository?: { full_name?: string };
-      };
-
-      if (
-        webhookPayload.sender?.login &&
-        webhookPayload.repository?.full_name
-      ) {
-        await this.upsertInstallation({
-          installation_id: installationId,
-          account_login: webhookPayload.sender.login,
-          account_id: webhookPayload.sender.id || 0,
-          repositories: [webhookPayload.repository.full_name],
-        });
-
-        installation = await this.installations.findOne({
-          where: { id: installationId },
-        });
-        if (!installation) return;
-      } else {
-        return;
-      }
+      console.warn(`Installation ${installationId} not found`);
+      return;
     }
 
-    // Type-safe extraction of repository full name
-    const repoFullName =
-      (payload as { repository?: { full_name?: string } }).repository
-        ?.full_name ?? '';
-
-    // Extract author information
-    const author = (
-      payload as {
-        sender?: { login?: string; avatar_url?: string };
-      }
-    ).sender;
-
-    // Determine event type
-    const eventType = this.mapEventToType(event);
-
-    let metadata: Record<string, unknown> | undefined;
-
-    try {
-      const octokit = await this.getInstallationOctokit(installationId);
-      const parsedEvent = await parseGitEvent(payload, event, octokit);
-      metadata = {
-        title: parsedEvent.title,
-        desc: parsedEvent.desc,
-        filesChanged: parsedEvent.filesChanged,
-        diffStats: parsedEvent.diffStats,
-      };
-    } catch (error) {
-      console.warn(
-        'Failed to parse event with Octokit, falling back without API calls:',
-        error,
-      );
-      const parsedEvent = await parseGitEvent(payload, event);
-      metadata = {
-        title: parsedEvent.title,
-        desc: parsedEvent.desc,
-        filesChanged: parsedEvent.filesChanged,
-        diffStats: parsedEvent.diffStats,
-      };
-    }
-
-    const savedEvent = await this.events.save({
+    const eventEntity = this.events.create({
       delivery_id: delivery,
       installation,
-      event,
+      event: event,
       event_type: eventType,
-      payload,
       repo_full_name: repoFullName,
-      author_login: author?.login,
-      author_avatar_url: author?.avatar_url,
-      metadata,
+      payload: payload,
       status: 'pending',
     });
 
-    this.eventSubject.next(savedEvent);
-    await this.queue.add(event, { delivery_id: delivery });
+    await this.events.save(eventEntity);
+    this.eventSubject.next(eventEntity);
+  }
+
+  private extractRepoFullName(payload: Record<string, unknown>): string {
+    if (payload.repository && typeof payload.repository === 'object') {
+      const repo = payload.repository as Record<string, unknown>;
+      if (repo.full_name && typeof repo.full_name === 'string') {
+        return repo.full_name;
+      }
+    }
+    return 'unknown';
   }
 
   async savePost(data: {
@@ -517,75 +553,119 @@ export class GithubAppService {
     eventType: string;
     content: string;
   }): Promise<void> {
+    // Récupérer l'installation
     const installation = await this.installations.findOne({
       where: { id: data.installationId },
     });
-    if (!installation) return;
-    await this.posts.save({
+
+    if (!installation) {
+      console.warn(`Installation ${data.installationId} not found`);
+      return;
+    }
+
+    const post = this.posts.create({
       installation,
-      repo_full_name: data.repo,
-      event_type: data.eventType,
-      content_draft: data.content,
+      summary: data.content.substring(0, 100),
+      postContent: data.content,
+      rawResponse: { eventType: data.eventType, repo: data.repo },
+      status: 'draft',
     });
+
+    await this.posts.save(post);
   }
 
   async createTestEvent(): Promise<GithubEvent> {
-    const testEvent = {
-      delivery_id: `test-${Date.now()}`,
-      event: 'push',
-      payload: {
-        repository: {
-          full_name: 'test/repo',
-          name: 'repo',
-          owner: { login: 'test' },
-        },
-        head_commit: {
-          message: 'Test commit for activity feed',
-          added: ['test.txt'],
-          modified: [],
-          removed: [],
-        },
-      },
-      repo_full_name: 'test/repo',
-      metadata: {
-        title: 'Test commit for activity feed',
-        desc: 'This is a test commit to verify the activity feed is working',
-        filesChanged: ['test.txt'],
-        diffStats: [
-          {
-            filePath: 'test.txt',
-            additions: 5,
-            deletions: 0,
-            changes: 5,
-          },
-        ],
-      },
-    };
+    // Récupérer une installation existante ou en créer une
+    let installation = await this.installations.findOne({
+      where: { id: 1 },
+    });
 
-    const saved = await this.events.save(testEvent);
-    this.eventSubject.next(saved);
-    return saved;
+    if (!installation) {
+      installation = this.installations.create({
+        id: 1,
+        account_login: 'test-user',
+        account_id: 1,
+        repos: ['test/repo'],
+        created_at: new Date(),
+      });
+      await this.installations.save(installation);
+    }
+
+    const testEvent = this.events.create({
+      delivery_id: `test-${Date.now()}`,
+      installation,
+      event: 'push',
+      event_type: 'push',
+      repo_full_name: 'test/repo',
+      payload: { test: true },
+      status: 'pending',
+    });
+
+    return await this.events.save(testEvent);
   }
 
-  /**
-   * Force la synchronisation de toutes les installations depuis GitHub
-   * Utile pour déboguer ou forcer la mise à jour
-   */
   async forceSyncAllInstallations(): Promise<Installation[]> {
-    console.log('🔄 Force syncing ALL installations from GitHub...');
+    return this.syncInstallationsFromGitHub();
+  }
 
-    try {
-      // Synchroniser depuis GitHub
-      const syncedInstallations = await this.syncInstallationsFromGitHub();
+  async getPostsStats(): Promise<PostsStats> {
+    const [drafts, ready, scheduled, published, failed] = await Promise.all([
+      this.posts.count({ where: { status: 'draft' } }),
+      this.posts.count({ where: { status: 'ready' } }),
+      this.posts.count({ where: { status: 'scheduled' } }),
+      this.posts.count({ where: { status: 'published' } }),
+      this.posts.count({ where: { status: 'failed' } }),
+    ]);
 
-      console.log(
-        `✅ Force sync completed: ${syncedInstallations.length} installations`,
-      );
+    return {
+      drafts,
+      ready,
+      scheduled,
+      published,
+      failed,
+    };
+  }
 
-      return syncedInstallations;
-    } catch (error) {
-      console.error('❌ Failed to force sync installations:', error);
-      throw error;
-    }
+  async getPostsByStatus(): Promise<PostsByStatus> {
+    const [drafts, ready, scheduled, published, failed] = await Promise.all([
+      this.posts.find({
+        where: { status: 'draft' },
+        order: { createdAt: 'DESC' },
+        take: 100,
+        relations: ['installation'],
+      }),
+      this.posts.find({
+        where: { status: 'ready' },
+        order: { createdAt: 'DESC' },
+        take: 100,
+        relations: ['installation'],
+      }),
+      this.posts.find({
+        where: { status: 'scheduled' },
+        order: { createdAt: 'DESC' },
+        take: 100,
+        relations: ['installation'],
+      }),
+      this.posts.find({
+        where: { status: 'published' },
+        order: { createdAt: 'DESC' },
+        take: 100,
+        relations: ['installation'],
+      }),
+      this.posts.find({
+        where: { status: 'failed' },
+        order: { createdAt: 'DESC' },
+        take: 100,
+        relations: ['installation'],
+      }),
+    ]);
+
+    return {
+      drafts,
+      ready,
+      scheduled,
+      published,
+      failed,
+    };
   }
 }

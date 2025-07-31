@@ -27,7 +27,7 @@ import {
 import Link from "next/link";
 import { GitHubAppAlert } from "@/components/dashboard/GitHubAppAlert";
 import ActivityPreview from "@/components/dashboard/ActivityPreview";
-import { usePostsByStatus } from "@/hooks/usePostsStats";
+import { usePostsStatsSSE } from "@/hooks/usePostsStatsSSE";
 import { LinkedInAppAlert } from "@/components/dashboard/LinkedinAppAlert";
 
 type ExtendedUser = {
@@ -54,7 +54,11 @@ function DashboardContent() {
   const { data: session } = useSession();
   const user = session?.user as ExtendedUser;
 
-  const { data: postsByStatus, isLoading } = usePostsByStatus();
+  const {
+    postsByStatus,
+    isConnected: postsConnected,
+    error: postsError,
+  } = usePostsStatsSSE();
 
   if (!user) {
     return null;
@@ -192,9 +196,13 @@ function DashboardContent() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {isLoading ? (
+                  {!postsConnected && !postsError ? (
                     <p className="text-sm text-gray-500 text-center py-4">
-                      Chargement...
+                      Chargement des posts...
+                    </p>
+                  ) : postsError ? (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      Impossible de charger les posts. Veuillez réessayer.
                     </p>
                   ) : queuedPosts.length === 0 ? (
                     <p className="text-sm text-gray-500 text-center py-4">
@@ -247,9 +255,14 @@ function DashboardContent() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {isLoading ? (
+                  {!postsConnected && !postsError ? (
                     <p className="text-sm text-gray-500 text-center py-4">
-                      Chargement...
+                      Chargement des posts planifiés...
+                    </p>
+                  ) : postsError ? (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      Impossible de charger les posts planifiés. Veuillez
+                      réessayer.
                     </p>
                   ) : upcomingPosts.length === 0 ? (
                     <p className="text-sm text-gray-500 text-center py-4">

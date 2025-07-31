@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule } from '@nestjs/config';
 import { GithubController } from './github.controller';
 import { WebhooksController } from './webhooks.controller';
 import { GithubService } from './github.service';
@@ -21,6 +23,11 @@ import { LinkedinModule } from '../linkedin/linkedin.module';
     TypeOrmModule.forFeature([Installation, Event, Post, Template]),
     PreferencesModule,
     LinkedinModule,
+    ConfigModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'your-secret-key',
+      signOptions: { expiresIn: '24h' },
+    }),
   ],
   controllers: [GithubController, WebhooksController],
   providers: [GithubService, GithubAppService, GenerateService],

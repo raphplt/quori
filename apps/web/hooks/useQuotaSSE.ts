@@ -2,25 +2,28 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
 
-interface UseEventsCountSSEReturn {
-  eventsLength: number | undefined;
+interface Quota {
+  used: number;
+  remaining: number;
+}
+
+interface UseQuotaSSEReturn {
+  quota: Quota | undefined;
   isConnected: boolean;
   error: Error | null;
 }
 
 /**
- * Hook pour recevoir le count des événements en temps réel via SSE
+ * Hook pour recevoir les informations de quota en temps réel via SSE
  */
-export function useEventsCountSSE(): UseEventsCountSSEReturn {
+export function useQuotaSSE(): UseQuotaSSEReturn {
   const { data: session } = useSession();
-  const [eventsLength, setEventsLength] = useState<number | undefined>(
-    undefined
-  );
+  const [quota, setQuota] = useState<Quota | undefined>(undefined);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const maxReconnectAttempts = 3; // Réduit de 5 à 3
+  const maxReconnectAttempts = 3;
   const reconnectAttemptsRef = useRef(0);
 
   useEffect(() => {
@@ -35,7 +38,7 @@ export function useEventsCountSSE(): UseEventsCountSSEReturn {
 
       const baseUrl =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const url = `${baseUrl}/github/events/length/stream?token=${session.apiToken}`;
+      const url = `${baseUrl}/quota/stream?token=${session.apiToken}`;
 
       const eventSource = new EventSource(url, {
         withCredentials: true,
@@ -44,36 +47,38 @@ export function useEventsCountSSE(): UseEventsCountSSEReturn {
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {
-        console.log("🔗 SSE Events Count connected");
+        console.log("🔗 SSE Quota connected");
         setIsConnected(true);
         setError(null);
         reconnectAttemptsRef.current = 0;
       };
 
-      eventSource.onmessage = event => {
+      // Écouter les événements de quota
+      eventSource.addEventListener("quota", event => {
         try {
           const data = JSON.parse(event.data);
-          if (typeof data.count === "number") {
-            setEventsLength(data.count);
+          if (data.quota) {
+            setQuota(data.quota);
           }
         } catch (err) {
-          console.error("Error parsing SSE event data:", err);
+          console.error("Error parsing SSE quota event:", err);
         }
-      };
+      });
 
-      eventSource.addEventListener("count", event => {
+      // Écouter les mises à jour de quota
+      eventSource.addEventListener("quota-update", event => {
         try {
           const data = JSON.parse(event.data);
-          if (typeof data.count === "number") {
-            setEventsLength(data.count);
+          if (data.quota) {
+            setQuota(data.quota);
           }
         } catch (err) {
-          console.error("Error parsing SSE count event:", err);
+          console.error("Error parsing SSE quota-update event:", err);
         }
       });
 
       eventSource.onerror = err => {
-        console.error("SSE Events Count error:", err);
+        console.error("SSE Quota error:", err);
         setIsConnected(false);
 
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
@@ -84,7 +89,7 @@ export function useEventsCountSSE(): UseEventsCountSSEReturn {
           reconnectAttemptsRef.current++;
 
           console.log(
-            `🔄 Reconnecting SSE Events Count in ${delay}ms (attempt ${reconnectAttemptsRef.current})`
+            `🔄 Reconnecting SSE Quota in ${delay}ms (attempt ${reconnectAttemptsRef.current})`
           );
 
           reconnectTimeoutRef.current = setTimeout(() => {
@@ -113,7 +118,7 @@ export function useEventsCountSSE(): UseEventsCountSSEReturn {
   }, [session?.apiToken]);
 
   return {
-    eventsLength,
+    quota,
     isConnected,
     error,
   };
