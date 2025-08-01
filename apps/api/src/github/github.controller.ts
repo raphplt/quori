@@ -54,6 +54,34 @@ export class GithubController {
     private readonly eventRepository: Repository<Event>,
   ) {}
 
+  private getOriginUrl(): string {
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
+
+    if (isProduction) {
+      // En production, priorité à www.quori.dev
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+      if (frontendUrl?.includes('www.quori.dev')) {
+        return frontendUrl;
+      }
+      return 'https://www.quori.dev';
+    }
+
+    return (
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000'
+    );
+  }
+
+  private setCorsHeaders(res: Response): void {
+    const origin = this.getOriginUrl();
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Cache-Control, Last-Event-ID, Authorization',
+    );
+  }
+
   private verifyToken(token?: string, authHeader?: string): any {
     // Le token peut arriver avec ou sans le préfixe "Bearer "
     const authToken =
@@ -272,16 +300,7 @@ export class GithubController {
     @Res({ passthrough: true }) res: Response,
   ): Observable<{ data: string; type: string }> {
     // Configuration CORS spécifique pour les SSE
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    );
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Cache-Control, Last-Event-ID',
-    );
+    this.setCorsHeaders(res);
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
@@ -299,16 +318,7 @@ export class GithubController {
 
   @Options('events/stream')
   handleEventsStreamOptions(@Res() res: Response) {
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    );
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Cache-Control, Last-Event-ID',
-    );
+    this.setCorsHeaders(res);
     res.status(200).send();
   }
 
@@ -336,16 +346,7 @@ export class GithubController {
     @Res({ passthrough: true }) res: Response,
   ): Observable<{ data: string; type: string }> {
     // Configuration CORS spécifique pour les SSE
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    );
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Cache-Control, Last-Event-ID',
-    );
+    this.setCorsHeaders(res);
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
@@ -363,16 +364,7 @@ export class GithubController {
 
   @Options('events/length/stream')
   handleEventsLengthStreamOptions(@Res() res: Response) {
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    );
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Cache-Control, Last-Event-ID',
-    );
+    this.setCorsHeaders(res);
     res.status(200).send();
   }
 
@@ -382,16 +374,7 @@ export class GithubController {
     @Res({ passthrough: true }) res: Response,
   ): Observable<{ data: string; type: string }> {
     // Configuration CORS spécifique pour les SSE
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    );
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Cache-Control, Last-Event-ID',
-    );
+    this.setCorsHeaders(res);
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
@@ -409,16 +392,7 @@ export class GithubController {
 
   @Options('posts/stats/stream')
   handlePostsStatsStreamOptions(@Res() res: Response) {
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    );
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Cache-Control, Last-Event-ID',
-    );
+    this.setCorsHeaders(res);
     res.status(200).send();
   }
 

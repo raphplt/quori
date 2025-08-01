@@ -85,8 +85,8 @@ async function bootstrap() {
   // CORS
   const allowedOrigins = isProduction
     ? [
-        'https://quori.dev',
         'https://www.quori.dev',
+        'https://quori.dev',
         configService.get('FRONTEND_URL'),
       ].filter(Boolean)
     : [
