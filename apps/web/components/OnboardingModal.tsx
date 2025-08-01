@@ -8,7 +8,11 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { useOnboarding } from "@/contexts/OnboardingContext";
-import { useGitHubAppStatus } from "@/hooks/useGitHubApp";
+import {
+  useGithubAppDebug,
+  useGitHubAppStatus,
+  useGithubAppTestApi,
+} from "@/hooks/useGitHubApp";
 import { Button } from "@/components/ui/button";
 import { Github, ExternalLink } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
@@ -28,7 +32,7 @@ import { Card, CardContent, CardFooter } from "./ui/card";
 const TOTAL_STEPS = 4;
 
 const stepTitles = [
-  "Installer l’App GitHub",
+  "Installer l'App GitHub",
   "Scan des dépôts",
   "Sélectionner un commit",
   "Générer & partager le post",
@@ -53,6 +57,36 @@ export const OnboardingModal: React.FC = () => {
     error: appError,
     refetch: refetchApp,
   } = useGitHubAppStatus();
+
+  const {
+    data: debugData,
+    isLoading: isLoadingDebug,
+    error: debugError,
+  } = useGithubAppDebug();
+
+  const {
+    data: testApiData,
+    isLoading: isLoadingTestApi,
+    error: testApiError,
+  } = useGithubAppTestApi();
+
+  // console.log("Debug data:", debugData);
+  // console.log("Debug loading:", isLoadingDebug);
+  // console.log("Debug error:", debugError);
+
+  console.log("Debug data:", debugData);
+  console.log("Debug loading:", isLoadingDebug);
+  console.log("Debug error:", debugError);
+
+  console.log("Test API data:", testApiData);
+  console.log("Test API loading:", isLoadingTestApi);
+  console.log("Test API error:", testApiError);
+
+  console.log("GitHub App status:", {
+    githubApp,
+    isLoadingApp,
+    appError,
+  });
 
   // Step 2: Scan logic
   const scanMutation = useMutation({
@@ -146,6 +180,21 @@ export const OnboardingModal: React.FC = () => {
                 className="ml-2"
               >
                 Réessayer
+              </Button>
+            </div>
+          ) : githubApp?.error === "INSUFFICIENT_PERMISSIONS" ? (
+            <div className="flex flex-col gap-4">
+              <div className="text-orange-600 mb-2 p-3 bg-orange-50 rounded-lg">
+                <p className="font-medium">Permissions insuffisantes</p>
+                <p className="text-sm">{githubApp.message}</p>
+              </div>
+              <Button asChild className="btn-modern w-full" size="lg">
+                <a
+                  href="/auth/login"
+                  className="flex items-center justify-center"
+                >
+                  <Github className="mr-2 h-5 w-5" /> Se reconnecter
+                </a>
               </Button>
             </div>
           ) : githubApp?.installed ? (

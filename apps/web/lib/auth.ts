@@ -71,6 +71,25 @@ async function syncWithBackend(
   accessToken: string
 ): Promise<SyncResponse | null> {
   try {
+    console.log(
+      "🔍 Syncing with backend, access token length:",
+      accessToken.length
+    );
+
+    // Debug: vérifier les scopes du token côté frontend
+    try {
+      const scopeCheck = await fetch("https://api.github.com/user", {
+        headers: {
+          Authorization: `token ${accessToken}`,
+          Accept: "application/vnd.github.v3+json",
+        },
+      });
+      const scopes = scopeCheck.headers.get("x-oauth-scopes");
+      console.log("📋 Frontend OAuth scopes:", scopes);
+    } catch (error) {
+      console.error("❌ Frontend scope check error:", error);
+    }
+
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/auth/github/sync`,
       {
@@ -104,6 +123,12 @@ export const authOptions: NextAuthConfig = {
     GitHubProvider({
       clientId: process.env.AUTH_GITHUB_ID!,
       clientSecret: process.env.AUTH_GITHUB_SECRET!,
+      authorization: {
+        params: {
+          scope: "read:user user:email read:org repo",
+          prompt: "consent", // Force à redemander les permissions
+        },
+      },
     }),
   ],
   secret: process.env.AUTH_SECRET,

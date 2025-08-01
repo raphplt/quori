@@ -13,11 +13,13 @@ import {
   Options,
   Delete,
   Headers,
+  NotFoundException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { GithubService } from './github.service';
+import { Installation } from './entities/installation.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GitHubRepository } from './interfaces/github-repository.interface';
 import { GitHubRepositoriesPage } from './interfaces/github-repositories-page.interface';
@@ -51,11 +53,12 @@ export class GithubController {
   ) {}
 
   private verifyToken(token?: string, authHeader?: string): any {
+    // Le token peut arriver avec ou sans le préfixe "Bearer "
     const authToken =
       token ||
       (authHeader?.startsWith('Bearer ')
         ? authHeader.split(' ')[1]
-        : undefined);
+        : authHeader); // Si pas de préfixe, prendre directement le header
 
     if (!authToken) {
       throw new UnauthorizedException('Token required');
@@ -164,7 +167,7 @@ export class GithubController {
   async getEventById(@Param('id') id: string) {
     const event = await this.appService.getEventById(id);
     if (!event) {
-      throw new UnauthorizedException('Event not found');
+      throw new NotFoundException('Event not found');
     }
     return event;
   }
@@ -177,10 +180,8 @@ export class GithubController {
     return events;
   }
 
-
   @Sse('events/length/stream')
   streamEventsLength(
-    @Query('token') token: string,
     @Headers('authorization') authHeader: string,
     @Res({ passthrough: true }) res: Response,
   ): Observable<{ data: string; type: string }> {
@@ -200,7 +201,7 @@ export class GithubController {
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
 
     // Vérifier le token
-    this.verifyToken(token, authHeader);
+    this.verifyToken(undefined, authHeader);
 
     return this.appService.getEventsCountStream().pipe(
       map((count) => ({
@@ -227,7 +228,6 @@ export class GithubController {
 
   @Sse('posts/stats/stream')
   streamPostsStats(
-    @Query('token') token: string,
     @Headers('authorization') authHeader: string,
     @Res({ passthrough: true }) res: Response,
   ): Observable<{ data: string; type: string }> {
@@ -247,7 +247,7 @@ export class GithubController {
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
 
     // Vérifier le token
-    this.verifyToken(token, authHeader);
+    this.verifyToken(undefined, authHeader);
 
     return this.appService.getPostsStatsStream().pipe(
       map((data) => ({
@@ -274,7 +274,6 @@ export class GithubController {
 
   @Sse('events/stream')
   streamEventsWithUpdates(
-    @Query('token') token: string,
     @Headers('authorization') authHeader: string,
     @Res({ passthrough: true }) res: Response,
   ): Observable<{ data: string; type: string }> {
@@ -294,7 +293,7 @@ export class GithubController {
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
 
     // Vérifier le token
-    this.verifyToken(token, authHeader);
+    this.verifyToken(undefined, authHeader);
 
     return this.appService.getEventsStreamWithUpdates().pipe(
       map((data) => ({
@@ -320,12 +319,132 @@ export class GithubController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('app/test-api')
+  async testGitHubAppApi(@Request() req: AuthenticatedRequest) {
+    const user = req.user;
+
+    console.log('=== TEST GITHUB APP API ===');
+    console.log('User ID:', user.id);
+    console.log('User GitHub ID:', user.githubId);
+    console.log('User has GitHub Token:', !!user.githubAccessToken);
+
+    if (!user.githubAccessToken) {
+      return { error: 'No GitHub access token' };
+    }
+
+    try {
+      // Test direct avec l'API GitHub
+      const response = await fetch(
+        'https://api.github.com/user/installations',
+        {
+          headers: {
+            Authorization: `token ${user.githubAccessToken}`,
+            Accept: 'application/vnd.github.v3+json',
+            'User-Agent': 'Quori-App',
+          },
+        },
+      );
+
+      const scopes = response.headers.get('x-oauth-scopes');
+      console.log('🔑 Scopes from direct API call:', scopes);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Direct API call failed:', response.status, errorText);
+        return {
+          error: 'API_CALL_FAILED',
+          status: response.status,
+          message: errorText,
+          scopes,
+        };
+      }
+
+      const data = await response.json();
+      console.log(
+        '✅ Direct API call successful, installations:',
+        data.installations?.length || 0,
+      );
+
+      return {
+        success: true,
+        scopes,
+        installationsCount: data.installations?.length || 0,
+        installations: data.installations || [],
+      };
+    } catch (error) {
+      console.error('💥 Error in direct API test:', error);
+      return {
+        error: 'EXCEPTION',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('app/debug')
+  async debugAppInstallations(@Request() req: AuthenticatedRequest) {
+    const user = req.user;
+
+    console.log('=== DEBUG APP INSTALLATIONS ===');
+    console.log('User ID:', user.id);
+    console.log(
+      'User GitHub ID:',
+      user.githubId,
+      'Type:',
+      typeof user.githubId,
+    );
+    console.log('User GitHub Token exists:', !!user.githubAccessToken);
+
+    // Récupérer toutes les installations
+    const allInstallations = await this.appService.getAllInstallations();
+    console.log('All installations in DB:', allInstallations);
+
+    // Récupérer les installations de l'utilisateur
+    const userInstallations = await this.appService.getUserInstallations(
+      user.githubId,
+    );
+    console.log('User installations:', userInstallations);
+
+    // Essayer de récupérer depuis GitHub
+    let githubInstallations: Installation[] = [];
+    if (user.githubAccessToken) {
+      try {
+        githubInstallations =
+          await this.appService.syncUserInstallationsFromGitHub(
+            user.githubAccessToken,
+          );
+        console.log('GitHub installations:', githubInstallations);
+      } catch (error) {
+        console.error('Error fetching from GitHub:', error);
+      }
+    }
+
+    return {
+      user: {
+        id: user.id,
+        githubId: user.githubId,
+        hasGithubToken: !!user.githubAccessToken,
+      },
+      allInstallations,
+      userInstallations,
+      githubInstallations,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('app/status')
   async getAppInstallationStatus(@Request() req: AuthenticatedRequest) {
     const user = req.user;
 
+    console.error('userid:', user.id);
+    console.log('user.githubId:', user.githubId, typeof user.githubId);
+
     let installations = await this.appService.getUserInstallations(
       user.githubId,
+    );
+
+    console.log(
+      `🔄 Found ${installations.length} installations in DB for user ${user.githubId}`,
     );
 
     if (installations.length === 0 && user.githubAccessToken) {
@@ -339,8 +458,24 @@ export class GithubController {
         console.log(
           `✅ Synced ${installations.length} installations from GitHub`,
         );
-      } catch (error) {
-        console.error('❌ Failed to sync installations from GitHub:', error);
+      } catch (error: any) {
+        // Gérer spécifiquement l'erreur d'authentification GitHub App
+        if (error?.status === 403) {
+          console.warn(
+            '⚠️ GitHub token does not have GitHub App permissions. User needs to re-authenticate with proper scopes.',
+          );
+          // On peut retourner une erreur spécifique pour informer le frontend
+          return {
+            installed: false,
+            installations: [],
+            installUrl: this.appService.getInstallationUrl(),
+            error: 'INSUFFICIENT_PERMISSIONS',
+            message:
+              "Veuillez vous reconnecter pour autoriser l'accès aux GitHub Apps",
+          };
+        } else {
+          console.error('❌ Failed to sync installations from GitHub:', error);
+        }
       }
     }
 

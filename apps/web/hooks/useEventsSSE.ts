@@ -30,14 +30,12 @@ export function useEventsSSE(): UseEventsSSEReturn {
     if (!session?.apiToken) return;
 
     const connectSSE = () => {
-      // ferme l'ancienne si existante
       eventSourceRef.current?.close();
 
       const baseUrl =
         process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
       const url = `${baseUrl}/github/events/stream`;
 
-      // crée d'abord le polyfill, puis on le caste en EventSource pur
       const raw = new EventSourcePolyfill(url, {
         withCredentials: true,
         headers: { Authorization: `Bearer ${session.apiToken}` },

@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { sign } from 'jsonwebtoken';
 import { Octokit } from '@octokit/rest';
 import { Queue } from 'bullmq';
-import { Observable, Subject, from, interval, merge } from 'rxjs';
-import { startWith, switchMap, map } from 'rxjs/operators';
+import { Observable, Subject, from, interval, merge, of } from 'rxjs';
+import { startWith, switchMap, map, catchError } from 'rxjs/operators';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -246,38 +246,86 @@ export class GithubAppService {
   async syncUserInstallationsFromGitHub(
     githubAccessToken: string,
   ): Promise<Installation[]> {
+    console.log('🔧 syncUserInstallationsFromGitHub - Starting sync...');
+
     const octokit = new Octokit({
       auth: githubAccessToken,
     });
 
-    const { data } =
-      await octokit.rest.apps.listInstallationsForAuthenticatedUser();
-    const installations: Installation[] = [];
+    // Debug: vérifier les scopes du token
+    try {
+      const userResponse = await octokit.rest.users.getAuthenticated();
+      console.log('👤 Authenticated user:', userResponse.data.login);
 
-    for (const installation of data.installations) {
-      const synced = await this.syncSingleInstallation({
-        id: installation.id,
-        account: installation.account
-          ? {
-              id: installation.account.id,
-              login:
-                'login' in installation.account
-                  ? installation.account.login
-                  : undefined,
-              name:
-                'name' in installation.account
-                  ? installation.account.name
-                  : undefined,
-            }
-          : null,
-        created_at: installation.created_at,
+      // Faire un appel direct pour voir les scopes
+      const scopeCheck = await fetch('https://api.github.com/user', {
+        headers: {
+          Authorization: `token ${githubAccessToken}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
       });
-      if (synced) {
-        installations.push(synced);
-      }
+      const scopes = scopeCheck.headers.get('x-oauth-scopes');
+      console.log('🔑 Token scopes available:', scopes);
+    } catch (error) {
+      console.error('❌ Error checking user/scopes:', error);
     }
 
-    return installations;
+    try {
+      console.log(
+        '📋 Attempting to list installations for authenticated user...',
+      );
+      const { data } =
+        await octokit.rest.apps.listInstallationsForAuthenticatedUser();
+
+      console.log(
+        `✅ Found ${data.installations.length} installations from GitHub API`,
+      );
+
+      const installations: Installation[] = [];
+
+      for (const installation of data.installations) {
+        const accountInfo = installation.account
+          ? 'login' in installation.account
+            ? installation.account.login
+            : installation.account.name || 'unknown'
+          : 'unknown';
+
+        console.log(
+          `🔄 Processing installation ${installation.id} for account ${accountInfo}`,
+        );
+        const synced = await this.syncSingleInstallation({
+          id: installation.id,
+          account: installation.account
+            ? {
+                id: installation.account.id,
+                login:
+                  'login' in installation.account
+                    ? installation.account.login
+                    : undefined,
+                name:
+                  'name' in installation.account
+                    ? installation.account.name
+                    : undefined,
+              }
+            : null,
+          created_at: installation.created_at,
+        });
+        if (synced) {
+          installations.push(synced);
+          console.log(`✅ Successfully synced installation ${installation.id}`);
+        } else {
+          console.log(`❌ Failed to sync installation ${installation.id}`);
+        }
+      }
+
+      console.log(
+        `🎉 Sync completed: ${installations.length} installations synced`,
+      );
+      return installations;
+    } catch (error) {
+      console.error('💥 Error in syncUserInstallationsFromGitHub:', error);
+      throw error;
+    }
   }
 
   async upsertInstallation(data: {
@@ -319,9 +367,36 @@ export class GithubAppService {
   }
 
   async getUserInstallations(githubId: string): Promise<Installation[]> {
-    return this.installations.find({
-      where: { account_id: parseInt(githubId, 10) },
+    const accountId = parseInt(githubId, 10);
+    console.log(
+      `🔍 Looking for installations with account_id: ${accountId} (from githubId: ${githubId})`,
+    );
+
+    // Debug: lister TOUTES les installations
+    const allInstallations = await this.installations.find();
+    console.log(
+      `🗂️ All installations in DB:`,
+      allInstallations.map((i) => ({
+        id: i.id,
+        account_id: i.account_id,
+        account_login: i.account_login,
+      })),
+    );
+
+    const installations = await this.installations.find({
+      where: { account_id: accountId },
     });
+
+    console.log(
+      `📋 Found ${installations.length} installations:`,
+      installations.map((i) => ({
+        id: i.id,
+        account_id: i.account_id,
+        account_login: i.account_login,
+      })),
+    );
+
+    return installations;
   }
 
   async getInstallationById(id: number): Promise<Installation | null> {
@@ -331,8 +406,8 @@ export class GithubAppService {
   }
 
   getInstallationUrl(): string {
-    const appId = this.config.get<string>('GITHUB_APP_ID');
-    return `https://github.com/apps/${appId}/installations/new`;
+    const appSlug = this.config.get<string>('GITHUB_APP_SLUG');
+    return `https://github.com/apps/${appSlug}/installations/new`;
   }
 
   getEventStream(): Observable<GithubEvent> {
@@ -351,30 +426,69 @@ export class GithubAppService {
   getEventsStreamWithUpdates(): Observable<SSEEvent> {
     // Envoyer d'abord tous les événements existants
     const initialEvents = from(this.getRecentEvents(50)).pipe(
-      map((events: GithubEvent[]) => ({
-        type: 'events',
-        events,
-      })),
+      map((events: GithubEvent[]) => {
+        return {
+          type: 'events',
+          events,
+        };
+      }),
+      catchError((error: unknown) => {
+        return of({
+          type: 'events' as const,
+          events: [] as GithubEvent[],
+        });
+      }),
     );
 
     // Puis écouter les nouveaux événements
     const newEvents = this.eventSubject.asObservable().pipe(
-      map((event: GithubEvent) => ({
-        type: 'new-event',
-        event,
-      })),
+      map((event: GithubEvent) => {
+        console.log('📨 Sending new event:', event.delivery_id);
+        return {
+          type: 'new-event',
+          event,
+        };
+      }),
+      catchError((error: unknown) => {
+        console.error('❌ Error in new events stream:', error);
+        return of({
+          type: 'error' as const,
+          message: 'Error in new events stream',
+        });
+      }),
     );
 
     // Mettre à jour périodiquement les événements existants
     const periodicUpdates = interval(30000).pipe(
-      switchMap(() => from(this.getRecentEvents(50))),
-      map((events: GithubEvent[]) => ({
-        type: 'events-update',
-        events,
-      })),
+      switchMap(() => {
+        console.log('🔄 Periodic events update...');
+        return from(this.getRecentEvents(50));
+      }),
+      map((events: GithubEvent[]) => {
+        console.log(`📨 Sending ${events.length} updated events`);
+        return {
+          type: 'events-update',
+          events,
+        };
+      }),
+      catchError((error: unknown) => {
+        console.error('❌ Error in periodic events update:', error);
+        return of({
+          type: 'events-update' as const,
+          events: [] as GithubEvent[],
+        });
+      }),
     );
 
-    return merge(initialEvents, newEvents, periodicUpdates);
+    return merge(initialEvents, newEvents, periodicUpdates).pipe(
+      catchError((error: unknown) => {
+        console.error('❌ Error in events stream merge:', error);
+        return of({
+          type: 'error' as const,
+          message: 'Stream error',
+        });
+      }),
+    );
   }
 
   getPostsStatsStream(): Observable<SSEEvent> {

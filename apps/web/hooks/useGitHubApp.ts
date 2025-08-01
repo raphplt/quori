@@ -13,6 +13,8 @@ interface AppInstallationStatus {
   installed: boolean;
   installations: Installation[];
   installUrl: string;
+  error?: string;
+  message?: string;
 }
 
 /**
@@ -22,6 +24,22 @@ export function useGitHubAppStatus() {
   return useAuthenticatedQuery<AppInstallationStatus>(
     ["github", "app", "status"],
     "/github/app/status",
+    { method: "GET" }
+  );
+}
+
+export function useGithubAppDebug() {
+  return useAuthenticatedQuery<Installation[]>(
+    ["github", "app", "debug"],
+    "/github/app/debug",
+    { method: "GET" }
+  );
+}
+
+export function useGithubAppTestApi() {
+  return useAuthenticatedQuery<Record<string, unknown>>(
+    ["github", "app", "test-api"],
+    "/github/app/test-api",
     { method: "GET" }
   );
 }

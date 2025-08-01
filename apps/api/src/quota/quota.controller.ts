@@ -36,12 +36,10 @@ export class QuotaController {
     private readonly configService: ConfigService,
   ) {}
 
-  private verifyToken(token?: string, authHeader?: string): any {
-    const authToken =
-      token ||
-      (authHeader?.startsWith('Bearer ')
-        ? authHeader.split(' ')[1]
-        : undefined);
+  private verifyToken(authHeader?: string): any {
+    const authToken = authHeader?.startsWith('Bearer ')
+      ? authHeader.split(' ')[1]
+      : authHeader;
 
     if (!authToken) {
       throw new UnauthorizedException('Token required');
@@ -50,6 +48,7 @@ export class QuotaController {
     try {
       const jwtSecret =
         this.configService.get<string>('JWT_SECRET') || DEFAULT_JWT_SECRET;
+
       return this.jwtService.verify(authToken, { secret: jwtSecret });
     } catch (error) {
       console.error('JWT verification failed:', error);
@@ -86,7 +85,6 @@ export class QuotaController {
 
   @Sse('quota/stream')
   streamQuota(
-    @Query('token') token: string,
     @Headers('authorization') authHeader: string,
     @Res({ passthrough: true }) res: Response,
   ): Observable<{ data: string; type: string }> {
@@ -105,14 +103,12 @@ export class QuotaController {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
 
-    const authToken =
-      token ||
-      (authHeader?.startsWith('Bearer ')
-        ? authHeader.split(' ')[1]
-        : undefined);
+    const authToken = authHeader?.startsWith('Bearer ')
+      ? authHeader.split(' ')[1]
+      : authHeader; // Si pas de préfixe, prendre directement le header
 
     // Vérifier le token
-    this.verifyToken(authToken);
+    this.verifyToken(authHeader);
 
     return this.quotaService.getQuotaStream(authToken as string).pipe(
       map((data) => ({

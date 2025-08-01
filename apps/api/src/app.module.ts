@@ -91,7 +91,7 @@ import * as Joi from 'joi';
           type: 'postgres',
           url: config.get<string>('DATABASE_URL'),
           autoLoadEntities: true,
-          synchronize: false,
+          synchronize: true,
           // logging: config.get('NODE_ENV') === 'development',
           extra: {
             connectionLimit: 10,
