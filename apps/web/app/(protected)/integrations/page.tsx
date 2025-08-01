@@ -52,14 +52,14 @@ const IntegrationsPage = () => {
     {
       id: 1,
       name: "Push Events",
-      url: "https://api.quori.dev/webhooks/github/push",
+      url: "https://api.quori.dev/github/events",
       status: "active",
       events: ["push", "pull_request"],
     },
     {
       id: 2,
       name: "Release Events",
-      url: "https://api.quori.dev/webhooks/github/release",
+      url: "https://api.quori.dev/github/events",
       status: "active",
       events: ["release"],
     },
