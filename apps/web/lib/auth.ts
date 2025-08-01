@@ -121,11 +121,16 @@ async function syncWithBackend(
 export const authOptions: NextAuthConfig = {
   providers: [
     GitHubProvider({
-      clientId: process.env.AUTH_GITHUB_ID!,
-      clientSecret: process.env.AUTH_GITHUB_SECRET!,
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: "read:user user:email read:org repo",
+          scope: [
+            "read:user",
+            "user:email",
+            "read:org",
+            "repo",
+          ].join(" "), // inclut les scopes nécessaires aux installations
           prompt: "consent", // Force à redemander les permissions
         },
       },
