@@ -423,119 +423,6 @@ export class GithubController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('app/test-api')
-  async testGitHubAppApi(@Request() req: AuthenticatedRequest) {
-    const user = req.user;
-
-    console.log('=== TEST GITHUB APP API ===');
-    console.log('User ID:', user.id);
-    console.log('User GitHub ID:', user.githubId);
-    console.log('User has GitHub Token:', !!user.githubAccessToken);
-
-    if (!user.githubAccessToken) {
-      return { error: 'No GitHub access token' };
-    }
-
-    try {
-      // Test direct avec l'API GitHub
-      const response = await fetch(
-        'https://api.github.com/user/installations',
-        {
-          headers: {
-            Authorization: `token ${user.githubAccessToken}`,
-            Accept: 'application/vnd.github.v3+json',
-            'User-Agent': 'Quori-App',
-          },
-        },
-      );
-
-      const scopes = response.headers.get('x-oauth-scopes');
-      console.log('🔑 Scopes from direct API call:', scopes);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Direct API call failed:', response.status, errorText);
-        return {
-          error: 'API_CALL_FAILED',
-          status: response.status,
-          message: errorText,
-          scopes,
-        };
-      }
-
-      const data = await response.json();
-      console.log(
-        '✅ Direct API call successful, installations:',
-        data.installations?.length || 0,
-      );
-
-      return {
-        success: true,
-        scopes,
-        installationsCount: data.installations?.length || 0,
-        installations: data.installations || [],
-      };
-    } catch (error) {
-      console.error('💥 Error in direct API test:', error);
-      return {
-        error: 'EXCEPTION',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      };
-    }
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('app/debug')
-  async debugAppInstallations(
-    @Request() req: AuthenticatedRequest,
-    @Query('code') code?: string,
-  ) {
-    const user = req.user;
-
-    console.log('=== DEBUG APP INSTALLATIONS ===');
-    console.log('User ID:', user.id);
-    console.log(
-      'User GitHub ID:',
-      user.githubId,
-      'Type:',
-      typeof user.githubId,
-    );
-
-    // Récupérer toutes les installations
-    const allInstallations = await this.appService.getAllInstallations();
-    console.log('All installations in DB:', allInstallations);
-
-    // Récupérer les installations de l'utilisateur
-    const userInstallations = await this.appService.getUserInstallations(
-      user.githubId,
-    );
-    console.log('User installations:', userInstallations);
-
-    // Essayer de récupérer depuis GitHub si un code est fourni
-    let githubInstallations: Installation[] = [];
-    if (code) {
-      try {
-        const token = await this.appService.exchangeCodeForUserToken(code);
-        githubInstallations =
-          await this.appService.syncUserInstallationsFromGitHub(token);
-        console.log('GitHub installations:', githubInstallations);
-      } catch (error) {
-        console.error('Error fetching from GitHub:', error);
-      }
-    }
-
-    return {
-      user: {
-        id: user.id,
-        githubId: user.githubId,
-      },
-      allInstallations,
-      userInstallations,
-      githubInstallations,
-    };
-  }
-
-  @UseGuards(JwtAuthGuard)
   @Get('app/status')
   async getAppInstallationStatus(
     @Request() req: AuthenticatedRequest,
@@ -543,34 +430,18 @@ export class GithubController {
   ) {
     const user = req.user;
 
-    console.error('userid:', user.id);
-    console.log('user.githubId:', user.githubId, typeof user.githubId);
-
     let installations = await this.appService.getUserInstallations(
       user.githubId,
     );
 
-    console.log(
-      `🔄 Found ${installations.length} installations in DB for user ${user.githubId}`,
-    );
-
     if (installations.length === 0 && code) {
-      console.log('🔄 No installations found in DB, syncing from GitHub...');
-
       try {
         const token = await this.appService.exchangeCodeForUserToken(code);
         installations =
           await this.appService.syncUserInstallationsFromGitHub(token);
-
-        console.log(
-          `✅ Synced ${installations.length} installations from GitHub`,
-        );
       } catch (error: any) {
         // Gérer spécifiquement l'erreur d'authentification GitHub App
         if (error?.status === 403) {
-          console.warn(
-            '⚠️ GitHub token does not have GitHub App permissions. User needs to re-authenticate with proper scopes.',
-          );
           // On peut retourner une erreur spécifique pour informer le frontend
           return {
             installed: false,

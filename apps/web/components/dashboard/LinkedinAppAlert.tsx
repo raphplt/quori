@@ -2,11 +2,18 @@
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Linkedin } from "lucide-react";
+import { Linkedin, X } from "lucide-react";
 import { useLinkedInStatus } from "@/hooks/useLinkedInStatus";
+import { useState } from "react";
 
 export function LinkedInAppAlert() {
   const { user } = useLinkedInStatus();
+  const [dismissed, setDismissed] = useState(false);
+
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem("linkedinAlertDismissed", "true");
+  };
 
   const handleConnect = () => {
     const userId = user?.id;
@@ -15,14 +22,20 @@ export function LinkedInAppAlert() {
     }
   };
 
-  if (user?.linkedInId) {
+  if (
+    user?.linkedInId ||
+    dismissed ||
+    localStorage.getItem("linkedinAlertDismissed")
+  ) {
     return null;
   }
 
   return (
     <Alert className="border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950">
-      <Linkedin className="h-4 w-4 text-orange-600 dark:text-orange-400" />
       <AlertDescription className="flex items-center justify-between">
+        <Button variant="ghost" onClick={handleDismiss} className="p-2 mr-2">
+          <X className="h-4 w-4" />
+        </Button>
         <div className="flex-1">
           <strong className="text-orange-800 dark:text-orange-200">
             LinkedIn non connecté

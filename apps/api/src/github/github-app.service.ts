@@ -244,8 +244,8 @@ export class GithubAppService {
   }
 
   async exchangeCodeForUserToken(code: string): Promise<string> {
-    const clientId = this.config.get<string>('GITHUB_APP_CLIENT_ID');
-    const clientSecret = this.config.get<string>('GITHUB_APP_CLIENT_SECRET');
+    const clientId = this.config.get<string>('GITHUB_CLIENT_ID');
+    const clientSecret = this.config.get<string>('GITHUB_CLIENT_SECRET');
 
     const response = await fetch(
       'https://github.com/login/oauth/access_token',
