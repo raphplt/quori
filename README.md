@@ -21,7 +21,7 @@ npm run dev        # lance l'application
 
 ### Tester les webhooks GitHub
 
-Configurez l'URL `https://<sous-domaine>.loca.lt/webhooks/github` dans les
+Configurez l'URL `https://<sous-domaine>.loca.lt/github/events` dans les
 paramètres de votre GitHub App puis installez l'app depuis le dashboard.
 
 ## Architecture

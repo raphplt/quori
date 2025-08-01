@@ -19,6 +19,7 @@ describe('LinkedinPublisherService', () => {
     findById: jest.fn().mockResolvedValue({ linkedInId: 'ln1' }),
   } as unknown as jest.Mocked<UsersService>;
 
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -36,6 +37,7 @@ describe('LinkedinPublisherService', () => {
     repo.findOne.mockResolvedValue({ id: 1, postContent: 'hi', statusLinkedin: 'pending' } as any);
     auth.getToken.mockResolvedValue('tok');
     api.createPost.mockResolvedValue({ id: 'abc' });
+    users.findById.mockResolvedValue({ linkedInId: 'lid' } as any);
 
     await service.publish('u1', 1);
 

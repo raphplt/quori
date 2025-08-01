@@ -267,6 +267,52 @@ export class GithubController {
     return this.appService.getEventsPaginated(pageNum, limitNum);
   }
 
+  @Sse('events/stream')
+  streamEventsWithUpdates(
+    @Headers('authorization') authHeader: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Observable<{ data: string; type: string }> {
+    // Configuration CORS spécifique pour les SSE
+    res.setHeader(
+      'Access-Control-Allow-Origin',
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+    );
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Cache-Control, Last-Event-ID',
+    );
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+
+    // Vérifier le token
+    this.verifyToken(undefined, authHeader);
+
+    return this.appService.getEventsStreamWithUpdates().pipe(
+      map((data) => ({
+        data: JSON.stringify(data),
+        type: data.type,
+      })),
+    );
+  }
+
+  @Options('events/stream')
+  handleEventsStreamOptions(@Res() res: Response) {
+    res.setHeader(
+      'Access-Control-Allow-Origin',
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+    );
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Cache-Control, Last-Event-ID',
+    );
+    res.status(200).send();
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('events/:id')
   async getEventById(@Param('id') id: string) {
@@ -377,52 +423,6 @@ export class GithubController {
     res.status(200).send();
   }
 
-  @Sse('events/stream')
-  streamEventsWithUpdates(
-    @Headers('authorization') authHeader: string,
-    @Res({ passthrough: true }) res: Response,
-  ): Observable<{ data: string; type: string }> {
-    // Configuration CORS spécifique pour les SSE
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    );
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Cache-Control, Last-Event-ID',
-    );
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
-
-    // Vérifier le token
-    this.verifyToken(undefined, authHeader);
-
-    return this.appService.getEventsStreamWithUpdates().pipe(
-      map((data) => ({
-        data: JSON.stringify(data),
-        type: data.type,
-      })),
-    );
-  }
-
-  @Options('events/stream')
-  handleEventsStreamOptions(@Res() res: Response) {
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    );
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Cache-Control, Last-Event-ID',
-    );
-    res.status(200).send();
-  }
-
   @UseGuards(JwtAuthGuard)
   @Get('app/test-api')
   async testGitHubAppApi(@Request() req: AuthenticatedRequest) {
@@ -487,7 +487,10 @@ export class GithubController {
 
   @UseGuards(JwtAuthGuard)
   @Get('app/debug')
-  async debugAppInstallations(@Request() req: AuthenticatedRequest) {
+  async debugAppInstallations(
+    @Request() req: AuthenticatedRequest,
+    @Query('code') code?: string,
+  ) {
     const user = req.user;
 
     console.log('=== DEBUG APP INSTALLATIONS ===');
@@ -498,7 +501,6 @@ export class GithubController {
       'Type:',
       typeof user.githubId,
     );
-    console.log('User GitHub Token exists:', !!user.githubAccessToken);
 
     // Récupérer toutes les installations
     const allInstallations = await this.appService.getAllInstallations();
@@ -510,14 +512,13 @@ export class GithubController {
     );
     console.log('User installations:', userInstallations);
 
-    // Essayer de récupérer depuis GitHub
+    // Essayer de récupérer depuis GitHub si un code est fourni
     let githubInstallations: Installation[] = [];
-    if (user.githubAccessToken) {
+    if (code) {
       try {
+        const token = await this.appService.exchangeCodeForUserToken(code);
         githubInstallations =
-          await this.appService.syncUserInstallationsFromGitHub(
-            user.githubAccessToken,
-          );
+          await this.appService.syncUserInstallationsFromGitHub(token);
         console.log('GitHub installations:', githubInstallations);
       } catch (error) {
         console.error('Error fetching from GitHub:', error);
@@ -528,7 +529,6 @@ export class GithubController {
       user: {
         id: user.id,
         githubId: user.githubId,
-        hasGithubToken: !!user.githubAccessToken,
       },
       allInstallations,
       userInstallations,
@@ -538,7 +538,10 @@ export class GithubController {
 
   @UseGuards(JwtAuthGuard)
   @Get('app/status')
-  async getAppInstallationStatus(@Request() req: AuthenticatedRequest) {
+  async getAppInstallationStatus(
+    @Request() req: AuthenticatedRequest,
+    @Query('code') code?: string,
+  ) {
     const user = req.user;
 
     console.error('userid:', user.id);
@@ -552,12 +555,13 @@ export class GithubController {
       `🔄 Found ${installations.length} installations in DB for user ${user.githubId}`,
     );
 
-    if (installations.length === 0 && user.githubAccessToken) {
+    if (installations.length === 0 && code) {
       console.log('🔄 No installations found in DB, syncing from GitHub...');
 
       try {
+        const token = await this.appService.exchangeCodeForUserToken(code);
         installations = await this.appService.syncUserInstallationsFromGitHub(
-          user.githubAccessToken,
+          token,
         );
 
         console.log(
@@ -725,20 +729,22 @@ export class GithubController {
 
   @UseGuards(JwtAuthGuard)
   @Post('app/sync')
-  async syncInstallations(@Request() req: AuthenticatedRequest) {
+  async syncInstallations(
+    @Request() req: AuthenticatedRequest,
+    @Body('code') code: string,
+  ) {
     const user = req.user;
 
     console.log(`🔄 Manual sync requested for user ${user.githubId}`);
 
-    if (!user.githubAccessToken) {
-      throw new UnauthorizedException('No GitHub access token found for user');
+    if (!code) {
+      throw new UnauthorizedException('Missing GitHub OAuth code');
     }
 
     try {
+      const token = await this.appService.exchangeCodeForUserToken(code);
       const syncedInstallations =
-        await this.appService.syncUserInstallationsFromGitHub(
-          user.githubAccessToken,
-        );
+        await this.appService.syncUserInstallationsFromGitHub(token);
 
       return {
         message: 'Installations synchronized successfully',

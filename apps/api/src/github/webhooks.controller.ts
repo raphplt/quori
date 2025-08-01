@@ -5,7 +5,7 @@ import { GithubAppService } from './github-app.service';
 //TODO : retirer les commentaires eslint une fois le code validé
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
 
-@Controller('webhooks/github')
+@Controller('github/events')
 export class WebhooksController {
   constructor(private readonly appService: GithubAppService) {}
 
