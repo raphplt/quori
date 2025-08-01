@@ -1,10 +1,11 @@
 "use client";
+
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
 import { EventSourcePolyfill } from "event-source-polyfill";
 
 interface UseEventsCountSSEReturn {
-  eventsLength: number | undefined;
+  eventsLength?: number;
   isConnected: boolean;
   error: Error | null;
 }
@@ -14,86 +15,82 @@ interface UseEventsCountSSEReturn {
  */
 export function useEventsCountSSE(): UseEventsCountSSEReturn {
   const { data: session } = useSession();
-  const [eventsLength, setEventsLength] = useState<number | undefined>(
-    undefined
-  );
+  const [eventsLength, setEventsLength] = useState<number>();
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  // On reste sur EventSource pour éviter les conflits de types
   const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const maxReconnectAttempts = 3; // Réduit de 5 à 3
+  const reconnectTimeoutRef = useRef<number | null>(null);
   const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 3;
 
   useEffect(() => {
-    if (!session?.apiToken) {
-      return;
-    }
+    if (!session?.apiToken) return;
 
     const connectSSE = () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
+      // Ferme l'ancienne connexion si existante
+      eventSourceRef.current?.close();
 
       const baseUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+        process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
       const url = `${baseUrl}/github/events/length/stream`;
 
-      const eventSource = new EventSourcePolyfill(url, {
+      // Crée le polyfill puis caste en EventSource standard
+      const raw = new EventSourcePolyfill(url, {
         withCredentials: true,
-        headers: {
-          Authorization: `Bearer ${session.apiToken}`,
-        },
+        headers: { Authorization: `Bearer ${session.apiToken}` },
       });
+      const es = raw as unknown as EventSource;
+      eventSourceRef.current = es;
 
-      eventSourceRef.current = eventSource as unknown as EventSource;
-
-      eventSource.onopen = () => {
+      // Connexion ouverte
+      es.onopen = () => {
         console.log("🔗 SSE Events Count connected");
         setIsConnected(true);
         setError(null);
         reconnectAttemptsRef.current = 0;
       };
 
-      eventSource.onmessage = (event: MessageEvent) => {
+      // Message par défaut
+      es.onmessage = (ev: MessageEvent) => {
         try {
-          const data = JSON.parse(event.data);
-          if (typeof data.count === "number") {
-            setEventsLength(data.count);
+          const parsed = JSON.parse(ev.data) as { count: number };
+          if (typeof parsed.count === "number") {
+            setEventsLength(parsed.count);
           }
-        } catch (err: unknown) {
-          console.error("Error parsing SSE event data:", err);
+        } catch (parseErr: unknown) {
+          console.error("Error parsing SSE message:", parseErr);
         }
       };
 
-      (eventSource as any).addEventListener("count", (event: Event) => {
+      // Événement nommé "count"
+      es.addEventListener("count", (ev: MessageEvent) => {
         try {
-          const data = JSON.parse((event as MessageEvent).data);
-          if (typeof data.count === "number") {
-            setEventsLength(data.count);
+          const parsed = JSON.parse(ev.data) as { count: number };
+          if (typeof parsed.count === "number") {
+            setEventsLength(parsed.count);
           }
-        } catch (err: unknown) {
-          console.error("Error parsing SSE count event:", err);
+        } catch (parseErr: unknown) {
+          console.error("Error parsing SSE 'count' event:", parseErr);
         }
       });
 
-      (eventSource as any).onerror = (err: Event) => {
-        console.error("SSE Events Count error:", err);
+      // Gestion des erreurs et reconnexion
+      es.onerror = () => {
+        console.error("SSE Events Count error");
         setIsConnected(false);
 
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
           const delay = Math.min(
-            1000 * Math.pow(2, reconnectAttemptsRef.current),
-            30000
+            1000 * 2 ** reconnectAttemptsRef.current,
+            30_000
           );
-          reconnectAttemptsRef.current++;
-
+          reconnectAttemptsRef.current += 1;
           console.log(
             `🔄 Reconnecting SSE Events Count in ${delay}ms (attempt ${reconnectAttemptsRef.current})`
           );
-
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connectSSE();
-          }, delay);
+          reconnectTimeoutRef.current = window.setTimeout(connectSSE, delay);
         } else {
           setError(new Error("Max reconnection attempts reached"));
         }
@@ -104,21 +101,13 @@ export function useEventsCountSSE(): UseEventsCountSSEReturn {
 
     // Cleanup
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-      if (reconnectTimeoutRef.current) {
+      eventSourceRef.current?.close();
+      if (reconnectTimeoutRef.current !== null) {
         clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
       }
       setIsConnected(false);
     };
   }, [session?.apiToken]);
 
-  return {
-    eventsLength,
-    isConnected,
-    error,
-  };
+  return { eventsLength, isConnected, error };
 }
