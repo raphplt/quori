@@ -625,7 +625,8 @@ export default function EventDetailPage({
             </CardHeader>
             <CardContent className="space-y-2">
               <Button
-                variant="outline"
+                // variant="outline"
+                color="primary"
                 className="w-full"
                 onClick={() => setGenerateDialogOpen(true)}
                 disabled={
