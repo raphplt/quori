@@ -162,6 +162,52 @@ export class GithubController {
     return this.appService.getEventsPaginated(pageNum, limitNum);
   }
 
+  @Sse('events/stream')
+  streamEventsWithUpdates(
+    @Headers('authorization') authHeader: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Observable<{ data: string; type: string }> {
+    // Configuration CORS spécifique pour les SSE
+    res.setHeader(
+      'Access-Control-Allow-Origin',
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+    );
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Cache-Control, Last-Event-ID',
+    );
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+
+    // Vérifier le token
+    this.verifyToken(undefined, authHeader);
+
+    return this.appService.getEventsStreamWithUpdates().pipe(
+      map((data) => ({
+        data: JSON.stringify(data),
+        type: data.type,
+      })),
+    );
+  }
+
+  @Options('events/stream')
+  handleEventsStreamOptions(@Res() res: Response) {
+    res.setHeader(
+      'Access-Control-Allow-Origin',
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+    );
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Cache-Control, Last-Event-ID',
+    );
+    res.status(200).send();
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('events/:id')
   async getEventById(@Param('id') id: string) {
@@ -259,52 +305,6 @@ export class GithubController {
 
   @Options('posts/stats/stream')
   handlePostsStatsStreamOptions(@Res() res: Response) {
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    );
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Cache-Control, Last-Event-ID',
-    );
-    res.status(200).send();
-  }
-
-  @Sse('events/stream')
-  streamEventsWithUpdates(
-    @Headers('authorization') authHeader: string,
-    @Res({ passthrough: true }) res: Response,
-  ): Observable<{ data: string; type: string }> {
-    // Configuration CORS spécifique pour les SSE
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    );
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Cache-Control, Last-Event-ID',
-    );
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
-
-    // Vérifier le token
-    this.verifyToken(undefined, authHeader);
-
-    return this.appService.getEventsStreamWithUpdates().pipe(
-      map((data) => ({
-        data: JSON.stringify(data),
-        type: data.type,
-      })),
-    );
-  }
-
-  @Options('events/stream')
-  handleEventsStreamOptions(@Res() res: Response) {
     res.setHeader(
       'Access-Control-Allow-Origin',
       process.env.FRONTEND_URL || 'http://localhost:3000',

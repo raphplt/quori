@@ -5,6 +5,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Post } from '../github/entities/post.entity';
 import { LinkedInApi } from './linkedin.api';
+import { UsersService } from '../users/users.service';
 
 describe('LinkedinPublisherService', () => {
   let service: LinkedinPublisherService;
@@ -14,6 +15,7 @@ describe('LinkedinPublisherService', () => {
   } as unknown as jest.Mocked<Repository<Post>>;
   const auth = { getToken: jest.fn() } as unknown as jest.Mocked<LinkedinAuthService>;
   const api = { createPost: jest.fn() } as jest.Mocked<LinkedInApi>;
+  const users = { findById: jest.fn() } as unknown as jest.Mocked<UsersService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -22,6 +24,7 @@ describe('LinkedinPublisherService', () => {
         { provide: getRepositoryToken(Post), useValue: repo },
         { provide: LinkedinAuthService, useValue: auth },
         { provide: 'LinkedInApi', useValue: api },
+        { provide: UsersService, useValue: users },
       ],
     }).compile();
     service = module.get(LinkedinPublisherService);
@@ -31,6 +34,7 @@ describe('LinkedinPublisherService', () => {
     repo.findOne.mockResolvedValue({ id: 1, postContent: 'hi', statusLinkedin: 'pending' } as any);
     auth.getToken.mockResolvedValue('tok');
     api.createPost.mockResolvedValue({ id: 'abc' });
+    users.findById.mockResolvedValue({ linkedInId: 'lid' } as any);
 
     await service.publish('u1', 1);
 
