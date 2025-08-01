@@ -83,8 +83,7 @@ export class GithubController {
     @Res() res: Response,
   ) {
     const front =
-      this.configService.get<string>('FRONTEND_URL') ||
-      'http://localhost:3000';
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     try {
       const clientId = this.configService.get<string>('GITHUB_CLIENT_ID') || '';
       const clientSecret =
@@ -560,9 +559,8 @@ export class GithubController {
 
       try {
         const token = await this.appService.exchangeCodeForUserToken(code);
-        installations = await this.appService.syncUserInstallationsFromGitHub(
-          token,
-        );
+        installations =
+          await this.appService.syncUserInstallationsFromGitHub(token);
 
         console.log(
           `✅ Synced ${installations.length} installations from GitHub`,

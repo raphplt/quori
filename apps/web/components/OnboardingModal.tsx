@@ -8,11 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { useOnboarding } from "@/contexts/OnboardingContext";
-import {
-  useGithubAppDebug,
-  useGitHubAppStatus,
-  useGithubAppTestApi,
-} from "@/hooks/useGitHubApp";
+import { useGitHubAppStatus } from "@/hooks/useGitHubApp";
 import { Button } from "@/components/ui/button";
 import { Github, ExternalLink } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
@@ -58,24 +54,6 @@ export const OnboardingModal: React.FC = () => {
     error: appError,
     refetch: refetchApp,
   } = useGitHubAppStatus();
-
-  // console.log("Debug data:", debugData);
-  // console.log("Debug loading:", isLoadingDebug);
-  // console.log("Debug error:", debugError);
-
-  // console.log("Debug data:", debugData);
-  // console.log("Debug loading:", isLoadingDebug);
-  // console.log("Debug error:", debugError);
-
-  // console.log("Test API data:", testApiData);
-  // console.log("Test API loading:", isLoadingTestApi);
-  // console.log("Test API error:", testApiError);
-
-  // console.log("GitHub App status:", {
-  //   githubApp,
-  //   isLoadingApp,
-  //   appError,
-  // });
 
   // Step 2: Scan logic
   const scanMutation = useMutation({
