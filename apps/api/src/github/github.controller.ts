@@ -24,6 +24,7 @@ import { User } from '../users/user.interface';
 import { GithubAppService } from './github-app.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { DEFAULT_JWT_SECRET } from '../common/constants';
 import { GenerateService } from './services/generate.service';
 import { GenerateDto, GenerateResultDto } from './dto/generate.dto';
 import { UpdatePostStatusDto } from './dto/post.dto';
@@ -55,7 +56,7 @@ export class GithubController {
 
     try {
       const jwtSecret =
-        this.configService.get<string>('JWT_SECRET') || 'default-jwt-secret';
+        this.configService.get<string>('JWT_SECRET') || DEFAULT_JWT_SECRET;
       return this.jwtService.verify(token, { secret: jwtSecret });
     } catch (error) {
       console.error('JWT verification failed:', error);
@@ -169,60 +170,6 @@ export class GithubController {
     return events;
   }
 
-  @Sse('events/stream')
-  streamEvents(
-    @Query('token') token: string,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    // Configuration CORS spécifique pour les SSE
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    );
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Cache-Control, Last-Event-ID',
-    );
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
-
-    // Validate JWT token manually
-    if (!token) {
-      throw new UnauthorizedException('Token required');
-    }
-
-    try {
-      this.jwtService.verify(token);
-    } catch {
-      throw new UnauthorizedException('Invalid token');
-    }
-
-    return this.appService.getEventStream().pipe(
-      map((event) => ({
-        data: JSON.stringify(event),
-        id: event.delivery_id,
-        type: 'event',
-      })),
-    );
-  }
-
-  @Options('events/stream')
-  handleEventStreamOptions(@Res() res: Response) {
-    res.setHeader(
-      'Access-Control-Allow-Origin',
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-    );
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader(
-      'Access-Control-Allow-Headers',
-      'Cache-Control, Last-Event-ID',
-    );
-    res.status(200).send();
-  }
 
   @Sse('events/length/stream')
   streamEventsLength(

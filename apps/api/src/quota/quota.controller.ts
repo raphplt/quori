@@ -20,6 +20,7 @@ import { GenerateDto, GenerateResultDto } from '../github/dto/generate.dto';
 import { QuotaService } from './quota.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { DEFAULT_JWT_SECRET } from '../common/constants';
 
 interface AuthReq {
   user: { id: string };
@@ -40,7 +41,7 @@ export class QuotaController {
     }
 
     try {
-      const jwtSecret = this.configService.get<string>('JWT_SECRET') || 'default-jwt-secret';
+      const jwtSecret = this.configService.get<string>('JWT_SECRET') || DEFAULT_JWT_SECRET;
       return this.jwtService.verify(token, { secret: jwtSecret });
     } catch (error) {
       console.error('JWT verification failed:', error);

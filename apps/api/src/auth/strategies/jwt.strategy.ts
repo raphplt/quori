@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DEFAULT_JWT_SECRET } from '../../common/constants';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { AuthService, JwtPayload } from '../auth.service';
@@ -12,7 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     private readonly authService: AuthService,
   ) {
     const jwtSecret =
-      configService.get<string>('JWT_SECRET') || 'default-jwt-secret';
+      configService.get<string>('JWT_SECRET') || DEFAULT_JWT_SECRET;
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
