@@ -15,7 +15,10 @@ describe('LinkedinPublisherService', () => {
   } as unknown as jest.Mocked<Repository<Post>>;
   const auth = { getToken: jest.fn() } as unknown as jest.Mocked<LinkedinAuthService>;
   const api = { createPost: jest.fn() } as jest.Mocked<LinkedInApi>;
-  const users = { findById: jest.fn() } as unknown as jest.Mocked<UsersService>;
+  const users = {
+    findById: jest.fn().mockResolvedValue({ linkedInId: 'ln1' }),
+  } as unknown as jest.Mocked<UsersService>;
+
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

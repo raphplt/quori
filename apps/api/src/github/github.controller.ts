@@ -35,6 +35,7 @@ import { Event } from './entities/event.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateTestEventDto } from './dto/create-test-event.dto';
+import { UsersService, GitHubProfile } from '../users/users.service';
 
 interface AuthenticatedRequest {
   user: User;
@@ -48,6 +49,7 @@ export class GithubController {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly generateService: GenerateService,
+    private readonly usersService: UsersService,
     @InjectRepository(Event)
     private readonly eventRepository: Repository<Event>,
   ) {}
@@ -71,6 +73,109 @@ export class GithubController {
     } catch (error) {
       console.error('JWT verification failed:', error);
       throw new UnauthorizedException('Invalid token');
+    }
+  }
+
+  @Get('callback')
+  async githubAppCallback(
+    @Query('code') code: string,
+    @Query('installation_id') installationId: string,
+    @Res() res: Response,
+  ) {
+    const front =
+      this.configService.get<string>('FRONTEND_URL') ||
+      'http://localhost:3000';
+    try {
+      const clientId = this.configService.get<string>('GITHUB_CLIENT_ID') || '';
+      const clientSecret =
+        this.configService.get<string>('GITHUB_CLIENT_SECRET') || '';
+
+      const params = new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+      });
+
+      const tokenResp = await fetch(
+        'https://github.com/login/oauth/access_token',
+        {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          body: params.toString(),
+        },
+      );
+      const tokenData = (await tokenResp.json()) as {
+        access_token?: string;
+      };
+      const accessToken = tokenData.access_token;
+      if (!accessToken) throw new Error('No access token');
+
+      // Store installation information
+      if (installationId) {
+        const instResp = await fetch(
+          `https://api.github.com/user/installations/${installationId}`,
+          {
+            headers: {
+              Authorization: `token ${accessToken}`,
+              Accept: 'application/vnd.github.v3+json',
+            },
+          },
+        );
+        const instData = await instResp.json();
+        const reposResp = await fetch(
+          `https://api.github.com/user/installations/${installationId}/repositories`,
+          {
+            headers: {
+              Authorization: `token ${accessToken}`,
+              Accept: 'application/vnd.github.v3+json',
+            },
+          },
+        );
+        const reposData = await reposResp.json();
+        await this.appService.upsertInstallation({
+          installation_id: instData.id,
+          account_login: instData.account?.login || '',
+          account_id: instData.account?.id || 0,
+          repositories:
+            reposData.repositories?.map((r: any) => r.full_name) || [],
+        });
+      }
+
+      // Store token for the user
+      const userResp = await fetch('https://api.github.com/user', {
+        headers: {
+          Authorization: `token ${accessToken}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
+      const ghUser = await userResp.json();
+      const ghId = ghUser.id?.toString();
+      if (ghId) {
+        const existing = await this.usersService.findByGithubId(ghId);
+        if (existing) {
+          await this.usersService.update(existing.id, {
+            githubAccessToken: accessToken,
+          });
+        } else {
+          const profile: GitHubProfile = {
+            id: ghId,
+            username: ghUser.login,
+            displayName: ghUser.name,
+            emails: ghUser.email
+              ? [{ value: ghUser.email, primary: true }]
+              : undefined,
+            photos: ghUser.avatar_url
+              ? [{ value: ghUser.avatar_url }]
+              : undefined,
+          };
+          await this.usersService.create(profile, accessToken);
+        }
+      }
+
+      res.redirect(`${front}/settings?github=success`);
+    } catch (error) {
+      console.error('GitHub app callback error:', error);
+      res.redirect(`${front}/settings?github=error`);
     }
   }
 
