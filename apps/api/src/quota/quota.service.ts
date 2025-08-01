@@ -1,5 +1,6 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DEFAULT_JWT_SECRET } from '../common/constants';
 import { Redis } from 'ioredis';
 import { Observable, interval } from 'rxjs';
 import { map, switchMap, startWith } from 'rxjs/operators';
@@ -43,7 +44,7 @@ export class QuotaService {
 
   getQuotaStream(token: string): Observable<any> {
     // Décoder le token pour obtenir l'userId
-    const jwtSecret = this.config.get<string>('JWT_SECRET') || 'default-jwt-secret';
+    const jwtSecret = this.config.get<string>('JWT_SECRET') || DEFAULT_JWT_SECRET;
     const decoded = this.jwtService.verify(token, { secret: jwtSecret });
     const userId = decoded.sub;
 

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { DEFAULT_JWT_SECRET } from '../common/constants';
 
 import { GithubStrategy } from './strategies/github.strategy';
 import { AuthController } from './auth.controller';
@@ -30,7 +31,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         }
 
         return {
-          secret: jwtSecret || 'temporary-dev-secret-change-in-production',
+          secret: jwtSecret || DEFAULT_JWT_SECRET,
           signOptions: {
             expiresIn: configService.get<string>('JWT_EXPIRES_IN', '7d'),
           },

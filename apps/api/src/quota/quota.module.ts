@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { DEFAULT_JWT_SECRET } from '../common/constants';
 import { QuotaService } from './quota.service';
 import { QuotaController } from './quota.controller';
 import { GithubModule } from '../github/github.module';
@@ -9,9 +10,13 @@ import { GithubModule } from '../github/github.module';
   imports: [
     GithubModule,
     ConfigModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'your-secret-key',
-      signOptions: { expiresIn: '24h' },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET') || DEFAULT_JWT_SECRET,
+        signOptions: { expiresIn: '24h' },
+      }),
+      inject: [ConfigService],
     }),
   ],
   providers: [QuotaService],
