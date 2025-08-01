@@ -76,8 +76,9 @@ DATABASE_URL="postgresql://user:password@localhost:5432/quori"
 REDIS_URL="redis://localhost:6379"
 
 # GitHub
-GITHUB_CLIENT_ID="your_github_app_id"
-GITHUB_CLIENT_SECRET="your_github_app_secret"
+GITHUB_APP_ID="your_github_app_id"
+GITHUB_CLIENT_ID="your_github_client_id"
+GITHUB_CLIENT_SECRET="your_github_client_secret"
 GITHUB_WEBHOOK_SECRET="your_webhook_secret"
 
 # OpenAI
@@ -93,8 +94,9 @@ ENCRYPTION_KEY="change-me"
 NEXT_PUBLIC_API_URL="http://localhost:3001"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your_nextauth_secret"
-GITHUB_CLIENT_ID="your_github_app_id"
-GITHUB_CLIENT_SECRET="your_github_app_secret"
+GITHUB_APP_ID="your_github_app_id"
+GITHUB_CLIENT_ID="your_github_client_id"
+GITHUB_CLIENT_SECRET="your_github_client_secret"
 ```
 
 ## API Quota
