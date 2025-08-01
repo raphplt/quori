@@ -46,6 +46,7 @@ export const OnboardingModal: React.FC = () => {
     currentStep,
     advanceStep,
     finishOnboarding,
+    skipOnboarding,
   } = useOnboarding();
 
   const { status } = useSession();
@@ -58,35 +59,23 @@ export const OnboardingModal: React.FC = () => {
     refetch: refetchApp,
   } = useGitHubAppStatus();
 
-  const {
-    data: debugData,
-    isLoading: isLoadingDebug,
-    error: debugError,
-  } = useGithubAppDebug();
-
-  const {
-    data: testApiData,
-    isLoading: isLoadingTestApi,
-    error: testApiError,
-  } = useGithubAppTestApi();
+  // console.log("Debug data:", debugData);
+  // console.log("Debug loading:", isLoadingDebug);
+  // console.log("Debug error:", debugError);
 
   // console.log("Debug data:", debugData);
   // console.log("Debug loading:", isLoadingDebug);
   // console.log("Debug error:", debugError);
 
-  console.log("Debug data:", debugData);
-  console.log("Debug loading:", isLoadingDebug);
-  console.log("Debug error:", debugError);
+  // console.log("Test API data:", testApiData);
+  // console.log("Test API loading:", isLoadingTestApi);
+  // console.log("Test API error:", testApiError);
 
-  console.log("Test API data:", testApiData);
-  console.log("Test API loading:", isLoadingTestApi);
-  console.log("Test API error:", testApiError);
-
-  console.log("GitHub App status:", {
-    githubApp,
-    isLoadingApp,
-    appError,
-  });
+  // console.log("GitHub App status:", {
+  //   githubApp,
+  //   isLoadingApp,
+  //   appError,
+  // });
 
   // Step 2: Scan logic
   const scanMutation = useMutation({
@@ -499,7 +488,9 @@ export const OnboardingModal: React.FC = () => {
     <Dialog open={!!open}>
       <DialogContent className="max-w-lg w-full">
         <DialogHeader>
-          <DialogTitle>Bienvenue sur Quori</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Bienvenue sur Quori</DialogTitle>
+          </div>
           <DialogDescription asChild={false}>
             <span className="text-sm font-medium">
               Étape {currentStep} sur {TOTAL_STEPS}
@@ -516,6 +507,14 @@ export const OnboardingModal: React.FC = () => {
           {error && <div className="text-red-500 mb-2">{error.message}</div>}
           {renderStep(currentStep)}
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={skipOnboarding}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          Passer l&apos;onboarding
+        </Button>
       </DialogContent>
     </Dialog>
   );

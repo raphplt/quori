@@ -34,4 +34,9 @@ export class OnboardingStatusController {
   async finish(@Param('userId') userId: string) {
     return this.onboardingService.markFinished(userId);
   }
+
+  @Post(':userId/skip')
+  async skip(@Param('userId') userId: string) {
+    return this.onboardingService.skipOnboarding(userId);
+  }
 }

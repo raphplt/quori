@@ -43,4 +43,20 @@ export class OnboardingStatusService {
     onboarding.step = 5;
     return this.onboardingRepo.save(onboarding);
   }
+
+  async skipOnboarding(userId: string): Promise<OnboardingStatusEntity> {
+    let onboarding = await this.getByUserId(userId);
+    if (!onboarding) {
+      onboarding = this.onboardingRepo.create({
+        step: 5,
+        finished: true,
+        user: { id: userId },
+      });
+      onboarding.startedAt = new Date();
+    }
+    onboarding.finished = true;
+    onboarding.completedAt = new Date();
+    onboarding.step = 5;
+    return this.onboardingRepo.save(onboarding);
+  }
 }

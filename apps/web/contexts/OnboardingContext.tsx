@@ -23,6 +23,7 @@ interface OnboardingContextType {
   currentStep: number;
   advanceStep: () => void;
   finishOnboarding: () => void;
+  skipOnboarding: () => void;
   refetchOnboarding: () => void;
 }
 
@@ -97,6 +98,21 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
+  const skipMutation = useMutation<OnboardingStatus, Error, void>({
+    mutationFn: async () => {
+      if (!userId) throw new Error("No user");
+      const res = await authenticatedFetch(
+        `/onboarding-status/${userId}/skip`,
+        {
+          method: "POST",
+        }
+      );
+      if (!res.ok) throw new Error("Erreur skip onboarding");
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey }),
+  });
+
   const advanceStep = useCallback(
     () => advanceMutation.mutate(),
     [advanceMutation]
@@ -104,6 +120,10 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
   const finishOnboarding = useCallback(
     () => finishMutation.mutate(),
     [finishMutation]
+  );
+  const skipOnboarding = useCallback(
+    () => skipMutation.mutate(),
+    [skipMutation]
   );
   const refetchOnboarding = useCallback(
     () => onboardingQuery.refetch(),
@@ -122,6 +142,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
             : 0,
         advanceStep,
         finishOnboarding,
+        skipOnboarding,
         refetchOnboarding,
       }}
     >
