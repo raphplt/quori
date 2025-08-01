@@ -22,13 +22,9 @@ import {
 export function useSidebarItems(): SidebarItem[] {
   const badgeData = useSidebarBadgeData();
 
-  const sidebarItems: SidebarItem[] = useMemo(() => {
-    return [
-      {
-        title: "Dashboard",
-        href: "/dashboard",
-        icon: LayoutDashboard,
-      },
+  return useMemo(
+    () => [
+      { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       {
         title: "Dépôts",
         href: "/repositories",
@@ -57,61 +53,40 @@ export function useSidebarItems(): SidebarItem[] {
             icon: Clock,
             badge: badgeData.scheduled,
           },
-          {
-            title: "Publiés",
-            href: "/posts/published",
-            icon: Send,
-          },
-          {
-            title: "Archives",
-            href: "/posts/archived",
-            icon: Archive,
-          },
+          { title: "Publiés", href: "/posts/published", icon: Send },
+          { title: "Archives", href: "/posts/archived", icon: Archive },
         ],
       },
-      {
-        title: "Calendrier",
-        href: "/calendar",
-        icon: Calendar,
-      },
-      {
-        title: "Templates & Styles",
-        href: "/templates",
-        icon: Palette,
-      },
+      { title: "Calendrier", href: "/calendar", icon: Calendar },
+      { title: "Templates & Styles", href: "/templates", icon: Palette },
       {
         title: "Analytics",
         href: "/analytics",
         icon: BarChart3,
+        disabled: true,
       },
       {
         title: "Intégrations",
         href: "/integrations",
         icon: Puzzle,
+        disabled: true,
       },
       {
         title: "Facturation & Plan",
         href: "/billing",
         icon: CreditCard,
+        disabled: true,
       },
       {
         title: "Équipe",
         href: "/team",
         icon: Users,
-        badge: "Pro",
+        badge: "Basique",
+        disabled: true,
       },
-      {
-        title: "Paramètres",
-        href: "/settings",
-        icon: Settings,
-      },
-      {
-        title: "Aide & Support",
-        href: "/help",
-        icon: HelpCircle,
-      },
-    ];
-  }, [badgeData]);
-
-  return sidebarItems;
+      { title: "Paramètres", href: "/settings", icon: Settings },
+      { title: "Aide & Support", href: "/help", icon: HelpCircle },
+    ],
+    [badgeData]
+  );
 }

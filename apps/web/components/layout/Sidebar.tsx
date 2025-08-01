@@ -21,6 +21,7 @@ export interface SidebarItem {
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
   children?: SidebarItem[];
+  disabled?: boolean;
 }
 
 export interface SidebarProps {
@@ -38,12 +39,54 @@ const SidebarItem: React.FC<{
   const isActive = pathname === item.href;
   const isChildActive = item.children?.some(child => pathname === child.href);
 
+  // Auto-open if a child route is active
   useEffect(() => {
     if (isChildActive && !isCollapsed) {
       setIsOpen(true);
     }
   }, [isChildActive, isCollapsed]);
 
+  // Render disabled items (inaccessible)
+  if (item.disabled) {
+    // Collapsed view: icon-only
+    if (isCollapsed && level === 0) {
+      return (
+        <Button
+          variant="ghost"
+          disabled
+          title={item.title}
+          className="w-full justify-center h-10 px-2"
+        >
+          <item.icon className="h-4 w-4 text-muted-foreground" />
+        </Button>
+      );
+    }
+    // Hide nested when collapsed
+    if (isCollapsed && level > 0) {
+      return null;
+    }
+    // Expanded view: full entry
+    return (
+      <Button
+        variant="ghost"
+        disabled
+        className={cn(
+          "w-full justify-start font-normal h-10 opacity-50 cursor-not-allowed",
+          level > 0 && "pl-8"
+        )}
+      >
+        <item.icon className="mr-3 h-4 w-4 text-muted-foreground" />
+        <span className="flex-1 text-left">{item.title}</span>
+        {item.badge && (
+          <Badge variant="secondary" className="ml-auto">
+            {item.badge}
+          </Badge>
+        )}
+      </Button>
+    );
+  }
+
+  // Non-disabled items
   if (isCollapsed && level === 0) {
     return (
       <Button
@@ -145,34 +188,33 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     <div className={cn("pb-12", isOpen ? "w-64" : "w-16", className)}>
       <div className="space-y-4 py-4">
         <div className={cn("px-3 py-2", !isOpen && "px-2")}>
+          {isOpen ? (
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold tracking-tight">
+                Navigation
+              </h2>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={toggle}
+              >
+                <PanelLeft className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex justify-center mb-4">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={toggle}
+              >
+                <PanelLeft className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
           <div className="space-y-1">
-            {isOpen ? (
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold tracking-tight">
-                  Navigation
-                </h2>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8"
-                  onClick={toggle}
-                >
-                  <PanelLeft className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex justify-center mb-4">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8"
-                  onClick={toggle}
-                >
-                  <PanelLeft className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-
             {sidebarItems.map((item, index) => (
               <SidebarItem
                 key={index}

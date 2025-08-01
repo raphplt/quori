@@ -19,7 +19,6 @@ import { Response } from 'express';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { GithubService } from './github.service';
-import { Installation } from './entities/installation.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GitHubRepository } from './interfaces/github-repository.interface';
 import { GitHubRepositoriesPage } from './interfaces/github-repositories-page.interface';
@@ -58,7 +57,6 @@ export class GithubController {
     const isProduction = this.configService.get('NODE_ENV') === 'production';
 
     if (isProduction) {
-      // En production, priorité à www.quori.dev
       const frontendUrl = this.configService.get<string>('FRONTEND_URL');
       if (frontendUrl?.includes('www.quori.dev')) {
         return frontendUrl;
@@ -340,6 +338,20 @@ export class GithubController {
     return events;
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('events/current-month/length')
+  async getCurrentMonthEventsLength() {
+    const events = await this.appService.getCurrentMonthEvents();
+    return { length: events.length };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('posts/current-month/length')
+  async getCurrentMonthPostsLength() {
+    const posts = await this.appService.getCurrentMonthPosts();
+    return { length: posts.length };
+  }
+
   @Sse('events/length/stream')
   streamEventsLength(
     @Headers('authorization') authHeader: string,
@@ -576,10 +588,6 @@ export class GithubController {
     @Request() req: AuthenticatedRequest,
     @Body('code') code: string,
   ) {
-    const user = req.user;
-
-    console.log(`🔄 Manual sync requested for user ${user.githubId}`);
-
     if (!code) {
       throw new UnauthorizedException('Missing GitHub OAuth code');
     }

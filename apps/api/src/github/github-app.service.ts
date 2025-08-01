@@ -560,6 +560,19 @@ export class GithubAppService {
     });
   }
 
+  async getCurrentMonthPosts(): Promise<Post[]> {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    return this.posts.find({
+      where: {
+        createdAt: MoreThanOrEqual(startOfMonth),
+      },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   private mapEventToType(event: string): EventType {
     switch (event) {
       case 'push':

@@ -14,13 +14,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   BarChart3,
-  GitCommit,
   Clock,
   FileText,
-  TrendingUp,
   Calendar,
   Target,
-  Eye,
   ArrowUpRight,
   Plus,
 } from "lucide-react";
@@ -29,6 +26,7 @@ import { GitHubAppAlert } from "@/components/dashboard/GitHubAppAlert";
 import ActivityPreview from "@/components/dashboard/ActivityPreview";
 import { usePostsStatsSSE } from "@/hooks/usePostsStatsSSE";
 import { LinkedInAppAlert } from "@/components/dashboard/LinkedinAppAlert";
+import KpisCards from "@/components/dashboard/KpisCards";
 
 type ExtendedUser = {
   id: string;
@@ -63,20 +61,6 @@ function DashboardContent() {
   if (!user) {
     return null;
   }
-
-  // KPI mock data conservé pour l'instant
-  const stats = {
-    thisMonth: {
-      posts: 12,
-      engagement: 4.2,
-      impressions: 8430,
-      commits: 45,
-    },
-    total: {
-      posts: 89,
-      followers: 1240,
-    },
-  };
 
   const queuedPosts = postsByStatus
     ? [...postsByStatus.drafts, ...postsByStatus.ready]
@@ -115,70 +99,7 @@ function DashboardContent() {
         <LinkedInAppAlert />
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Posts ce mois-ci
-              </CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.thisMonth.posts}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+3</span> depuis la semaine
-                dernière
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Taux d&apos;engagement
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats.thisMonth.engagement}%
-              </div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-green-600">+0.4%</span> vs mois dernier
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Impressions totales
-              </CardTitle>
-              <Eye className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats.thisMonth.impressions.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground">Ce mois-ci</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Commits traités
-              </CardTitle>
-              <GitCommit className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats.thisMonth.commits}
-              </div>
-              <p className="text-xs text-muted-foreground">Ce mois-ci</p>
-            </CardContent>
-          </Card>
-        </div>
+        <KpisCards />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Activité Git récente */}
