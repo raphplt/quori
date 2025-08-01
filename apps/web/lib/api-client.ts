@@ -4,7 +4,7 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
 // Cache pour la session pour éviter les appels répétés
-let sessionCache: any = null;
+let sessionCache: Awaited<ReturnType<typeof getSession>> | null = null;
 let sessionCacheTime = 0;
 const SESSION_CACHE_DURATION = 30000; // 30 secondes
 
@@ -26,8 +26,7 @@ export const authenticatedFetch = async (
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const apiToken = (sessionCache as any)?.apiToken as string | undefined;
+  const apiToken = sessionCache?.apiToken as string | undefined;
   if (apiToken) {
     headers.Authorization = `Bearer ${apiToken}`;
   }

@@ -1,6 +1,7 @@
 "use client";
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useRef, useCallback } from "react";
+import { EventSourcePolyfill } from "event-source-polyfill";
 
 interface UseSSEOptions {
   endpoint: string;
@@ -45,13 +46,16 @@ export function useSSE({
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-    const url = `${baseUrl}${endpoint}?token=${session.apiToken}`;
+    const url = `${baseUrl}${endpoint}`;
 
-    const eventSource = new EventSource(url, {
+    const eventSource = new EventSourcePolyfill(url, {
       withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${session.apiToken}`,
+      },
     });
 
-    eventSourceRef.current = eventSource;
+    eventSourceRef.current = eventSource as unknown as EventSource;
 
     eventSource.onopen = () => {
       console.log(`🔗 SSE connected to ${endpoint}`);
@@ -63,17 +67,17 @@ export function useSSE({
 
     // Écouter les événements spécifiés
     events.forEach(eventName => {
-      eventSource.addEventListener(eventName, event => {
+      (eventSource as any).addEventListener(eventName, (event: Event) => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse((event as MessageEvent).data);
           onMessage?.(eventName, data);
-        } catch (err) {
+        } catch (err: unknown) {
           console.error(`Error parsing SSE ${eventName} event:`, err);
         }
       });
     });
 
-    eventSource.onerror = err => {
+    (eventSource as any).onerror = (err: Event) => {
       console.error(`SSE error for ${endpoint}:`, err);
       setIsConnected(false);
 
@@ -107,7 +111,7 @@ export function useSSE({
     session?.apiToken,
   ]);
 
-  const sendMessage = useCallback((event: string, data: any) => {
+  const sendMessage = useCallback((event: string, data: unknown) => {
     // Pour SSE, on ne peut pas envoyer de messages depuis le client
     // Cette fonction est là pour la compatibilité avec d'autres patterns
     console.warn("SSE does not support sending messages from client");

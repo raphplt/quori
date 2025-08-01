@@ -1,6 +1,7 @@
 "use client";
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
+import { EventSourcePolyfill } from "event-source-polyfill";
 
 interface Quota {
   used: number;
@@ -38,13 +39,16 @@ export function useQuotaSSE(): UseQuotaSSEReturn {
 
       const baseUrl =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const url = `${baseUrl}/quota/stream?token=${session.apiToken}`;
+      const url = `${baseUrl}/quota/stream`;
 
-      const eventSource = new EventSource(url, {
+      const eventSource = new EventSourcePolyfill(url, {
         withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${session.apiToken}`,
+        },
       });
 
-      eventSourceRef.current = eventSource;
+      eventSourceRef.current = eventSource as unknown as EventSource;
 
       eventSource.onopen = () => {
         console.log("🔗 SSE Quota connected");
@@ -54,30 +58,30 @@ export function useQuotaSSE(): UseQuotaSSEReturn {
       };
 
       // Écouter les événements de quota
-      eventSource.addEventListener("quota", event => {
+      (eventSource as any).addEventListener("quota", (event: Event) => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse((event as MessageEvent).data) as { quota?: Quota };
           if (data.quota) {
             setQuota(data.quota);
           }
-        } catch (err) {
+        } catch (err: unknown) {
           console.error("Error parsing SSE quota event:", err);
         }
       });
 
       // Écouter les mises à jour de quota
-      eventSource.addEventListener("quota-update", event => {
+      (eventSource as any).addEventListener("quota-update", (event: Event) => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse((event as MessageEvent).data) as { quota?: Quota };
           if (data.quota) {
             setQuota(data.quota);
           }
-        } catch (err) {
+        } catch (err: unknown) {
           console.error("Error parsing SSE quota-update event:", err);
         }
       });
 
-      eventSource.onerror = err => {
+      (eventSource as any).onerror = (err: Event) => {
         console.error("SSE Quota error:", err);
         setIsConnected(false);
 

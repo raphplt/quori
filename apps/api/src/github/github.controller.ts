@@ -12,6 +12,7 @@ import {
   Res,
   Options,
   Delete,
+  Headers,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { map } from 'rxjs/operators';
@@ -49,15 +50,21 @@ export class GithubController {
     private readonly eventRepository: Repository<Event>,
   ) {}
 
-  private verifyToken(token: string): any {
-    if (!token) {
+  private verifyToken(token?: string, authHeader?: string): any {
+    const authToken =
+      token ||
+      (authHeader?.startsWith('Bearer ')
+        ? authHeader.split(' ')[1]
+        : undefined);
+
+    if (!authToken) {
       throw new UnauthorizedException('Token required');
     }
 
     try {
       const jwtSecret =
         this.configService.get<string>('JWT_SECRET') || DEFAULT_JWT_SECRET;
-      return this.jwtService.verify(token, { secret: jwtSecret });
+      return this.jwtService.verify(authToken, { secret: jwtSecret });
     } catch (error) {
       console.error('JWT verification failed:', error);
       throw new UnauthorizedException('Invalid token');
@@ -174,6 +181,7 @@ export class GithubController {
   @Sse('events/length/stream')
   streamEventsLength(
     @Query('token') token: string,
+    @Headers('authorization') authHeader: string,
     @Res({ passthrough: true }) res: Response,
   ): Observable<{ data: string; type: string }> {
     // Configuration CORS spécifique pour les SSE
@@ -192,7 +200,7 @@ export class GithubController {
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
 
     // Vérifier le token
-    this.verifyToken(token);
+    this.verifyToken(token, authHeader);
 
     return this.appService.getEventsCountStream().pipe(
       map((count) => ({
@@ -220,6 +228,7 @@ export class GithubController {
   @Sse('posts/stats/stream')
   streamPostsStats(
     @Query('token') token: string,
+    @Headers('authorization') authHeader: string,
     @Res({ passthrough: true }) res: Response,
   ): Observable<{ data: string; type: string }> {
     // Configuration CORS spécifique pour les SSE
@@ -238,7 +247,7 @@ export class GithubController {
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
 
     // Vérifier le token
-    this.verifyToken(token);
+    this.verifyToken(token, authHeader);
 
     return this.appService.getPostsStatsStream().pipe(
       map((data) => ({
@@ -266,6 +275,7 @@ export class GithubController {
   @Sse('events/stream')
   streamEventsWithUpdates(
     @Query('token') token: string,
+    @Headers('authorization') authHeader: string,
     @Res({ passthrough: true }) res: Response,
   ): Observable<{ data: string; type: string }> {
     // Configuration CORS spécifique pour les SSE
@@ -284,7 +294,7 @@ export class GithubController {
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
 
     // Vérifier le token
-    this.verifyToken(token);
+    this.verifyToken(token, authHeader);
 
     return this.appService.getEventsStreamWithUpdates().pipe(
       map((data) => ({

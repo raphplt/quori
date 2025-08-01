@@ -1,6 +1,7 @@
 "use client";
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
+import { EventSourcePolyfill } from "event-source-polyfill";
 
 interface UseEventsCountSSEReturn {
   eventsLength: number | undefined;
@@ -35,13 +36,16 @@ export function useEventsCountSSE(): UseEventsCountSSEReturn {
 
       const baseUrl =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const url = `${baseUrl}/github/events/length/stream?token=${session.apiToken}`;
+      const url = `${baseUrl}/github/events/length/stream`;
 
-      const eventSource = new EventSource(url, {
+      const eventSource = new EventSourcePolyfill(url, {
         withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${session.apiToken}`,
+        },
       });
 
-      eventSourceRef.current = eventSource;
+      eventSourceRef.current = eventSource as unknown as EventSource;
 
       eventSource.onopen = () => {
         console.log("🔗 SSE Events Count connected");
@@ -50,29 +54,29 @@ export function useEventsCountSSE(): UseEventsCountSSEReturn {
         reconnectAttemptsRef.current = 0;
       };
 
-      eventSource.onmessage = event => {
+      eventSource.onmessage = (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data);
           if (typeof data.count === "number") {
             setEventsLength(data.count);
           }
-        } catch (err) {
+        } catch (err: unknown) {
           console.error("Error parsing SSE event data:", err);
         }
       };
 
-      eventSource.addEventListener("count", event => {
+      (eventSource as any).addEventListener("count", (event: Event) => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse((event as MessageEvent).data);
           if (typeof data.count === "number") {
             setEventsLength(data.count);
           }
-        } catch (err) {
+        } catch (err: unknown) {
           console.error("Error parsing SSE count event:", err);
         }
       });
 
-      eventSource.onerror = err => {
+      (eventSource as any).onerror = (err: Event) => {
         console.error("SSE Events Count error:", err);
         setIsConnected(false);
 
