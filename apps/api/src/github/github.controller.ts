@@ -382,7 +382,10 @@ export class GithubController {
 
   @UseGuards(JwtAuthGuard)
   @Get('app/debug')
-  async debugAppInstallations(@Request() req: AuthenticatedRequest) {
+  async debugAppInstallations(
+    @Request() req: AuthenticatedRequest,
+    @Query('code') code?: string,
+  ) {
     const user = req.user;
 
     console.log('=== DEBUG APP INSTALLATIONS ===');
@@ -393,7 +396,6 @@ export class GithubController {
       'Type:',
       typeof user.githubId,
     );
-    console.log('User GitHub Token exists:', !!user.githubAccessToken);
 
     // Récupérer toutes les installations
     const allInstallations = await this.appService.getAllInstallations();
@@ -405,14 +407,13 @@ export class GithubController {
     );
     console.log('User installations:', userInstallations);
 
-    // Essayer de récupérer depuis GitHub
+    // Essayer de récupérer depuis GitHub si un code est fourni
     let githubInstallations: Installation[] = [];
-    if (user.githubAccessToken) {
+    if (code) {
       try {
+        const token = await this.appService.exchangeCodeForUserToken(code);
         githubInstallations =
-          await this.appService.syncUserInstallationsFromGitHub(
-            user.githubAccessToken,
-          );
+          await this.appService.syncUserInstallationsFromGitHub(token);
         console.log('GitHub installations:', githubInstallations);
       } catch (error) {
         console.error('Error fetching from GitHub:', error);
@@ -423,7 +424,6 @@ export class GithubController {
       user: {
         id: user.id,
         githubId: user.githubId,
-        hasGithubToken: !!user.githubAccessToken,
       },
       allInstallations,
       userInstallations,
@@ -433,7 +433,10 @@ export class GithubController {
 
   @UseGuards(JwtAuthGuard)
   @Get('app/status')
-  async getAppInstallationStatus(@Request() req: AuthenticatedRequest) {
+  async getAppInstallationStatus(
+    @Request() req: AuthenticatedRequest,
+    @Query('code') code?: string,
+  ) {
     const user = req.user;
 
     console.error('userid:', user.id);
@@ -447,12 +450,13 @@ export class GithubController {
       `🔄 Found ${installations.length} installations in DB for user ${user.githubId}`,
     );
 
-    if (installations.length === 0 && user.githubAccessToken) {
+    if (installations.length === 0 && code) {
       console.log('🔄 No installations found in DB, syncing from GitHub...');
 
       try {
+        const token = await this.appService.exchangeCodeForUserToken(code);
         installations = await this.appService.syncUserInstallationsFromGitHub(
-          user.githubAccessToken,
+          token,
         );
 
         console.log(
@@ -620,20 +624,22 @@ export class GithubController {
 
   @UseGuards(JwtAuthGuard)
   @Post('app/sync')
-  async syncInstallations(@Request() req: AuthenticatedRequest) {
+  async syncInstallations(
+    @Request() req: AuthenticatedRequest,
+    @Body('code') code: string,
+  ) {
     const user = req.user;
 
     console.log(`🔄 Manual sync requested for user ${user.githubId}`);
 
-    if (!user.githubAccessToken) {
-      throw new UnauthorizedException('No GitHub access token found for user');
+    if (!code) {
+      throw new UnauthorizedException('Missing GitHub OAuth code');
     }
 
     try {
+      const token = await this.appService.exchangeCodeForUserToken(code);
       const syncedInstallations =
-        await this.appService.syncUserInstallationsFromGitHub(
-          user.githubAccessToken,
-        );
+        await this.appService.syncUserInstallationsFromGitHub(token);
 
       return {
         message: 'Installations synchronized successfully',

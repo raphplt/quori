@@ -243,13 +243,41 @@ export class GithubAppService {
     );
   }
 
+  async exchangeCodeForUserToken(code: string): Promise<string> {
+    const clientId = this.config.get<string>('GITHUB_APP_CLIENT_ID');
+    const clientSecret = this.config.get<string>('GITHUB_APP_CLIENT_SECRET');
+
+    const response = await fetch(
+      'https://github.com/login/oauth/access_token',
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code }),
+      },
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Failed to exchange code for token: ${text}`);
+    }
+
+    const data: { access_token?: string } = await response.json();
+    if (!data.access_token) {
+      throw new Error('No access_token returned from GitHub');
+    }
+    return data.access_token;
+  }
+
   async syncUserInstallationsFromGitHub(
-    githubAccessToken: string,
+    userToken: string,
   ): Promise<Installation[]> {
     console.log('🔧 syncUserInstallationsFromGitHub - Starting sync...');
 
     const octokit = new Octokit({
-      auth: githubAccessToken,
+      auth: userToken,
     });
 
     // Debug: vérifier les scopes du token
@@ -260,7 +288,7 @@ export class GithubAppService {
       // Faire un appel direct pour voir les scopes
       const scopeCheck = await fetch('https://api.github.com/user', {
         headers: {
-          Authorization: `token ${githubAccessToken}`,
+          Authorization: `token ${userToken}`,
           Accept: 'application/vnd.github.v3+json',
         },
       });
