@@ -68,7 +68,7 @@ npm run format      # Format avec Prettier
 
 **apps/api/.env**
 
-````bash
+```bash
 # Database
 DATABASE_URL="postgresql://user:password@localhost:5432/quori"
 
@@ -86,13 +86,16 @@ OPENAI_API_KEY="sk-..."
 # Sessions & Encryption
 SESSION_SECRET="your-session-secret-key"
 ENCRYPTION_KEY="change-me"
+```
 
 **apps/web/.env.local**
 ```bash
 NEXT_PUBLIC_API_URL="http://localhost:3001"
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your_nextauth_secret"
-````
+GITHUB_CLIENT_ID="your_github_app_id"
+GITHUB_CLIENT_SECRET="your_github_app_secret"
+```
 
 ## API Quota
 
