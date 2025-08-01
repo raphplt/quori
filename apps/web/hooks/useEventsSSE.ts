@@ -1,11 +1,12 @@
 "use client";
+
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import { GitHubEvent } from "@/types/githubEvent";
 
 interface UseEventsSSEReturn {
-  events: GitHubEvent[] | undefined;
+  events?: GitHubEvent[];
   isConnected: boolean;
   error: Error | null;
 }
@@ -15,125 +16,122 @@ interface UseEventsSSEReturn {
  */
 export function useEventsSSE(): UseEventsSSEReturn {
   const { data: session } = useSession();
-  const [events, setEvents] = useState<GitHubEvent[] | undefined>(undefined);
+  const [events, setEvents] = useState<GitHubEvent[]>();
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  // On n’a plus besoin de EventSourcePolyfill dans le type, juste EventSource
   const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const maxReconnectAttempts = 3;
+  const reconnectTimeoutRef = useRef<number | null>(null);
   const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 3;
 
   useEffect(() => {
-    if (!session?.apiToken) {
-      return;
-    }
+    if (!session?.apiToken) return;
 
     const connectSSE = () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
+      // ferme l'ancienne si existante
+      eventSourceRef.current?.close();
 
       const baseUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+        process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
       const url = `${baseUrl}/github/events/stream`;
 
-      const eventSource = new EventSourcePolyfill(url, {
+      // crée d'abord le polyfill, puis on le caste en EventSource pur
+      const raw = new EventSourcePolyfill(url, {
         withCredentials: true,
-        headers: {
-          Authorization: `Bearer ${session.apiToken}`,
-        },
+        headers: { Authorization: `Bearer ${session.apiToken}` },
       });
+      const es = raw as unknown as EventSource;
+      eventSourceRef.current = es;
 
-      eventSourceRef.current = eventSource as unknown as EventSource;
-
-      eventSource.onopen = () => {
+      // connexion ouverte
+      es.onopen = () => {
         console.log("🔗 SSE Events connected");
         setIsConnected(true);
         setError(null);
         reconnectAttemptsRef.current = 0;
       };
 
-      // Écouter les événements initiaux
-      (eventSource as any).addEventListener("events", (event: Event) => {
+      // événement initial avec la liste complète
+      es.addEventListener("events", (ev: MessageEvent) => {
         try {
-          const data = JSON.parse((event as MessageEvent).data);
-          if (data.events) {
-            setEvents(data.events);
-          }
-        } catch (err: unknown) {
-          console.error("Error parsing SSE events event:", err);
+          const payload = JSON.parse(ev.data) as unknown as {
+            events: GitHubEvent[];
+          };
+          if (payload.events) setEvents(payload.events);
+        } catch (parseErr: unknown) {
+          console.error("Error parsing 'events':", parseErr);
         }
       });
 
-      // Écouter les nouveaux événements
-      (eventSource as any).addEventListener("new-event", (event: Event) => {
+      // nouvel événement ajouté
+      es.addEventListener("new-event", (ev: MessageEvent) => {
         try {
-          const data = JSON.parse((event as MessageEvent).data);
-          if (data.event) {
-            setEvents(prevEvents => {
-              if (!prevEvents) return [data.event];
-              return [data.event, ...prevEvents];
-            });
+          const payload = JSON.parse(ev.data) as unknown as {
+            event: GitHubEvent;
+          };
+          if (payload.event) {
+            setEvents(prev =>
+              prev ? [payload.event, ...prev] : [payload.event]
+            );
           }
-        } catch (err: unknown) {
-          console.error("Error parsing SSE new-event event:", err);
+        } catch (parseErr: unknown) {
+          console.error("Error parsing 'new-event':", parseErr);
         }
       });
 
-      // Écouter les mises à jour d'événements
-      (eventSource as any).addEventListener("event-update", (event: Event) => {
+      // mise à jour d'un événement existant
+      es.addEventListener("event-update", (ev: MessageEvent) => {
         try {
-          const data = JSON.parse((event as MessageEvent).data);
-          if (data.event) {
-            setEvents(prevEvents => {
-              if (!prevEvents) return [data.event];
-              return prevEvents.map(event =>
-                event.delivery_id === data.event.delivery_id
-                  ? data.event
-                  : event
-              );
-            });
+          const payload = JSON.parse(ev.data) as unknown as {
+            event: GitHubEvent;
+          };
+          if (payload.event) {
+            setEvents(prev =>
+              prev
+                ? prev.map(e =>
+                    e.delivery_id === payload.event.delivery_id
+                      ? payload.event
+                      : e
+                  )
+                : [payload.event]
+            );
           }
-        } catch (err: unknown) {
-          console.error("Error parsing SSE event-update event:", err);
+        } catch (parseErr: unknown) {
+          console.error("Error parsing 'event-update':", parseErr);
         }
       });
 
-      // Écouter les suppressions d'événements
-      (eventSource as any).addEventListener("event-delete", (event: Event) => {
+      // suppression d'un événement
+      es.addEventListener("event-delete", (ev: MessageEvent) => {
         try {
-          const data = JSON.parse((event as MessageEvent).data);
-          if (data.eventId) {
-            setEvents(prevEvents => {
-              if (!prevEvents) return [];
-              return prevEvents.filter(
-                event => event.delivery_id !== data.eventId
-              );
-            });
+          const payload = JSON.parse(ev.data) as unknown as { eventId: string };
+          if (payload.eventId) {
+            setEvents(prev =>
+              prev ? prev.filter(e => e.delivery_id !== payload.eventId) : []
+            );
           }
-        } catch (err: unknown) {
-          console.error("Error parsing SSE event-delete event:", err);
+        } catch (parseErr: unknown) {
+          console.error("Error parsing 'event-delete':", parseErr);
         }
       });
 
-      (eventSource as any).onerror = (err: Event) => {
-        console.error("SSE Events error:", err);
+      // erreur + logique de reconnexion
+      es.onerror = () => {
+        console.error("SSE Events error");
         setIsConnected(false);
 
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
           const delay = Math.min(
-            1000 * Math.pow(2, reconnectAttemptsRef.current),
-            30000
+            1000 * 2 ** reconnectAttemptsRef.current,
+            30_000
           );
-          reconnectAttemptsRef.current++;
-
+          reconnectAttemptsRef.current += 1;
           console.log(
-            `🔄 Reconnecting SSE Events in ${delay}ms (attempt ${reconnectAttemptsRef.current})`
+            `🔄 Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current})`
           );
-
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connectSSE();
-          }, delay);
+          reconnectTimeoutRef.current = window.setTimeout(connectSSE, delay);
         } else {
           setError(new Error("Max reconnection attempts reached"));
         }
@@ -142,23 +140,15 @@ export function useEventsSSE(): UseEventsSSEReturn {
 
     connectSSE();
 
-    // Cleanup
+    // cleanup
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-      if (reconnectTimeoutRef.current) {
+      eventSourceRef.current?.close();
+      if (reconnectTimeoutRef.current !== null) {
         clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
       }
       setIsConnected(false);
     };
   }, [session?.apiToken]);
 
-  return {
-    events,
-    isConnected,
-    error,
-  };
+  return { events, isConnected, error };
 }
