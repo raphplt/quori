@@ -20,11 +20,6 @@ const LANGUAGES = [
   { value: "espagnol", label: "Espagnol" },
 ];
 
-const OUTPUTS = [
-  { value: "summary", label: "Résumé" },
-  { value: "post", label: "Post" },
-  { value: "tweet", label: "Tweet" },
-];
 
 export function UserPreferencesForm() {
   const { preferences, isLoading, error, savePreferences } = useUserPreferences();
@@ -37,8 +32,11 @@ export function UserPreferencesForm() {
     if (preferences) setForm(preferences);
   }, [preferences]);
 
-  const handleChange = (field: keyof UserPreferences, value: any) => {
-    setForm(f => ({ ...f, [field]: value }));
+  const handleChange = (
+    field: keyof UserPreferences,
+    value: unknown
+  ) => {
+    setForm(f => ({ ...f, [field]: value as never }));
   };
 
   const handleArrayChange = (field: keyof UserPreferences, value: string) => {
@@ -53,8 +51,12 @@ export function UserPreferencesForm() {
     try {
       await savePreferences(form);
       setSuccess(true);
-    } catch (e: any) {
-      setErrMsg(e.message || "Erreur lors de la sauvegarde");
+    } catch (e: unknown) {
+      setErrMsg(
+        e && typeof e === "object" && "message" in e
+          ? String((e as { message: string }).message)
+          : "Erreur lors de la sauvegarde"
+      );
     } finally {
       setSaving(false);
     }

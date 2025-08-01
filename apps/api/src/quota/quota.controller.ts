@@ -10,6 +10,7 @@ import {
   Res,
   Options,
   UnauthorizedException,
+  Headers,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { Observable } from 'rxjs';
@@ -35,14 +36,21 @@ export class QuotaController {
     private readonly configService: ConfigService,
   ) {}
 
-  private verifyToken(token: string): any {
-    if (!token) {
+  private verifyToken(token?: string, authHeader?: string): any {
+    const authToken =
+      token ||
+      (authHeader?.startsWith('Bearer ')
+        ? authHeader.split(' ')[1]
+        : undefined);
+
+    if (!authToken) {
       throw new UnauthorizedException('Token required');
     }
 
     try {
-      const jwtSecret = this.configService.get<string>('JWT_SECRET') || DEFAULT_JWT_SECRET;
-      return this.jwtService.verify(token, { secret: jwtSecret });
+      const jwtSecret =
+        this.configService.get<string>('JWT_SECRET') || DEFAULT_JWT_SECRET;
+      return this.jwtService.verify(authToken, { secret: jwtSecret });
     } catch (error) {
       console.error('JWT verification failed:', error);
       throw new UnauthorizedException('Invalid token');
@@ -79,6 +87,7 @@ export class QuotaController {
   @Sse('quota/stream')
   streamQuota(
     @Query('token') token: string,
+    @Headers('authorization') authHeader: string,
     @Res({ passthrough: true }) res: Response,
   ): Observable<{ data: string; type: string }> {
     // Configuration CORS spécifique pour les SSE
@@ -96,10 +105,16 @@ export class QuotaController {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
 
-    // Vérifier le token
-    this.verifyToken(token);
+    const authToken =
+      token ||
+      (authHeader?.startsWith('Bearer ')
+        ? authHeader.split(' ')[1]
+        : undefined);
 
-    return this.quotaService.getQuotaStream(token).pipe(
+    // Vérifier le token
+    this.verifyToken(authToken);
+
+    return this.quotaService.getQuotaStream(authToken as string).pipe(
       map((data) => ({
         data: JSON.stringify(data),
         type: data.type,

@@ -1,6 +1,7 @@
 "use client";
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
+import { EventSourcePolyfill } from "event-source-polyfill";
 import { GitHubEvent } from "@/types/githubEvent";
 
 interface UseEventsSSEReturn {
@@ -34,13 +35,16 @@ export function useEventsSSE(): UseEventsSSEReturn {
 
       const baseUrl =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const url = `${baseUrl}/github/events/stream?token=${session.apiToken}`;
+      const url = `${baseUrl}/github/events/stream`;
 
-      const eventSource = new EventSource(url, {
+      const eventSource = new EventSourcePolyfill(url, {
         withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${session.apiToken}`,
+        },
       });
 
-      eventSourceRef.current = eventSource;
+      eventSourceRef.current = eventSource as unknown as EventSource;
 
       eventSource.onopen = () => {
         console.log("🔗 SSE Events connected");
@@ -50,36 +54,36 @@ export function useEventsSSE(): UseEventsSSEReturn {
       };
 
       // Écouter les événements initiaux
-      eventSource.addEventListener("events", event => {
+      (eventSource as any).addEventListener("events", (event: Event) => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse((event as MessageEvent).data);
           if (data.events) {
             setEvents(data.events);
           }
-        } catch (err) {
+        } catch (err: unknown) {
           console.error("Error parsing SSE events event:", err);
         }
       });
 
       // Écouter les nouveaux événements
-      eventSource.addEventListener("new-event", event => {
+      (eventSource as any).addEventListener("new-event", (event: Event) => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse((event as MessageEvent).data);
           if (data.event) {
             setEvents(prevEvents => {
               if (!prevEvents) return [data.event];
               return [data.event, ...prevEvents];
             });
           }
-        } catch (err) {
+        } catch (err: unknown) {
           console.error("Error parsing SSE new-event event:", err);
         }
       });
 
       // Écouter les mises à jour d'événements
-      eventSource.addEventListener("event-update", event => {
+      (eventSource as any).addEventListener("event-update", (event: Event) => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse((event as MessageEvent).data);
           if (data.event) {
             setEvents(prevEvents => {
               if (!prevEvents) return [data.event];
@@ -90,15 +94,15 @@ export function useEventsSSE(): UseEventsSSEReturn {
               );
             });
           }
-        } catch (err) {
+        } catch (err: unknown) {
           console.error("Error parsing SSE event-update event:", err);
         }
       });
 
       // Écouter les suppressions d'événements
-      eventSource.addEventListener("event-delete", event => {
+      (eventSource as any).addEventListener("event-delete", (event: Event) => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse((event as MessageEvent).data);
           if (data.eventId) {
             setEvents(prevEvents => {
               if (!prevEvents) return [];
@@ -107,12 +111,12 @@ export function useEventsSSE(): UseEventsSSEReturn {
               );
             });
           }
-        } catch (err) {
+        } catch (err: unknown) {
           console.error("Error parsing SSE event-delete event:", err);
         }
       });
 
-      eventSource.onerror = err => {
+      (eventSource as any).onerror = (err: Event) => {
         console.error("SSE Events error:", err);
         setIsConnected(false);
 

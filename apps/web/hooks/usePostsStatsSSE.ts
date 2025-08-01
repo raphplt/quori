@@ -1,6 +1,7 @@
 "use client";
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useRef } from "react";
+import { EventSourcePolyfill } from "event-source-polyfill";
 import { Post } from "@/types/post";
 
 interface PostsStats {
@@ -54,13 +55,16 @@ export function usePostsStatsSSE(): UsePostsStatsSSEReturn {
 
       const baseUrl =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const url = `${baseUrl}/github/posts/stats/stream?token=${session.apiToken}`;
+      const url = `${baseUrl}/github/posts/stats/stream`;
 
-      const eventSource = new EventSource(url, {
+      const eventSource = new EventSourcePolyfill(url, {
         withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${session.apiToken}`,
+        },
       });
 
-      eventSourceRef.current = eventSource;
+      eventSourceRef.current = eventSource as unknown as EventSource;
 
       eventSource.onopen = () => {
         console.log("🔗 SSE Posts Stats connected");
@@ -70,54 +74,68 @@ export function usePostsStatsSSE(): UsePostsStatsSSEReturn {
       };
 
       // Écouter les événements de stats
-      eventSource.addEventListener("stats", event => {
+      (eventSource as any).addEventListener("stats", (event: Event) => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse((event as MessageEvent).data) as {
+            stats?: PostsStats;
+          };
           if (data.stats) {
             setStats(data.stats);
           }
-        } catch (err) {
+        } catch (err: unknown) {
           console.error("Error parsing SSE stats event:", err);
         }
       });
 
       // Écouter les événements de posts par statut
-      eventSource.addEventListener("posts-by-status", event => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.postsByStatus) {
-            setPostsByStatus(data.postsByStatus);
+      (eventSource as any).addEventListener(
+        "posts-by-status",
+        (event: Event) => {
+          try {
+            const data = JSON.parse((event as MessageEvent).data) as {
+              postsByStatus?: PostsByStatus;
+            };
+            if (data.postsByStatus) {
+              setPostsByStatus(data.postsByStatus);
+            }
+          } catch (err: unknown) {
+            console.error("Error parsing SSE posts-by-status event:", err);
           }
-        } catch (err) {
-          console.error("Error parsing SSE posts-by-status event:", err);
         }
-      });
+      );
 
       // Écouter les mises à jour de stats
-      eventSource.addEventListener("stats-update", event => {
+      (eventSource as any).addEventListener("stats-update", (event: Event) => {
         try {
-          const data = JSON.parse(event.data);
+          const data = JSON.parse((event as MessageEvent).data) as {
+            stats?: PostsStats;
+          };
           if (data.stats) {
             setStats(data.stats);
           }
-        } catch (err) {
+        } catch (err: unknown) {
           console.error("Error parsing SSE stats-update event:", err);
         }
       });
 
       // Écouter les mises à jour de posts
-      eventSource.addEventListener("posts-update", event => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.postsByStatus) {
-            setPostsByStatus(data.postsByStatus);
+      (eventSource as any).addEventListener(
+        "posts-update",
+        (event: Event) => {
+          try {
+            const data = JSON.parse((event as MessageEvent).data) as {
+              postsByStatus?: PostsByStatus;
+            };
+            if (data.postsByStatus) {
+              setPostsByStatus(data.postsByStatus);
+            }
+          } catch (err: unknown) {
+            console.error("Error parsing SSE posts-update event:", err);
           }
-        } catch (err) {
-          console.error("Error parsing SSE posts-update event:", err);
         }
-      });
+      );
 
-      eventSource.onerror = err => {
+      (eventSource as any).onerror = (err: Event) => {
         console.error("SSE Posts Stats error:", err);
         setIsConnected(false);
 
