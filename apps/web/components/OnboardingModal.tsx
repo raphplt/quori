@@ -80,7 +80,6 @@ export const OnboardingModal: React.FC = () => {
     events: allEvents,
     isLoading: isLoadingEvents,
     error: eventsError,
-    refetch: refetchEvents,
   } = useGitHubEvents();
   const [selectedCommitId, setSelectedCommitId] = React.useState<string | null>(
     null
@@ -273,14 +272,6 @@ export const OnboardingModal: React.FC = () => {
               {eventsError instanceof Error
                 ? eventsError.message
                 : String(eventsError)}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => refetchEvents()}
-                className="ml-2"
-              >
-                Réessayer
-              </Button>
             </div>
           ) : (
             <div className="w-full max-h-64 overflow-y-auto rounded mb-4 bg-muted/30">
