@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { SidebarItem } from "@/components/layout/Sidebar";
 import { useSidebarBadgeData } from "@/hooks/useSidebarBadgeData";
+import { useSession } from "next-auth/react";
 import {
   LayoutDashboard,
   GitBranch,
@@ -17,14 +18,17 @@ import {
   Clock,
   Send,
   Archive,
+  Shield,
 } from "lucide-react";
 
 export function useSidebarItems(): SidebarItem[] {
   const badgeData = useSidebarBadgeData();
+  const { data: session } = useSession();
 
   return useMemo(
-    () => [
-      { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    () => {
+      const items: SidebarItem[] = [
+        { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       {
         title: "Dépôts",
         href: "/repositories",
@@ -86,7 +90,16 @@ export function useSidebarItems(): SidebarItem[] {
       },
       { title: "Paramètres", href: "/settings", icon: Settings },
       { title: "Aide & Support", href: "/help", icon: HelpCircle },
-    ],
-    [badgeData]
+    ];
+      if (session?.user.role === "admin") {
+        items.splice(1, 0, {
+          title: "Administration",
+          href: "/admin/users",
+          icon: Shield,
+        });
+      }
+      return items;
+    },
+    [badgeData, session?.user.role]
   );
 }

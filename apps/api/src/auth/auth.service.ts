@@ -9,6 +9,7 @@ export interface JwtPayload {
   sub: string;
   username: string;
   email: string;
+  role: string;
   iat?: number;
   exp?: number;
 }
@@ -66,6 +67,7 @@ export class AuthService {
       sub: user.id,
       username: user.username,
       email: user.email,
+      role: user.role,
     };
 
     return this.jwtService.sign(payload);
