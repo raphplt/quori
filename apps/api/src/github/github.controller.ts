@@ -60,7 +60,7 @@ export class GithubController {
 
     if (isProduction) {
       const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-      if (frontendUrl?.includes('www.quori.dev')) {
+      if (frontendUrl?.includes('quori.dev')) {
         return frontendUrl;
       }
       return 'https://www.quori.dev';
