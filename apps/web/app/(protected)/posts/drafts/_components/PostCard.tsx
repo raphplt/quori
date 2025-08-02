@@ -41,11 +41,12 @@ import {
   Trash2,
 } from "lucide-react";
 import React from "react";
-import { statusLabels } from "../page";
+
 import toast from "react-hot-toast";
 import { authenticatedFetch } from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { statusLabels } from "../../utils";
 
 type PostCardProps = {
   post: Post;
