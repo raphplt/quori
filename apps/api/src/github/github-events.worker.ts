@@ -42,6 +42,7 @@ async function bootstrap() {
     dataSource.getRepository(Installation),
     dataSource.getRepository(GithubEvent),
     dataSource.getRepository(Post),
+    dataSource,
   );
 
   const eventsRepository = dataSource.getRepository(GithubEvent);
