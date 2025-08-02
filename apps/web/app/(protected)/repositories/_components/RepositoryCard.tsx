@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, GitFork, Code, ExternalLink, Calendar } from "lucide-react";
+import Link from "next/link";
 
 interface Repository {
   id: number;
@@ -30,58 +31,69 @@ interface RepositoryCardProps {
 export const RepositoryCard: React.FC<RepositoryCardProps> = ({
   repository: repo,
 }) => {
+  const handleExternalLinkClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.open(repo.html_url, "_blank", "noopener,noreferrer");
+  };
+
   return (
-    <Card className="hover:shadow-lg transition-shadow duration-200">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-lg font-semibold line-clamp-1">
-            <a
-              href={repo.html_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:underline flex items-center gap-2"
-            >
-              {repo.name}
-              <ExternalLink className="h-4 w-4" />
-            </a>
-          </CardTitle>
-          <Badge variant={repo.private ? "secondary" : "default"}>
-            {repo.private ? "Privé" : "Public"}
-          </Badge>
-        </div>
-        <CardDescription className="text-sm text-muted-foreground">
-          {repo.full_name}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {repo.description && (
-          <p className="text-sm text-gray-700 line-clamp-2">
-            {repo.description}
-          </p>
-        )}
-
-        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-          {repo.language && (
-            <div className="flex items-center gap-1">
-              <Code className="h-4 w-4" />
-              {repo.language}
-            </div>
+    <Link href={`/repositories/${repo.id}`}>
+      <Card className="hover:shadow-lg transition-shadow duration-200">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <CardTitle className="text-lg font-semibold line-clamp-1">
+              <span
+                onClick={handleExternalLinkClick}
+                className="text-primary hover:underline flex items-center gap-2 cursor-pointer"
+              >
+                {repo.name}
+                <ExternalLink className="h-4 w-4" />
+              </span>
+            </CardTitle>
+            <Badge variant={repo.private ? "secondary" : "default"}>
+              {repo.private ? "Privé" : "Public"}
+            </Badge>
+          </div>
+          <CardDescription className="text-sm text-muted-foreground">
+            {repo.full_name}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {repo.description ? (
+            <p className="text-sm text-gray-700 line-clamp-2">
+              {repo.description}
+            </p>
+          ) : (
+            <p className="text-sm text-gray-700 line-clamp-2">
+              Aucune description fournie
+            </p>
           )}
-          <div className="flex items-center gap-1">
-            <Star className="h-4 w-4" />
-            {repo.stargazers_count}
-          </div>
-          <div className="flex items-center gap-1">
-            <GitFork className="h-4 w-4" />
-            {repo.forks_count}
-          </div>
-        </div>
 
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Calendar className="h-3 w-3" />
-          Mis à jour le {new Date(repo.updated_at).toLocaleDateString("fr-FR")}
-        </div>
-      </CardContent>
-    </Card>
+          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+            {repo.language && (
+              <div className="flex items-center gap-1">
+                <Code className="h-4 w-4" />
+                {repo.language}
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              <Star className="h-4 w-4" />
+              {repo.stargazers_count}
+            </div>
+            <div className="flex items-center gap-1">
+              <GitFork className="h-4 w-4" />
+              {repo.forks_count}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Calendar className="h-3 w-3" />
+            Mis à jour le{" "}
+            {new Date(repo.updated_at).toLocaleDateString("fr-FR")}
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 };

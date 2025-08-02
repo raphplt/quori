@@ -68,6 +68,7 @@ interface PayloadData {
   };
 }
 
+//TODO / trop long, à refactor
 export default function EventDetailPage({
   params,
 }: {
