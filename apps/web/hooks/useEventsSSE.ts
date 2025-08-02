@@ -45,7 +45,6 @@ export function useEventsSSE(): UseEventsSSEReturn {
 
       // connexion ouverte
       es.onopen = () => {
-        console.log("🔗 SSE Events connected");
         setIsConnected(true);
         setError(null);
         reconnectAttemptsRef.current = 0;
@@ -117,7 +116,6 @@ export function useEventsSSE(): UseEventsSSEReturn {
 
       // erreur + logique de reconnexion
       es.onerror = () => {
-        console.error("SSE Events error");
         setIsConnected(false);
 
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {

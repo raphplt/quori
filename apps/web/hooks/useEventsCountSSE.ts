@@ -46,7 +46,6 @@ export function useEventsCountSSE(): UseEventsCountSSEReturn {
 
       // Connexion ouverte
       es.onopen = () => {
-        console.log("🔗 SSE Events Count connected");
         setIsConnected(true);
         setError(null);
         reconnectAttemptsRef.current = 0;
@@ -78,7 +77,6 @@ export function useEventsCountSSE(): UseEventsCountSSEReturn {
 
       // Gestion des erreurs et reconnexion
       es.onerror = () => {
-        console.error("SSE Events Count error");
         setIsConnected(false);
 
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
@@ -87,9 +85,6 @@ export function useEventsCountSSE(): UseEventsCountSSEReturn {
             30_000
           );
           reconnectAttemptsRef.current += 1;
-          console.log(
-            `🔄 Reconnecting SSE Events Count in ${delay}ms (attempt ${reconnectAttemptsRef.current})`
-          );
           reconnectTimeoutRef.current = window.setTimeout(connectSSE, delay);
         } else {
           setError(new Error("Max reconnection attempts reached"));
