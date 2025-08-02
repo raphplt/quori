@@ -2,7 +2,6 @@ import { Body, Controller, Headers, Post, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { GithubAppService } from './github-app.service';
 
-//TODO : retirer les commentaires eslint une fois le code validé
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument */
 
 @Controller('github/events')
