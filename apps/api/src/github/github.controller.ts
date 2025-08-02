@@ -55,25 +55,11 @@ export class GithubController {
     private readonly eventRepository: Repository<Event>,
   ) {}
 
-  private getOriginUrl(): string {
-    const isProduction = this.configService.get('NODE_ENV') === 'production';
-
-    if (isProduction) {
-      const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-      if (frontendUrl?.includes('quori.dev')) {
-        return frontendUrl;
-      }
-      return 'https://www.quori.dev';
-    }
-
-    return (
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000'
-    );
-  }
-
   private setCorsHeaders(res: Response): void {
-    const originUrl = this.getOriginUrl();
-    res.setHeader('Access-Control-Allow-Origin', originUrl);
+    const url: string =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    res.setHeader('Access-Control-Allow-Origin', url);
+
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     res.setHeader(
