@@ -1,6 +1,5 @@
 "use client";
 import { createContext, useContext, ReactNode, useRef, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import { GitHubEvent } from "@/types/githubEvent";
 import { useEventNotifications } from "@/hooks/useEventNotifications";
 import { useEventsCountSSE } from "@/hooks/useEventsCountSSE";
@@ -10,7 +9,6 @@ interface EventsContextType {
   events: GitHubEvent[] | undefined;
   isLoading: boolean;
   error: Error | null;
-  refetch: () => void;
   eventsLength?: number;
 }
 
@@ -21,7 +19,6 @@ interface EventsProviderProps {
 }
 
 export function EventsProvider({ children }: EventsProviderProps) {
-  const { data: session } = useSession();
   const previousEventsRef = useRef<GitHubEvent[]>([]);
   const { notifyNewEvent } = useEventNotifications();
 
@@ -51,16 +48,10 @@ export function EventsProvider({ children }: EventsProviderProps) {
     previousEventsRef.current = events;
   }, [events, notifyNewEvent]);
 
-  const refetch = () => {
-    // Avec SSE, pas besoin de refetch manuel
-    // Les données sont mises à jour automatiquement
-  };
-
   const value: EventsContextType = {
     events,
     isLoading: !isConnected && !error,
     error,
-    refetch,
     eventsLength,
   };
 

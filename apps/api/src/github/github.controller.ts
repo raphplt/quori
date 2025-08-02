@@ -72,8 +72,8 @@ export class GithubController {
   }
 
   private setCorsHeaders(res: Response): void {
-    const origin = this.getOriginUrl();
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    const originUrl = this.getOriginUrl();
+    res.setHeader('Access-Control-Allow-Origin', originUrl);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     res.setHeader(
@@ -304,9 +304,22 @@ export class GithubController {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('X-Accel-Buffering', 'no'); // Pour Nginx
+    res.setHeader('Transfer-Encoding', 'chunked');
 
-    // Vérifier le token
-    this.verifyToken(undefined, authHeader);
+    // Vérifier le token avec gestion d'erreur améliorée
+    try {
+      this.verifyToken(undefined, authHeader);
+    } catch {
+      // Retourner une erreur SSE valide
+      return new Observable((subscriber) => {
+        subscriber.next({
+          data: JSON.stringify({ error: 'Authentication failed' }),
+          type: 'error',
+        });
+        subscriber.complete();
+      });
+    }
 
     return this.appService.getEventsStreamWithUpdates().pipe(
       map((data) => ({

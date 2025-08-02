@@ -114,9 +114,32 @@ export function useEventsSSE(): UseEventsSSEReturn {
         }
       });
 
+      // gestion des erreurs côté serveur
+      es.addEventListener("error", (ev: MessageEvent) => {
+        try {
+          const payload = JSON.parse(ev.data) as unknown as { error: string };
+          if (payload.error) {
+            console.error("Server SSE error:", payload.error);
+            setError(new Error(payload.error));
+          }
+        } catch (parseErr: unknown) {
+          console.error("Error parsing 'error' event:", parseErr);
+        }
+      });
+
       // erreur + logique de reconnexion
-      es.onerror = () => {
+      es.onerror = errorEvent => {
+        console.error("🔥 SSE Error:", errorEvent);
         setIsConnected(false);
+
+        // Vérifier s'il s'agit d'une erreur d'authentification
+        if (
+          errorEvent.type === "error" &&
+          es.readyState === EventSource.CLOSED
+        ) {
+          setError(new Error("Authentication failed or connection refused"));
+          return;
+        }
 
         if (reconnectAttemptsRef.current < maxReconnectAttempts) {
           const delay = Math.min(
