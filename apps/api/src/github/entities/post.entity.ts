@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { Installation } from './installation.entity';
 import { Event } from './event.entity';
-import { PostRate, PostStatus } from 'src/common/dto/posts.enum';
+import { PostRate, PostStatus } from '../../common/dto/posts.enum';
 
 @Entity({ name: 'posts' })
 export class Post {
