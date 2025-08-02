@@ -125,13 +125,7 @@ export const authOptions: NextAuthConfig = {
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: [
-            "read:user",
-            "user:email",
-            "read:org",
-            "repo",
-          ].join(" "), // inclut les scopes nécessaires aux installations
-          prompt: "consent", // Force à redemander les permissions
+          scope: ["read:user", "user:email", "read:org", "repo"].join(" "),
         },
       },
     }),
