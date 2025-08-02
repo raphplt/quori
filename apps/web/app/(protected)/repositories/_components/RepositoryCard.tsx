@@ -61,11 +61,11 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         </CardHeader>
         <CardContent className="space-y-4">
           {repo.description ? (
-            <p className="text-sm text-gray-700 line-clamp-2">
+            <p className="text-sm text-default-700 line-clamp-2">
               {repo.description}
             </p>
           ) : (
-            <p className="text-sm text-gray-700 line-clamp-2">
+            <p className="text-sm text-default-700 line-clamp-2">
               Aucune description fournie
             </p>
           )}

@@ -55,7 +55,7 @@ const KpisCards = () => {
             <span className="text-green-600">+0.4%</span> vs mois dernier
           </p>
         </CardContent>
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-default-50/70">
           <Clock className="h-6 w-6 text-muted-foreground mb-1" />
           <span className="text-sm font-medium">À venir</span>
         </div>
@@ -73,7 +73,7 @@ const KpisCards = () => {
           <div className="text-2xl font-bold">1,234,567</div>
           <p className="text-xs text-muted-foreground">Ce mois-ci</p>
         </CardContent>
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-default-50/70">
           <Clock className="h-6 w-6 text-muted-foreground mb-1" />
           <span className="text-sm font-medium">À venir</span>
         </div>
