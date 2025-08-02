@@ -8,8 +8,8 @@ export interface User {
   role: string;
   linkedInId?: string;
   linkedinAccessToken?: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AuthResponse {
