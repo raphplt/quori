@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { sign } from 'jsonwebtoken';
 import { Octokit } from '@octokit/rest';
@@ -14,6 +18,7 @@ import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Installation } from './entities/installation.entity';
 import { Event as GithubEvent, EventType } from './entities/event.entity';
 import { Post } from './entities/post.entity';
+import { PostRate, PostStatus } from 'src/common/dto/posts.enum';
 
 interface GitHubAccount {
   id: number;
@@ -56,7 +61,6 @@ export class GithubAppService {
   private cache = new Map<number, { token: string; expires: number }>();
   private queue: Queue<Record<string, unknown>>;
   private eventSubject = new Subject<GithubEvent>();
-  private postsStatsSubject = new Subject<SSEEvent>();
 
   constructor(
     private config: ConfigService,
@@ -662,7 +666,7 @@ export class GithubAppService {
       summary: data.content.substring(0, 100),
       postContent: data.content,
       rawResponse: { eventType: data.eventType, repo: data.repo },
-      status: 'draft',
+      status: PostStatus.DRAFT,
     });
 
     await this.posts.save(post);
@@ -704,11 +708,11 @@ export class GithubAppService {
 
   async getPostsStats(): Promise<PostsStats> {
     const [drafts, ready, scheduled, published, failed] = await Promise.all([
-      this.posts.count({ where: { status: 'draft' } }),
-      this.posts.count({ where: { status: 'ready' } }),
-      this.posts.count({ where: { status: 'scheduled' } }),
-      this.posts.count({ where: { status: 'published' } }),
-      this.posts.count({ where: { status: 'failed' } }),
+      this.posts.count({ where: { status: PostStatus.DRAFT } }),
+      this.posts.count({ where: { status: PostStatus.READY } }),
+      this.posts.count({ where: { status: PostStatus.SCHEDULED } }),
+      this.posts.count({ where: { status: PostStatus.PUBLISHED } }),
+      this.posts.count({ where: { status: PostStatus.FAILED } }),
     ]);
 
     return {
@@ -723,31 +727,31 @@ export class GithubAppService {
   async getPostsByStatus(): Promise<PostsByStatus> {
     const [drafts, ready, scheduled, published, failed] = await Promise.all([
       this.posts.find({
-        where: { status: 'draft' },
+        where: { status: PostStatus.DRAFT },
         order: { createdAt: 'DESC' },
         take: 100,
         relations: ['installation'],
       }),
       this.posts.find({
-        where: { status: 'ready' },
+        where: { status: PostStatus.READY },
         order: { createdAt: 'DESC' },
         take: 100,
         relations: ['installation'],
       }),
       this.posts.find({
-        where: { status: 'scheduled' },
+        where: { status: PostStatus.SCHEDULED },
         order: { createdAt: 'DESC' },
         take: 100,
         relations: ['installation'],
       }),
       this.posts.find({
-        where: { status: 'published' },
+        where: { status: PostStatus.PUBLISHED },
         order: { createdAt: 'DESC' },
         take: 100,
         relations: ['installation'],
       }),
       this.posts.find({
-        where: { status: 'failed' },
+        where: { status: PostStatus.FAILED },
         order: { createdAt: 'DESC' },
         take: 100,
         relations: ['installation'],
@@ -761,5 +765,31 @@ export class GithubAppService {
       published,
       failed,
     };
+  }
+
+  async addPostFeedback(
+    postId: number,
+    feedback: { comment?: string; rate?: PostRate },
+  ): Promise<void> {
+    const post = await this.posts.findOne({ where: { id: postId } });
+    if (!post) {
+      throw new NotFoundException(`Post with id ${postId} not found`);
+    }
+
+    // Validation supplémentaire
+    if (feedback.comment && feedback.comment.trim().length === 0) {
+      feedback.comment = undefined;
+    }
+
+    // Ne mettre à jour que les champs fournis (éviter d'écraser avec undefined)
+    if (feedback.rate !== undefined) {
+      post.feedbackRate = feedback.rate;
+    }
+    if (feedback.comment !== undefined) {
+      post.feedbackComment = feedback.comment;
+    }
+
+    post.updatedAt = new Date();
+    await this.posts.save(post);
   }
 }

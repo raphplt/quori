@@ -8,12 +8,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OpenAI } from 'openai';
 import { GenerateDto, GenerateResultDto } from '../dto/generate.dto';
-import { Post, PostStatus } from '../entities/post.entity';
+import { Post } from '../entities/post.entity';
 import { Installation } from '../entities/installation.entity';
 import { Event } from '../entities/event.entity';
 import { Template } from '../../templates/entities/template.entity';
 import { PreferencesService } from '../../preferences/preferences.service';
 import { LinkedinPublisherService } from '../../linkedin/linkedin-publisher.service';
+import { PostStatus } from 'src/common/dto/posts.enum';
 
 interface QuotaInfo {
   date: string;
@@ -141,7 +142,7 @@ export class GenerateService {
       request_options: options,
       generated_at: new Date().toISOString(),
     };
-    post.status = 'draft';
+    post.status = PostStatus.DRAFT;
     post.tone = options?.tone;
     post.template = templateName;
 
@@ -316,7 +317,7 @@ export class GenerateService {
       throw new BadRequestException('Post not found');
     }
     post.status = status;
-    if (status === 'published') {
+    if (status === PostStatus.PUBLISHED) {
       post.publishedAt = new Date();
     }
     return this.postRepository.save(post);
@@ -330,15 +331,13 @@ export class GenerateService {
       throw new BadRequestException('Post not found');
     }
 
-    // Mettre à jour le statut à "published"
-    post.status = 'published';
+    post.status = PostStatus.PUBLISHED;
     post.publishedAt = new Date();
 
     // Publier sur LinkedIn
     try {
       const updatedPost = await this.linkedinPublisher.publish(userId, postId);
 
-      // S'assurer que le post a toutes les mises à jour
       const finalPost = await this.postRepository.findOne({
         where: { id: postId },
         relations: ['installation', 'event'],
@@ -346,13 +345,13 @@ export class GenerateService {
 
       return finalPost || updatedPost;
     } catch (error) {
-      // Si la publication LinkedIn échoue, marquer comme failed
-      post.status = 'failed';
+      post.status = PostStatus.FAILED;
       await this.postRepository.save(post);
 
-      throw new BadRequestException(
-        `Failed to publish on LinkedIn: ${error.message}`,
-      );
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Failed to publish to LinkedIn');
     }
   }
 

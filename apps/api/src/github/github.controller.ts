@@ -14,11 +14,11 @@ import {
   Delete,
   Headers,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { GithubService } from './github.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GitHubRepository } from './interfaces/github-repository.interface';
 import { GitHubRepositoriesPage } from './interfaces/github-repositories-page.interface';
@@ -27,14 +27,16 @@ import { GithubAppService } from './github-app.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { DEFAULT_JWT_SECRET } from '../common/constants';
-import { GenerateService } from './services/generate.service';
 import { GenerateDto, GenerateResultDto } from './dto/generate.dto';
-import { UpdatePostStatusDto } from './dto/post.dto';
+import { PostFeedbackDto, UpdatePostStatusDto } from './dto/post.dto';
 import { Event } from './entities/event.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateTestEventDto } from './dto/create-test-event.dto';
 import { UsersService, GitHubProfile } from '../users/users.service';
+import { PostStatus } from 'src/common/dto/posts.enum';
+import { GithubService } from 'src/github/github.service';
+import { GenerateService } from './services/generate.service';
 
 interface AuthenticatedRequest {
   user: User;
@@ -561,7 +563,7 @@ export class GithubController {
     const user = req.user;
 
     // Si le statut passe à "published", publier sur LinkedIn
-    if (body.status === 'published') {
+    if (body.status === PostStatus.PUBLISHED) {
       return await this.generateService.publishToLinkedIn(postId, user.id);
     }
 
@@ -577,7 +579,7 @@ export class GithubController {
     const postId = parseInt(id, 10);
     const user = req.user;
 
-    await this.generateService.updatePostStatus(postId, 'published');
+    await this.generateService.updatePostStatus(postId, PostStatus.PUBLISHED);
 
     return await this.generateService.publishToLinkedIn(postId, user.id);
   }
@@ -628,10 +630,6 @@ export class GithubController {
 
       const userInstallations = allInstallations.filter(
         (installation) => installation.account_id.toString() === user.githubId,
-      );
-
-      console.log(
-        `✅ Force sync completed. Found ${userInstallations.length} installations for user ${user.githubId}`,
       );
 
       return {
@@ -730,6 +728,34 @@ export class GithubController {
   async deletePost(@Param('id') id: string) {
     const postId = parseInt(id, 10);
     return await this.generateService.deletePost(postId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('post/:id/rate')
+  async ratePost(@Param('id') id: string, @Body() body: PostFeedbackDto) {
+    const postId = parseInt(id, 10);
+
+    if (isNaN(postId) || postId <= 0) {
+      throw new BadRequestException('Invalid post ID');
+    }
+
+    // Vérifier qu'au moins un des champs est fourni
+    if (!body.feedbackRate && !body.feedbackComment) {
+      throw new BadRequestException(
+        'At least one of feedbackRate or feedbackComment must be provided',
+      );
+    }
+
+    await this.appService.addPostFeedback(postId, {
+      comment: body.feedbackComment,
+      rate: body.feedbackRate,
+    });
+
+    return {
+      message: 'Feedback added successfully',
+      postId,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @UseGuards(JwtAuthGuard)

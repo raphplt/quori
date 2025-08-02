@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { GenerateService } from './services/generate.service';
 import { ConfigService } from '@nestjs/config';
 import { Template } from '../templates/entities/template.entity';
-import { OpenAI } from 'openai';
+import { GenerateService } from './services/generate.service';
 
 const mockCalls: any[] = [];
 vi.mock('openai', () => ({

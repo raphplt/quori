@@ -10,13 +10,7 @@ import {
 } from 'typeorm';
 import { Installation } from './installation.entity';
 import { Event } from './event.entity';
-
-export type PostStatus =
-  | 'draft' // non validé
-  | 'ready' // validé, prêt à poster
-  | 'scheduled' // programmé
-  | 'published' // publié
-  | 'failed'; // erreur de publication
+import { PostRate, PostStatus } from 'src/common/dto/posts.enum';
 
 @Entity({ name: 'posts' })
 export class Post {
@@ -56,6 +50,12 @@ export class Post {
     default: 'pending',
   })
   statusLinkedin!: 'pending' | 'published' | 'failed';
+
+  @Column('varchar', { default: 0, nullable: true })
+  feedbackRate?: PostRate;
+
+  @Column('text', { nullable: true })
+  feedbackComment?: string;
 
   @Column('timestamptz', { nullable: true })
   scheduledAt?: Date;

@@ -1,4 +1,5 @@
-import { IsString, IsIn } from 'class-validator';
+import { IsString, IsIn, IsOptional, IsEnum, MaxLength } from 'class-validator';
+import { PostRate, PostStatus } from 'src/common/dto/posts.enum';
 
 export class PostDto {
   id!: number;
@@ -33,6 +34,17 @@ export class PostsPageDto {
 
 export class UpdatePostStatusDto {
   @IsString()
-  @IsIn(['draft', 'ready', 'scheduled', 'published', 'failed'])
-  status!: 'draft' | 'ready' | 'scheduled' | 'published' | 'failed';
+  @IsIn(Object.values(PostStatus))
+  status!: PostStatus;
+}
+
+export class PostFeedbackDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  feedbackComment?: string;
+
+  @IsOptional()
+  @IsEnum(PostRate)
+  feedbackRate?: PostRate;
 }
