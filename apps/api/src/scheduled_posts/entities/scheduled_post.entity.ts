@@ -27,7 +27,7 @@ export class ScheduledPost {
   @Column('text')
   user_id!: string;
 
-  @ManyToOne(() => UserEntity, { eager: false })
+  @ManyToOne(() => UserEntity, { eager: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user?: UserEntity;
 

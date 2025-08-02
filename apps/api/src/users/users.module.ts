@@ -4,10 +4,11 @@ import { UsersService } from './users.service';
 import { UserEntity } from './user.entity';
 import { UsersController } from './users.controller';
 import { ScheduledPost } from '../scheduled_posts/entities/scheduled_post.entity';
+import { Preference } from '../preferences/entities/preference.entity';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity, ScheduledPost])],
+  imports: [TypeOrmModule.forFeature([UserEntity, ScheduledPost, Preference])],
   providers: [UsersService, RolesGuard],
   exports: [UsersService],
   controllers: [UsersController],

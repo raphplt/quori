@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRoleEnum } from './user.interface';
 import { UserEntity } from './user.entity';
+import { ScheduledPost } from '../scheduled_posts/entities/scheduled_post.entity';
+import { Preference } from '../preferences/entities/preference.entity';
 import * as crypto from 'crypto';
 
 export interface GitHubProfile {
@@ -23,6 +25,10 @@ export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly repo: Repository<UserEntity>,
+    @InjectRepository(ScheduledPost)
+    private readonly scheduledPostRepo: Repository<ScheduledPost>,
+    @InjectRepository(Preference)
+    private readonly preferenceRepo: Repository<Preference>,
   ) {}
 
   private encrypt(value: string): string {
@@ -187,5 +193,25 @@ export class UsersService {
       createdAt: entity.created_at,
       updatedAt: entity.updated_at,
     };
+  }
+
+  async deleteUserById(id: string): Promise<void> {
+    const user = await this.repo.findOne({ where: { id } });
+    if (!user) {
+      throw new Error(`User with id ${id} not found`);
+    }
+
+    // Supprimer manuellement les entités liées pour s'assurer qu'elles sont bien supprimées
+    // Note: Les cascades sont configurées au niveau de la base de données, mais on les supprime
+    // explicitement ici pour plus de sécurité et de traçabilité
+
+    // Supprimer les posts programmés
+    await this.scheduledPostRepo.delete({ user_id: id });
+
+    // Supprimer les préférences (normalement supprimées automatiquement par CASCADE)
+    await this.preferenceRepo.delete({ userId: id });
+
+    // Supprimer l'utilisateur (cela supprimera automatiquement OnboardingStatus grâce au cascade)
+    await this.repo.remove(user);
   }
 }
