@@ -14,7 +14,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Request } from 'express';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual } from 'typeorm';
+import { Repository, MoreThanOrEqual, DataSource } from 'typeorm';
 import { Installation } from './entities/installation.entity';
 import { Event as GithubEvent, EventType } from './entities/event.entity';
 import { Post } from './entities/post.entity';
@@ -70,6 +70,7 @@ export class GithubAppService {
     private events: Repository<GithubEvent>,
     @InjectRepository(Post)
     private posts: Repository<Post>,
+    private dataSource: DataSource,
   ) {
     this.queue = new Queue<Record<string, unknown>>('github-events', {
       connection: {
@@ -343,18 +344,27 @@ export class GithubAppService {
   }
 
   async removeInstallation(id: number): Promise<void> {
-    // D'abord supprimer tous les événements liés à cette installation
-    await this.events.delete({
-      installation: { id },
+    await this.dataSource.transaction(async (manager) => {
+      // D'abord supprimer tous les événements liés à cette installation
+      await manager
+        .createQueryBuilder()
+        .delete()
+        .from('events')
+        .where('installation_id = :id', { id })
+        .execute();
+
+      // Ensuite supprimer tous les posts liés à cette installation
+      await manager
+        .createQueryBuilder()
+        .delete()
+        .from('posts')
+        .where('installation_id = :id', { id })
+        .execute();
+
+      // Finalement supprimer l'installation
+      await manager.delete('installations', { id });
     });
 
-    // Ensuite supprimer tous les posts liés à cette installation
-    await this.posts.delete({
-      installation: { id },
-    });
-
-    // Finalement supprimer l'installation
-    await this.installations.delete({ id });
     this.cache.delete(id);
   }
 
