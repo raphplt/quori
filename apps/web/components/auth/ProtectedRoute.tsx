@@ -9,21 +9,29 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
   redirectTo?: string;
+  requiredRole?: string;
 }
 
 export default function ProtectedRoute({
   children,
   fallback,
   redirectTo = "/auth/login",
+  requiredRole,
 }: ProtectedRouteProps) {
-  const { status } = useSession();
+  const { status, data: session } = useSession();
   const router = useRouter();
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push(redirectTo);
+    } else if (
+      status === "authenticated" &&
+      requiredRole &&
+      session?.user.role !== requiredRole
+    ) {
+      router.push("/");
     }
-  }, [status, router, redirectTo]);
+  }, [status, router, redirectTo, requiredRole, session?.user.role]);
 
   if (status === "loading") {
     return (
@@ -39,7 +47,10 @@ export default function ProtectedRoute({
     );
   }
 
-  if (status !== "authenticated") {
+  if (
+    status !== "authenticated" ||
+    (requiredRole && session?.user.role !== requiredRole)
+  ) {
     return null;
   }
 

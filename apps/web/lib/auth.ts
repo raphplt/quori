@@ -59,6 +59,7 @@ interface SyncResponse {
     email: string;
     avatarUrl: string;
     name: string;
+    role: string;
     linkedInId?: string;
     linkedinAccessToken?: string;
     createdAt: string;
@@ -173,6 +174,7 @@ export const authOptions: NextAuthConfig = {
           username: u.username,
           githubId: u.githubId,
           avatarUrl: u.avatarUrl,
+          role: u.role,
           linkedInId: u.linkedInId,
           linkedinAccessToken: u.linkedinAccessToken,
           createdAt: u.createdAt,

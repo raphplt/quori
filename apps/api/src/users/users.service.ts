@@ -82,6 +82,7 @@ export class UsersService {
       email: githubProfile.emails?.[0]?.value || '',
       avatar_url: githubProfile.photos?.[0]?.value || '',
       name: githubProfile.displayName || githubProfile.username,
+      role: 'user',
       github_access_token: githubAccessToken
         ? this.encrypt(githubAccessToken)
         : undefined,
@@ -105,6 +106,7 @@ export class UsersService {
     if (updateData.email !== undefined) entity.email = updateData.email;
     if (updateData.avatarUrl !== undefined) entity.avatar_url = updateData.avatarUrl;
     if (updateData.name !== undefined) entity.name = updateData.name;
+    if (updateData.role !== undefined) entity.role = updateData.role;
     if (updateData.linkedInId !== undefined) entity.linkedIn_id = updateData.linkedInId;
     if (updateData.githubAccessToken !== undefined) {
       entity.github_access_token = this.encrypt(updateData.githubAccessToken);
@@ -135,6 +137,15 @@ export class UsersService {
     );
   }
 
+  async findAll(): Promise<User[]> {
+    const entities = await this.repo.find();
+    return entities.map((e) => this.toUser(e));
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.repo.delete({ id });
+  }
+
   private toUser(entity: UserEntity): User {
     return {
       id: entity.id,
@@ -143,6 +154,7 @@ export class UsersService {
       email: entity.email,
       avatarUrl: entity.avatar_url,
       name: entity.name,
+      role: entity.role,
       linkedInId: entity.linkedIn_id,
       linkedinAccessToken: entity.linkedin_access_token
         ? this.decrypt(entity.linkedin_access_token)

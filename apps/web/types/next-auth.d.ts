@@ -12,6 +12,7 @@ declare module "next-auth" {
       githubId?: string;
       username?: string;
       avatarUrl?: string;
+      role?: string;
       linkedInId?: string;
       linkedinAccessToken?: string;
       createdAt?: string;
@@ -26,6 +27,7 @@ declare module "next-auth" {
     email: string;
     avatarUrl: string;
     name: string;
+    role: string;
     linkedInId?: string;
     linkedinAccessToken?: string;
     createdAt: string;
@@ -43,6 +45,7 @@ declare module "next-auth/jwt" {
       email: string;
       avatarUrl: string;
       name: string;
+      role: string;
       linkedInId?: string;
       linkedinAccessToken?: string;
       createdAt: string;
