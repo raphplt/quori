@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './user.interface';
+import { User, UserRoleEnum } from './user.interface';
 import { UserEntity } from './user.entity';
 import * as crypto from 'crypto';
 
@@ -16,7 +16,9 @@ export interface GitHubProfile {
 @Injectable()
 export class UsersService {
   private readonly secret =
-    process.env.ENCRYPTION_KEY || process.env.SESSION_SECRET || 'default-secret';
+    process.env.ENCRYPTION_KEY ||
+    process.env.SESSION_SECRET ||
+    'default-secret';
 
   constructor(
     @InjectRepository(UserEntity)
@@ -27,7 +29,10 @@ export class UsersService {
     const key = crypto.createHash('sha256').update(this.secret).digest();
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-    const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+    const encrypted = Buffer.concat([
+      cipher.update(value, 'utf8'),
+      cipher.final(),
+    ]);
     const tag = cipher.getAuthTag();
     return `${iv.toString('hex')}:${tag.toString('hex')}:${encrypted.toString('hex')}`;
   }
@@ -35,7 +40,11 @@ export class UsersService {
   private decrypt(payload: string): string {
     const [ivHex, tagHex, encHex] = payload.split(':');
     const key = crypto.createHash('sha256').update(this.secret).digest();
-    const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'));
+    const decipher = crypto.createDecipheriv(
+      'aes-256-gcm',
+      key,
+      Buffer.from(ivHex, 'hex'),
+    );
     decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
     const decrypted = Buffer.concat([
       decipher.update(Buffer.from(encHex, 'hex')),
@@ -45,7 +54,9 @@ export class UsersService {
   }
 
   async findByRefreshToken(refreshToken: string): Promise<User | undefined> {
-    const entity = await this.repo.findOne({ where: { refresh_token: refreshToken } });
+    const entity = await this.repo.findOne({
+      where: { refresh_token: refreshToken },
+    });
     return entity ? this.toUser(entity) : undefined;
   }
 
@@ -74,7 +85,10 @@ export class UsersService {
     );
   }
 
-  async create(githubProfile: GitHubProfile, githubAccessToken?: string): Promise<User> {
+  async create(
+    githubProfile: GitHubProfile,
+    githubAccessToken?: string,
+  ): Promise<User> {
     const entity: UserEntity = {
       id: crypto.randomUUID(),
       github_id: githubProfile.id,
@@ -82,7 +96,7 @@ export class UsersService {
       email: githubProfile.emails?.[0]?.value || '',
       avatar_url: githubProfile.photos?.[0]?.value || '',
       name: githubProfile.displayName || githubProfile.username,
-      role: 'user',
+      role: UserRoleEnum.USER,
       github_access_token: githubAccessToken
         ? this.encrypt(githubAccessToken)
         : undefined,
@@ -96,18 +110,24 @@ export class UsersService {
     return this.toUser(saved);
   }
 
-  async update(id: string, updateData: Partial<User>): Promise<User | undefined> {
+  async update(
+    id: string,
+    updateData: Partial<User>,
+  ): Promise<User | undefined> {
     const entity = await this.repo.findOne({ where: { id: id } });
     if (!entity) {
       return undefined;
     }
 
-    if (updateData.username !== undefined) entity.username = updateData.username;
+    if (updateData.username !== undefined)
+      entity.username = updateData.username;
     if (updateData.email !== undefined) entity.email = updateData.email;
-    if (updateData.avatarUrl !== undefined) entity.avatar_url = updateData.avatarUrl;
+    if (updateData.avatarUrl !== undefined)
+      entity.avatar_url = updateData.avatarUrl;
     if (updateData.name !== undefined) entity.name = updateData.name;
     if (updateData.role !== undefined) entity.role = updateData.role;
-    if (updateData.linkedInId !== undefined) entity.linkedIn_id = updateData.linkedInId;
+    if (updateData.linkedInId !== undefined)
+      entity.linkedIn_id = updateData.linkedInId;
     if (updateData.githubAccessToken !== undefined) {
       entity.github_access_token = this.encrypt(updateData.githubAccessToken);
     }

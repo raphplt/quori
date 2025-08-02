@@ -1,5 +1,6 @@
 import { Column, Entity, PrimaryColumn, OneToOne, JoinColumn } from 'typeorm';
 import { OnboardingStatusEntity } from '../onboarding/onboarding-status.entity';
+import { UserRoleEnum } from './user.interface';
 
 @Entity({ name: 'users' })
 export class UserEntity {
@@ -27,8 +28,8 @@ export class UserEntity {
   @Column('text')
   name!: string;
 
-  @Column('text', { default: 'user' })
-  role!: string;
+  @Column('text', { default: UserRoleEnum.USER })
+  role!: UserRoleEnum;
 
   @Column('text', { nullable: true })
   github_access_token?: string;

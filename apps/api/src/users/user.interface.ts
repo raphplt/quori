@@ -1,4 +1,7 @@
-export type UserRole = 'user' | 'admin';
+export enum UserRoleEnum {
+  USER = 'user',
+  ADMIN = 'admin',
+}
 
 export interface User {
   id: string;
@@ -7,7 +10,7 @@ export interface User {
   email: string;
   avatarUrl: string;
   name: string;
-  role: UserRole;
+  role: UserRoleEnum;
   linkedInId?: string;
   linkedinAccessToken?: string;
   githubAccessToken?: string;
