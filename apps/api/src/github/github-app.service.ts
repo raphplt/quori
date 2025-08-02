@@ -343,6 +343,17 @@ export class GithubAppService {
   }
 
   async removeInstallation(id: number): Promise<void> {
+    // D'abord supprimer tous les événements liés à cette installation
+    await this.events.delete({
+      installation: { id },
+    });
+
+    // Ensuite supprimer tous les posts liés à cette installation
+    await this.posts.delete({
+      installation: { id },
+    });
+
+    // Finalement supprimer l'installation
     await this.installations.delete({ id });
     this.cache.delete(id);
   }
