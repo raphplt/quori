@@ -27,6 +27,9 @@ export class UserEntity {
   @Column('text')
   name!: string;
 
+  @Column('text', { default: 'user' })
+  role!: string;
+
   @Column('text', { nullable: true })
   github_access_token?: string;
 

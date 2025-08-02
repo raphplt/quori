@@ -1,3 +1,5 @@
+export type UserRole = 'user' | 'admin';
+
 export interface User {
   id: string;
   githubId: string;
@@ -5,6 +7,7 @@ export interface User {
   email: string;
   avatarUrl: string;
   name: string;
+  role: UserRole;
   linkedInId?: string;
   linkedinAccessToken?: string;
   githubAccessToken?: string;
