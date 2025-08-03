@@ -86,7 +86,7 @@ export const TestimonialsSection: React.FC = () => {
               viewport={{ once: true }}
               whileHover={{ y: -5 }}
             >
-              <Card className="p-6 bg-white border border-gray-200 hover:border-primary/30 transition-all duration-300 shadow-lg hover:shadow-xl">
+              <Card className="p-6 bg-default-50 border border-default-200 hover:border-primary/30 transition-all duration-300 shadow-lg hover:shadow-xl">
                 {/* Header tweet-style */}
                 <div className="flex items-center mb-4">
                   <Image
@@ -126,11 +126,11 @@ export const TestimonialsSection: React.FC = () => {
 
                 {/* Quote tweet-style */}
                 <blockquote className="text-base mb-4 leading-relaxed text-foreground">
-                  "{testimonial.quote}"
+                  &quot;{testimonial.quote}&quot;
                 </blockquote>
 
                 {/* Engagement metrics tweet-style */}
-                <div className="flex items-center justify-between text-sm text-muted-foreground pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between text-sm text-muted-foreground pt-4 border-t border-default-100">
                   <div className="flex items-center gap-1">
                     <MessageCircle className="h-4 w-4" />
                     <span>{testimonial.comments}</span>

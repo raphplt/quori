@@ -106,14 +106,14 @@ export const FeaturesSection: React.FC = () => {
             {/* Navigation buttons */}
             <button
               onClick={prevSlide}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all duration-300 border border-primary/20"
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-default/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-default-50 transition-all duration-300 border border-primary/20"
             >
               <ChevronLeft className="h-6 w-6 text-primary" />
             </button>
 
             <button
               onClick={nextSlide}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-all duration-300 border border-primary/20"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-default/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg hover:bg-default-50 transition-all duration-300 border border-primary/20"
             >
               <ChevronRight className="h-6 w-6 text-primary" />
             </button>
@@ -127,7 +127,7 @@ export const FeaturesSection: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -100 }}
                   transition={{ duration: 0.5 }}
-                  className="bg-white rounded-2xl shadow-xl border border-primary/20"
+                  className="bg-default-50 rounded-2xl shadow-xl border border-primary/20"
                 >
                   <div className="grid lg:grid-cols-2 gap-0">
                     {/* Feature info */}
@@ -165,7 +165,7 @@ export const FeaturesSection: React.FC = () => {
                       <h4 className="text-lg font-semibold mb-4 text-foreground">
                         Post généré
                       </h4>
-                      <div className="bg-white rounded-xl p-6 shadow-lg border border-primary/20">
+                      <div className="bg-default-100 rounded-xl p-6 shadow-lg border border-primary/20">
                         <p className="text-sm text-muted-foreground leading-relaxed">
                           {features[currentSlide].snippet}
                         </p>
