@@ -15,6 +15,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { authenticatedFetcher } from "@/hooks/useAuthenticatedQuery";
 import { Post } from "@/types/post";
+import { maj } from "@/utils/text";
 
 const CalendarPage = () => {
   const [view, setView] = useState<"month" | "week">("month");
@@ -68,7 +69,12 @@ const CalendarPage = () => {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <CalendarIcon className="mr-2 h-5 w-5" />
-                  Janvier 2025
+                  {maj(
+                    new Date().toLocaleDateString("fr-FR", {
+                      month: "long",
+                      year: "numeric",
+                    })
+                  )}
                 </CardTitle>
                 <CardDescription>
                   Vue {view === "month" ? "mensuelle" : "hebdomadaire"} de vos

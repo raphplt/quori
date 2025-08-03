@@ -197,13 +197,13 @@ export default function EventDetailPage({
       <div className="container mx-auto px-4 py-8">
         <div className="animate-pulse space-y-6">
           <div className="flex items-center space-x-4">
-            <div className="h-10 w-10 bg-gray-200 rounded-full" />
+            <div className="h-10 w-10 bg-default-200 rounded-full" />
             <div className="space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-32" />
-              <div className="h-4 bg-gray-200 rounded w-24" />
+              <div className="h-4 bg-default-200 rounded w-32" />
+              <div className="h-4 bg-default-200 rounded w-24" />
             </div>
           </div>
-          <div className="h-64 bg-gray-200 rounded-lg" />
+          <div className="h-64 bg-default-200 rounded-lg" />
         </div>
       </div>
     );
@@ -213,11 +213,11 @@ export default function EventDetailPage({
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <AlertCircle className="h-16 w-16 text-default-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-default-900 mb-2">
             Événement introuvable
           </h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-default-600 mb-6">
             L&apos;événement avec l&apos;ID {id} n&apos;a pas pu être trouvé.
           </p>
           <Button onClick={() => router.back()} variant="outline">
@@ -245,10 +245,10 @@ export default function EventDetailPage({
           <div className="flex items-center space-x-3">
             <span className="text-2xl">{getEventIcon(event.event_type)}</span>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-default-900">
                 {getEventTypeDisplay(event.event_type)}
               </h1>
-              <p className="text-sm text-gray-600">{event.repo_full_name}</p>
+              <p className="text-sm text-default-600">{event.repo_full_name}</p>
             </div>
           </div>
         </div>
@@ -277,11 +277,11 @@ export default function EventDetailPage({
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-default-600">
                     ID de livraison
                   </p>
                   <div className="flex items-center space-x-2">
-                    <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
+                    <code className="bg-default-100 px-2 py-1 rounded text-sm font-mono">
                       {event.delivery_id}
                     </code>
                     <Button
@@ -294,13 +294,15 @@ export default function EventDetailPage({
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-default-600">
                     Type d&apos;événement
                   </p>
                   <Badge variant="outline">{event.event}</Badge>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-600">Reçu le</p>
+                  <p className="text-sm font-medium text-default-600">
+                    Reçu le
+                  </p>
                   <p className="text-sm flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
                     {formatDate(event.received_at)}
@@ -308,7 +310,7 @@ export default function EventDetailPage({
                 </div>
                 {event.processed_at && (
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-default-600">
                       Traité le
                     </p>
                     <p className="text-sm flex items-center gap-1">
@@ -332,24 +334,24 @@ export default function EventDetailPage({
                   </Avatar>
                   <div>
                     <p className="text-sm font-medium">{event.author_login}</p>
-                    <p className="text-xs text-gray-600">Auteur</p>
+                    <p className="text-xs text-default-600">Auteur</p>
                   </div>
                 </div>
               )}
 
               {event.metadata?.title && (
                 <div className="space-y-2 pt-4 border-t">
-                  <p className="text-sm font-medium text-gray-600">Titre</p>
+                  <p className="text-sm font-medium text-default-600">Titre</p>
                   <p className="text-sm">{event.metadata.title}</p>
                 </div>
               )}
 
               {event.metadata?.desc && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-600">
+                  <p className="text-sm font-medium text-default-600">
                     Description
                   </p>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                  <p className="text-sm text-default-700 whitespace-pre-wrap">
                     {event.metadata.desc}
                   </p>
                 </div>
@@ -375,7 +377,7 @@ export default function EventDetailPage({
                           <p className="text-sm font-medium mb-1">
                             {commit.message}
                           </p>
-                          <div className="flex items-center space-x-4 text-xs text-gray-600">
+                          <div className="flex items-center space-x-4 text-xs text-default-600">
                             <span className="flex items-center gap-1">
                               <User className="h-3 w-3" />
                               {commit.author.name}
@@ -460,7 +462,7 @@ export default function EventDetailPage({
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             {getPostStatusBadge(post.status)}
-                            <span className="text-xs text-gray-600">
+                            <span className="text-xs text-default-600">
                               ID: {post.id}
                             </span>
                           </div>
@@ -475,7 +477,7 @@ export default function EventDetailPage({
                       />
 
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4 text-xs text-gray-600">
+                        <div className="flex items-center space-x-4 text-xs text-default-600">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {formatDistanceToNow(new Date(post.createdAt), {
@@ -536,10 +538,12 @@ export default function EventDetailPage({
                 <p className="text-sm font-medium">
                   {repository.name || event.repo_full_name.split("/").pop()}
                 </p>
-                <p className="text-xs text-gray-600">{event.repo_full_name}</p>
+                <p className="text-xs text-default-600">
+                  {event.repo_full_name}
+                </p>
               </div>
               {repository.description && (
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-default-700">
                   {repository.description}
                 </p>
               )}
@@ -568,18 +572,20 @@ export default function EventDetailPage({
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Tentatives</span>
+                <span className="text-sm text-default-600">Tentatives</span>
                 <span className="text-sm font-medium">{event.retry_count}</span>
               </div>
               {commits.length > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Commits</span>
+                  <span className="text-sm text-default-600">Commits</span>
                   <span className="text-sm font-medium">{commits.length}</span>
                 </div>
               )}
               {relatedPosts && (
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Posts générés</span>
+                  <span className="text-sm text-default-600">
+                    Posts générés
+                  </span>
                   <span className="text-sm font-medium">
                     {relatedPosts.length}
                   </span>
@@ -587,7 +593,7 @@ export default function EventDetailPage({
               )}
               <Separator />
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-default-600">
                   Délai de traitement
                 </span>
                 <span className="text-sm font-medium">
