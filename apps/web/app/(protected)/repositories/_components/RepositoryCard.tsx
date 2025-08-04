@@ -38,7 +38,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
   };
 
   return (
-    <Link href={`/repositories/${repo.id}`}>
+    <Link href={`/repositories/${encodeURIComponent(repo.full_name)}`}>
       <Card className="hover:shadow-lg transition-shadow duration-200">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">

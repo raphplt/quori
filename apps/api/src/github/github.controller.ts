@@ -15,6 +15,7 @@ import {
   Headers,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { map } from 'rxjs/operators';
@@ -248,6 +249,55 @@ export class GithubController {
       throw new UnauthorizedException('No GitHub access token found for user');
     }
     return this.githubService.getRepository(
+      user.githubAccessToken,
+      owner,
+      repo,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('repositories/:owner/:repo/details')
+  async getRepositoryDetails(
+    @Request() req: AuthenticatedRequest,
+    @Param('owner') owner: string,
+    @Param('repo') repo: string,
+    @Query('installationId') installationId?: string,
+  ) {
+    const user = req.user;
+
+    // Si on a un installationId, utiliser la GitHub App
+    if (installationId) {
+      const installationIdNum = parseInt(installationId, 10);
+      if (isNaN(installationIdNum)) {
+        throw new BadRequestException('Invalid installation ID');
+      }
+
+      // Vérifier que l'utilisateur a accès à cette installation
+      const userInstallations = await this.appService.getUserInstallations(
+        user.githubId,
+      );
+      const hasAccess = userInstallations.some(
+        (installation) => installation.id === installationIdNum,
+      );
+
+      if (!hasAccess) {
+        throw new ForbiddenException('Access denied to this installation');
+      }
+
+      return this.appService.getRepositoryDetails(
+        installationIdNum,
+        owner,
+        repo,
+      );
+    }
+
+    // Sinon, utiliser le token OAuth de l'utilisateur
+    if (!user?.githubAccessToken) {
+      throw new UnauthorizedException('GitHub access token not found');
+    }
+
+    // Utiliser la méthode détaillée via OAuth
+    return this.githubService.getRepositoryDetails(
       user.githubAccessToken,
       owner,
       repo,

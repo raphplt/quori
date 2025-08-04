@@ -404,6 +404,162 @@ export class GithubAppService {
     return `https://github.com/apps/${appSlug}/installations/new`;
   }
 
+  async getRepositoryDetails(
+    installationId: number,
+    owner: string,
+    repo: string,
+  ): Promise<any> {
+    try {
+      const octokit = await this.getInstallationOctokit(installationId);
+      // Récupérer les détails du repository
+      const { data: repository } = await octokit.rest.repos.get({
+        owner,
+        repo,
+      });
+
+      // Récupérer les languages du repository
+      const { data: languages } = await octokit.rest.repos.listLanguages({
+        owner,
+        repo,
+      });
+
+      // Récupérer les contributeurs
+      const { data: contributors } = await octokit.rest.repos.listContributors({
+        owner,
+        repo,
+        per_page: 10,
+      });
+
+      // Récupérer les derniers commits
+      const { data: commits } = await octokit.rest.repos.listCommits({
+        owner,
+        repo,
+        per_page: 10,
+      });
+
+      // Récupérer les releases
+      const { data: releases } = await octokit.rest.repos.listReleases({
+        owner,
+        repo,
+        per_page: 5,
+      });
+
+      // Récupérer les issues ouvertes
+      const { data: issues } = await octokit.rest.issues.listForRepo({
+        owner,
+        repo,
+        state: 'open',
+        per_page: 10,
+      });
+
+      // Récupérer les pull requests ouvertes
+      const { data: pullRequests } = await octokit.rest.pulls.list({
+        owner,
+        repo,
+        state: 'open',
+        per_page: 10,
+      });
+
+      // Récupérer les branches
+      const { data: branches } = await octokit.rest.repos.listBranches({
+        owner,
+        repo,
+        per_page: 10,
+      });
+
+      return {
+        repository: {
+          id: repository.id,
+          name: repository.name,
+          full_name: repository.full_name,
+          description: repository.description,
+          private: repository.private,
+          html_url: repository.html_url,
+          clone_url: repository.clone_url,
+          ssh_url: repository.ssh_url,
+          language: repository.language,
+          stargazers_count: repository.stargazers_count,
+          forks_count: repository.forks_count,
+          open_issues_count: repository.open_issues_count,
+          watchers_count: repository.watchers_count,
+          size: repository.size,
+          default_branch: repository.default_branch,
+          created_at: repository.created_at,
+          updated_at: repository.updated_at,
+          pushed_at: repository.pushed_at,
+          topics: repository.topics,
+          license: repository.license,
+          owner: {
+            login: repository.owner.login,
+            avatar_url: repository.owner.avatar_url,
+            html_url: repository.owner.html_url,
+          },
+        },
+        languages,
+        contributors: contributors.map((contributor) => ({
+          login: contributor.login,
+          avatar_url: contributor.avatar_url,
+          html_url: contributor.html_url,
+          contributions: contributor.contributions,
+        })),
+        recentCommits: commits.map((commit) => ({
+          sha: commit.sha,
+          message: commit.commit.message,
+          author: commit.commit.author,
+          date: commit.commit.author?.date,
+          html_url: commit.html_url,
+        })),
+        releases: releases.map((release) => ({
+          id: release.id,
+          tag_name: release.tag_name,
+          name: release.name,
+          body: release.body,
+          published_at: release.published_at,
+          html_url: release.html_url,
+        })),
+        openIssues: issues.map((issue) => ({
+          id: issue.id,
+          number: issue.number,
+          title: issue.title,
+          state: issue.state,
+          created_at: issue.created_at,
+          html_url: issue.html_url,
+          user: {
+            login: issue.user?.login,
+            avatar_url: issue.user?.avatar_url,
+          },
+        })),
+        openPullRequests: pullRequests.map((pr) => ({
+          id: pr.id,
+          number: pr.number,
+          title: pr.title,
+          state: pr.state,
+          created_at: pr.created_at,
+          html_url: pr.html_url,
+          user: {
+            login: pr.user?.login,
+            avatar_url: pr.user?.avatar_url,
+          },
+        })),
+        branches: branches.map((branch) => ({
+          name: branch.name,
+          commit: {
+            sha: branch.commit.sha,
+          },
+          protected: branch.protected,
+        })),
+      };
+    } catch (error) {
+      console.error(
+        `Failed to get repository details for ${owner}/${repo}:`,
+        error,
+      );
+      throw new Error(
+        `Failed to get repository details: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
   getEventStream(): Observable<GithubEvent> {
     return this.eventSubject.asObservable();
   }

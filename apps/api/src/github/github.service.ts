@@ -247,6 +247,212 @@ export class GithubService {
     }
   }
 
+  async getRepositoryDetails(
+    accessToken: string,
+    owner: string,
+    repo: string,
+  ): Promise<any> {
+    try {
+      // Récupérer les détails du repository
+      const repository = await this.getRepository(accessToken, owner, repo);
+
+      // Récupérer les languages du repository
+      const languagesResponse = await fetch(
+        `${this.GITHUB_API_BASE}/repos/${owner}/${repo}/languages`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/vnd.github.v3+json',
+            'User-Agent': 'Quori-App',
+          },
+        },
+      );
+      const languages = languagesResponse.ok
+        ? await languagesResponse.json()
+        : {};
+
+      // Récupérer les contributeurs
+      const contributorsResponse = await fetch(
+        `${this.GITHUB_API_BASE}/repos/${owner}/${repo}/contributors?per_page=10`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/vnd.github.v3+json',
+            'User-Agent': 'Quori-App',
+          },
+        },
+      );
+      const contributors = contributorsResponse.ok
+        ? await contributorsResponse.json()
+        : [];
+
+      // Récupérer les derniers commits
+      const commitsResponse = await fetch(
+        `${this.GITHUB_API_BASE}/repos/${owner}/${repo}/commits?per_page=10`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/vnd.github.v3+json',
+            'User-Agent': 'Quori-App',
+          },
+        },
+      );
+      const commits = commitsResponse.ok ? await commitsResponse.json() : [];
+
+      // Récupérer les releases
+      const releasesResponse = await fetch(
+        `${this.GITHUB_API_BASE}/repos/${owner}/${repo}/releases?per_page=5`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/vnd.github.v3+json',
+            'User-Agent': 'Quori-App',
+          },
+        },
+      );
+      const releases = releasesResponse.ok ? await releasesResponse.json() : [];
+
+      // Récupérer les issues ouvertes
+      const issuesResponse = await fetch(
+        `${this.GITHUB_API_BASE}/repos/${owner}/${repo}/issues?state=open&per_page=10`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/vnd.github.v3+json',
+            'User-Agent': 'Quori-App',
+          },
+        },
+      );
+      const issues = issuesResponse.ok ? await issuesResponse.json() : [];
+
+      // Récupérer les pull requests ouvertes
+      const pullRequestsResponse = await fetch(
+        `${this.GITHUB_API_BASE}/repos/${owner}/${repo}/pulls?state=open&per_page=10`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/vnd.github.v3+json',
+            'User-Agent': 'Quori-App',
+          },
+        },
+      );
+      const pullRequests = pullRequestsResponse.ok
+        ? await pullRequestsResponse.json()
+        : [];
+
+      // Récupérer les branches
+      const branchesResponse = await fetch(
+        `${this.GITHUB_API_BASE}/repos/${owner}/${repo}/branches?per_page=10`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/vnd.github.v3+json',
+            'User-Agent': 'Quori-App',
+          },
+        },
+      );
+      const branches = branchesResponse.ok ? await branchesResponse.json() : [];
+
+      return {
+        repository: {
+          id: repository.id,
+          name: repository.name,
+          full_name: repository.full_name,
+          description: repository.description,
+          private: repository.private,
+          html_url: repository.html_url,
+          clone_url: repository.clone_url,
+          ssh_url: repository.ssh_url,
+          language: repository.language,
+          stargazers_count: repository.stargazers_count,
+          forks_count: repository.forks_count,
+          open_issues_count: repository.open_issues_count,
+          watchers_count: repository.watchers_count,
+          size: repository.size,
+          default_branch: repository.default_branch,
+          created_at: repository.created_at,
+          updated_at: repository.updated_at,
+          pushed_at: repository.pushed_at,
+          topics: repository.topics || [],
+          license: repository.license,
+          owner: {
+            login: repository.owner.login,
+            avatar_url: repository.owner.avatar_url,
+            html_url: repository.owner.html_url,
+          },
+        },
+        languages,
+        contributors: contributors.map((contributor: any) => ({
+          login: contributor.login,
+          avatar_url: contributor.avatar_url,
+          html_url: contributor.html_url,
+          contributions: contributor.contributions,
+        })),
+        recentCommits: commits.map((commit: any) => ({
+          sha: commit.sha,
+          message: commit.commit.message,
+          author: commit.commit.author,
+          date: commit.commit.author?.date,
+          html_url: commit.html_url,
+        })),
+        releases: releases.map((release: any) => ({
+          id: release.id,
+          tag_name: release.tag_name,
+          name: release.name,
+          body: release.body,
+          published_at: release.published_at,
+          html_url: release.html_url,
+        })),
+        openIssues: issues
+          .filter((issue: any) => !issue.pull_request)
+          .map((issue: any) => ({
+            id: issue.id,
+            number: issue.number,
+            title: issue.title,
+            state: issue.state,
+            created_at: issue.created_at,
+            html_url: issue.html_url,
+            user: issue.user
+              ? {
+                  login: issue.user.login,
+                  avatar_url: issue.user.avatar_url,
+                }
+              : null,
+          })),
+        openPullRequests: pullRequests.map((pr: any) => ({
+          id: pr.id,
+          number: pr.number,
+          title: pr.title,
+          state: pr.state,
+          created_at: pr.created_at,
+          html_url: pr.html_url,
+          user: pr.user
+            ? {
+                login: pr.user.login,
+                avatar_url: pr.user.avatar_url,
+              }
+            : null,
+        })),
+        branches: branches.map((branch: any) => ({
+          name: branch.name,
+          commit: {
+            sha: branch.commit.sha,
+          },
+          protected: branch.protected,
+        })),
+      };
+    } catch (error) {
+      console.error(
+        `Failed to get repository details for ${owner}/${repo}:`,
+        error,
+      );
+      throw new HttpException(
+        'Failed to fetch repository details from GitHub',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   /**
    * Vider le cache des repositories pour un utilisateur
    */
