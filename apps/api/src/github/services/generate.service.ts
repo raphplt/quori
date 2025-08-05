@@ -239,7 +239,7 @@ export class GenerateService {
     if (template?.promptModifier) {
       prompt += `\n${template.promptModifier}`;
     }
-    console.debug('DEBUG ▶ prompt', prompt);
+    // console.debug('DEBUG ▶ prompt', prompt);
 
     try {
       const res = await this.openai.chat.completions.create({
@@ -254,9 +254,9 @@ export class GenerateService {
         throw new BadRequestException('No content received from OpenAI');
       }
 
-      console.debug('DEBUG ▶ raw response', content);
+      // console.debug('DEBUG ▶ raw response', content);
       const cleaned = this.cleanJsonResponse(content);
-      console.debug('DEBUG ▶ cleaned response', cleaned);
+      // console.debug('DEBUG ▶ cleaned response', cleaned);
 
       const parsed = this.validateGenerateResult(JSON.parse(cleaned));
 
