@@ -13,6 +13,10 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
+import {
+  useGenerateRepositoryPost,
+  createRepositoryPostRequest,
+} from "@/hooks/useGenerateRepositoryPost";
 
 export default function RepositoryDetailPage({
   params,
@@ -24,9 +28,9 @@ export default function RepositoryDetailPage({
   const initialInstallationId = searchParams.get("installationId");
 
   // State pour gérer l'installation sélectionnée
-  const [selectedInstallationId, setSelectedInstallationId] = useState<
-    string | null
-  >(initialInstallationId);
+  const [selectedInstallationId] = useState<string | null>(
+    initialInstallationId
+  );
 
   // Décoder l'ID qui est au format owner/repo
   const [owner, repo] = decodeURIComponent(id).split("/");
@@ -35,22 +39,9 @@ export default function RepositoryDetailPage({
     data: repositoryDetails,
     isLoading,
     error,
-    refetch,
   } = useRepositoryDetails(owner, repo, selectedInstallationId || undefined);
 
-  // Gérer le changement d'installation
-  const handleInstallationChange = (installationId: string | null) => {
-    setSelectedInstallationId(installationId);
-    const url = new URL(window.location.href);
-    if (installationId) {
-      url.searchParams.set("installationId", installationId);
-    } else {
-      url.searchParams.delete("installationId");
-    }
-    window.history.replaceState({}, "", url.toString());
-
-    refetch();
-  };
+  const generatePost = useGenerateRepositoryPost(owner, repo);
 
   if (isLoading) {
     return (
@@ -105,25 +96,40 @@ export default function RepositoryDetailPage({
   return (
     <div className="space-y-6">
       {/* Header avec navigation */}
-      <div className="flex items-center justify-between">
-        <Link href="/repositories">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour aux repositories
-          </Button>
-        </Link>
-        <Button asChild>
-          <a
-            href={repositoryDetails.repository.html_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center space-x-2"
-          >
-            <ExternalLink className="h-4 w-4" />
-            <span>Voir sur GitHub</span>
-          </a>
-        </Button>
-      </div>
+        <div className="flex items-center justify-between">
+          <Link href="/repositories">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour aux repositories
+            </Button>
+          </Link>
+          <div className="flex space-x-2">
+            <Button
+              onClick={() =>
+                generatePost.mutate(
+                  createRepositoryPostRequest(repositoryDetails)
+                )
+              }
+              disabled={generatePost.isPending}
+            >
+              {generatePost.isPending && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
+              Générer un post
+            </Button>
+            <Button asChild>
+              <a
+                href={repositoryDetails.repository.html_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span>Voir sur GitHub</span>
+              </a>
+            </Button>
+          </div>
+        </div>
 
       {/* Sélecteur d'installation */}
       {/* <InstallationSelector
@@ -133,7 +139,23 @@ export default function RepositoryDetailPage({
       /> */}
 
       {/* Vue d'ensemble */}
-      <RepositoryOverview data={repositoryDetails} />
+        <RepositoryOverview data={repositoryDetails} />
+
+        {generatePost.isSuccess && generatePost.data && (
+          <div className="space-y-2 p-4 border rounded">
+            <h3 className="font-semibold">Résumé</h3>
+            <p>{generatePost.data.summary}</p>
+            <h3 className="font-semibold">Post</h3>
+            <p>{generatePost.data.post}</p>
+          </div>
+        )}
+        {generatePost.isError && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              {generatePost.error.message}
+            </AlertDescription>
+          </Alert>
+        )}
 
       {/* Grille de contenu */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
