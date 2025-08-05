@@ -9,7 +9,6 @@ import { ContributorsList } from "./_components/ContributorsList";
 import { RecentCommits } from "./_components/RecentCommits";
 import { IssuesAndPRs } from "./_components/IssuesAndPRs";
 import { BranchesAndReleases } from "./_components/BranchesAndReleases";
-import { InstallationSelector } from "./_components/InstallationSelector";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -31,7 +30,6 @@ export default function RepositoryDetailPage({
 
   // Décoder l'ID qui est au format owner/repo
   const [owner, repo] = decodeURIComponent(id).split("/");
-  const repositoryFullName = `${owner}/${repo}`;
 
   const {
     data: repositoryDetails,
@@ -43,7 +41,6 @@ export default function RepositoryDetailPage({
   // Gérer le changement d'installation
   const handleInstallationChange = (installationId: string | null) => {
     setSelectedInstallationId(installationId);
-    // Optionnel: mettre à jour l'URL
     const url = new URL(window.location.href);
     if (installationId) {
       url.searchParams.set("installationId", installationId);
@@ -52,7 +49,6 @@ export default function RepositoryDetailPage({
     }
     window.history.replaceState({}, "", url.toString());
 
-    // Refetch avec la nouvelle installation
     refetch();
   };
 
@@ -130,11 +126,11 @@ export default function RepositoryDetailPage({
       </div>
 
       {/* Sélecteur d'installation */}
-      <InstallationSelector
+      {/* <InstallationSelector
         repositoryFullName={repositoryFullName}
         onInstallationChange={handleInstallationChange}
         selectedInstallationId={selectedInstallationId}
-      />
+      /> */}
 
       {/* Vue d'ensemble */}
       <RepositoryOverview data={repositoryDetails} />
