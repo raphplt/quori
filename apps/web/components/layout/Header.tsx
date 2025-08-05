@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -16,14 +15,11 @@ import {
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Sidebar from "./Sidebar";
-import InboxPopover from "../InboxPopover";
+import InboxPopover from "../header/InboxPopover";
 
 import {
-  Search,
   Users,
   Plus,
-  Circle,
-  GitBranch,
   ChevronDown,
   User,
   Settings,
@@ -33,6 +29,8 @@ import {
   Moon,
 } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
+import GitPreview from "../header/GitPreview";
+import Searchbar from "../header/Searchbar";
 
 const Header = () => {
   const { data: session, status } = useSession();
@@ -182,16 +180,7 @@ const Header = () => {
 
         {user && (
           <nav className="hidden md:flex items-center space-x-2">
-            <div className="relative">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                width={16}
-              />
-              <Input
-                placeholder="Type / to search"
-                className="pl-10 pr-4 w-64"
-              />
-            </div>
+            <Searchbar />
 
             <span className="h-6 w-px bg-border mx-2" />
 
@@ -223,12 +212,10 @@ const Header = () => {
 
             <span className="h-6 w-px bg-border mx-2" />
 
-            <Button variant="ghost" size="icon">
+            {/* <Button variant="ghost" size="icon">
               <Circle className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <GitBranch className="h-5 w-5" />
-            </Button>
+            </Button> */}
+            <GitPreview />
             <InboxPopover />
           </nav>
         )}
