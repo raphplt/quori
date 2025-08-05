@@ -29,6 +29,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { DEFAULT_JWT_SECRET } from '../common/constants';
 import { GenerateDto, GenerateResultDto } from './dto/generate.dto';
+import { GenerateRepositoryDto } from './dto/generate-repository.dto';
 import { PostFeedbackDto, UpdatePostStatusDto } from './dto/post.dto';
 import { Event } from './entities/event.entity';
 import { Repository } from 'typeorm';
@@ -302,6 +303,18 @@ export class GithubController {
       owner,
       repo,
     );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('repositories/:owner/:repo/generate')
+  async generateRepositoryPost(
+    @Request() req: AuthenticatedRequest,
+    @Param('owner') owner: string,
+    @Param('repo') repo: string,
+    @Body() body: GenerateRepositoryDto,
+  ): Promise<GenerateResultDto> {
+    const user = req.user;
+    return this.generateService.generateFromRepository(user.id, body);
   }
 
   @UseGuards(JwtAuthGuard)

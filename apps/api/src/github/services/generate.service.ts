@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OpenAI } from 'openai';
 import { GenerateDto, GenerateResultDto } from '../dto/generate.dto';
+import { GenerateRepositoryDto } from '../dto/generate-repository.dto';
 import { Post } from '../entities/post.entity';
 import { Installation } from '../entities/installation.entity';
 import { Event } from '../entities/event.entity';
@@ -25,6 +26,7 @@ interface QuotaInfo {
 export class GenerateService {
   private openai: OpenAI;
   private promptTemplate: string;
+  private repositoryPromptTemplate: string;
   private quotas = new Map<string, QuotaInfo>();
 
   constructor(
@@ -51,7 +53,16 @@ export class GenerateService {
     ).trim();
     if (!this.promptTemplate) {
       throw new Error(
-        'GENERATE_PROMPT environment variable is missing or empty',
+      'GENERATE_PROMPT environment variable is missing or empty',
+      );
+    }
+
+    this.repositoryPromptTemplate = (
+      this.config.get<string>('GENERATE_REPOSITORY_PROMPT') ?? ''
+    ).trim();
+    if (!this.repositoryPromptTemplate) {
+      throw new Error(
+        'GENERATE_REPOSITORY_PROMPT environment variable is missing or empty',
       );
     }
   }
@@ -91,6 +102,28 @@ export class GenerateService {
       .replace(/\{\{desc\}\}/g, event.desc)
       .replace(/\{\{filesChanged\}\}/g, event.filesChanged.join(', '))
       .replace(/\{\{statsBlock\}\}/g, statsBlock)
+      .replace(/\{\{lang\}\}/g, lang)
+      .replace(/\{\{tone\}\}/g, tone)
+      .replace(/\{\{outputs\}\}/g, outputs);
+  }
+
+  private buildRepositoryPrompt(dto: GenerateRepositoryDto): string {
+    const { repository, options } = dto;
+    const lang = options?.lang ?? 'français';
+    const tone = options?.tone ?? 'accessible, professionnel, léger humour';
+    const outputs = options?.output?.join(', ') ?? 'summary, post';
+
+    const topics = repository.topics.join(', ');
+
+    return this.repositoryPromptTemplate
+      .replace(/\{\{repoFullName\}\}/g, repository.fullName)
+      .replace(/\{\{description\}\}/g, repository.description || '')
+      .replace(/\{\{stars\}\}/g, String(repository.stars))
+      .replace(/\{\{forks\}\}/g, String(repository.forks))
+      .replace(/\{\{issues\}\}/g, String(repository.openIssues))
+      .replace(/\{\{language\}\}/g, repository.language || '')
+      .replace(/\{\{topics\}\}/g, topics)
+      .replace(/\{\{timestamp\}\}/g, repository.timestamp)
       .replace(/\{\{lang\}\}/g, lang)
       .replace(/\{\{tone\}\}/g, tone)
       .replace(/\{\{outputs\}\}/g, outputs);
@@ -272,6 +305,39 @@ export class GenerateService {
       return parsed;
     } catch (e) {
       console.error('Error in generate service:', e);
+      if (e instanceof BadRequestException) throw e;
+      throw new BadRequestException(
+        `Failed to parse OpenAI response: ${(e as Error).message}`,
+      );
+    }
+  }
+
+  async generateFromRepository(
+    userId: string,
+    dto: GenerateRepositoryDto,
+  ): Promise<GenerateResultDto> {
+    this.checkQuota(userId);
+
+    const prompt = this.buildRepositoryPrompt(dto);
+
+    try {
+      const res = await this.openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+      });
+
+      const content = res.choices[0]?.message?.content;
+      if (!content) {
+        throw new BadRequestException('No content received from OpenAI');
+      }
+
+      const cleaned = this.cleanJsonResponse(content);
+      const parsed = this.validateGenerateResult(JSON.parse(cleaned));
+
+      return parsed;
+    } catch (e) {
+      console.error('Error in generateFromRepository:', e);
       if (e instanceof BadRequestException) throw e;
       throw new BadRequestException(
         `Failed to parse OpenAI response: ${(e as Error).message}`,

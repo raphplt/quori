@@ -83,6 +83,8 @@ GITHUB_WEBHOOK_SECRET="your_webhook_secret"
 
 # OpenAI
 OPENAI_API_KEY="sk-..."
+GENERATE_PROMPT="..."
+GENERATE_REPOSITORY_PROMPT="..."
 
 # Sessions & Encryption
 SESSION_SECRET="your-session-secret-key"
