@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { UserEntity } from '../../users/user.entity';
 import { Post } from '../../github/entities/post.entity';
@@ -32,6 +33,7 @@ export class ScheduledPost {
   user?: UserEntity;
 
   @Column('bigint')
+  @Index({ unique: true })
   post_id!: number;
 
   @ManyToOne(() => Post, { eager: false })

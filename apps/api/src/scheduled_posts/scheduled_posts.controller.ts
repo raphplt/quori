@@ -64,4 +64,9 @@ export class ScheduledPostsController {
     await this.service.remove(id, req.user.id);
     return { success: true };
   }
+
+  @Patch(':id/retry')
+  async retry(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.service.retryFailed(id, req.user.id);
+  }
 }
